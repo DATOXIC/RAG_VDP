@@ -6,7 +6,7 @@
 
 | Đường dẫn | Là gì | Đi vào đâu khi ingestion |
 |---|---|---|
-| `data/policies/*.md` | 15 tài liệu chính sách (14 mã `CP-01..CP-14`, riêng `CP-01` có 2 phiên bản). `CP-01..CP-07` là lõi của FinCo Easy, quyết định đáp án chuẩn. `CP-08..CP-14` là **tài liệu nhiễu** (xem dưới) | Tách chunk → embedding → chỉ mục RAG |
+| `data/policies/*.md` | 18 tài liệu chính sách (17 mã `CP-01..CP-17`, riêng `CP-01` có 2 phiên bản). `CP-01..CP-07` là lõi của FinCo Easy, quyết định đáp án chuẩn. `CP-08..CP-17` là **tài liệu bổ trợ và nhiễu** (xem dưới) | Tách chunk → embedding → chỉ mục RAG |
 | `data/applications.json` | 21 hồ sơ vay giả lập | Nạp vào bảng SQLite `applications` |
 | `tests/expected_decisions.json` | Đáp án chuẩn từng hồ sơ (quyết định, phiên bản, DTI, lý do, tài liệu cần trích) | **Chỉ dùng cho eval**, agent không được đọc |
 
@@ -26,7 +26,9 @@ Mỗi file là Markdown, phần đầu là front matter dạng `khóa: giá tr�
 | `status` | không | `active`, `superseded` (bị bản mới thay) hoặc `expired` (chương trình đã hết hạn) |
 | `language` | không | `vi` |
 
-**Chunk theo mục `## `.** Mỗi mục là một chunk. Khi nhúng, thêm một dòng đầu `[doc_id version | hiệu lực từ ...] tiêu đề – mục` để chunk giữa tài liệu vẫn biết nó thuộc đâu. Cả 15 tài liệu cho **68 chunk** (lõi 38 + nhiễu 30), mỗi chunk khoảng 35–170 từ, nên không cần chia nhỏ hơn.
+**Chunk theo mục `## `.** Mỗi mục là một chunk. Khi nhúng, thêm một dòng đầu `[doc_id version | hiệu lực từ ...] tiêu đề – mục` để chunk giữa tài liệu vẫn biết nó thuộc đâu. Cả 18 tài liệu cho **88 chunk** (lõi 38 + nhiễu 30 + tài liệu dài 20). Các chunk của `CP-01..CP-14` dài 35–170 từ; `CP-15..CP-17` có chunk tới khoảng 630 từ để thử nhánh chia nhỏ theo điều khoản của chunker.
+
+**Tài liệu dài (`CP-15..CP-17`)** viết như văn bản thực tế: `CP-15` sổ tay thẩm định (thuật ngữ, quy trình từng bước, bảng ngưỡng theo phiên bản, 3 ví dụ giả định, sai sót thường gặp), `CP-16` hỏi đáp khách vay (nhắc lại số liệu theo hai phiên bản, nên có chunk trùng ý với `CP-01`), `CP-17` xử lý nợ quá hạn sau giải ngân (nhóm nợ, lãi phạt, nhắc nợ). Chúng chỉ nhắc lại hoặc bổ sung, không đổi số nào của `CP-01..CP-07`; `CP-15/16` là bản diễn giải nên khi mâu thuẫn thì chính sách gốc được ưu tiên.
 
 **Tài liệu nhiễu (`CP-08..CP-14`)** thuộc sản phẩm khác của FinCo, cố ý dùng từ vựng gần giống FinCo Easy để truy xuất phải phân biệt: `CP-09` thẻ tín dụng (có DTI 40%, lãi suất 28%, kỳ miễn lãi, đều **không** áp dụng cho FinCo Easy); `CP-10` tiền gửi tiết kiệm (có bảng lãi **tiền gửi** theo kỳ hạn, dễ nhầm với lãi suất vay ở `CP-03`); `CP-11` bảo mật dữ liệu; `CP-12` khiếu nại thẻ và tiền gửi (dễ nhầm với khiếu nại thẩm định ở `CP-08`); `CP-13` ưu đãi mùa hè 2025 (đã hết hạn 31/08/2025, để kiểm tra lọc theo `expiry_date`); `CP-14` định danh khách hàng. **Không tài liệu nhiễu nào làm đổi đáp án của 21 hồ sơ**, và không tài liệu nào nói về vay thế chấp, vay mua ô tô hay vay doanh nghiệp, để các câu hỏi `no_answer` về những chủ đề đó vẫn đúng. Khi viết thêm tài liệu, giữ hai nguyên tắc này.
 
