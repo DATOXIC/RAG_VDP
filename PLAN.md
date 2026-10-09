@@ -1,0 +1,426 @@
+# PLAN – Trợ lý thẩm định hồ sơ vay (FinCo)
+
+> Tài liệu duy nhất để cả nhóm hiểu **làm gì, ai làm, làm theo hợp đồng nào, khi nào xong**.
+> Đọc mục 1–3 trước (5 phút). Mục còn lại là tra cứu.
+> Đổi hợp đồng (mục 6) phải báo cả nhóm và sửa file này trong cùng commit.
+
+---
+
+## 1. Dự án là gì (30 giây)
+
+**FinCo** là một công ty tài chính **hư cấu**. Mỗi ngày chuyên viên thẩm định phải xét hồ sơ vay: tra đúng phiên bản chính sách, tính tỷ lệ nợ trên thu nhập (DTI), ra quyết định và ghi lại.
+
+Hệ thống của nhóm là **trợ lý làm thay chuỗi việc đó**:
+
+```
+"Thẩm định hồ sơ APP-014 và ghi quyết định"
+   → xem hồ sơ → tra chính sách (đúng phiên bản theo ngày nộp)
+   → tra lãi suất → tính DTI → so sánh → quyết định
+   → GHI quyết định vào DB → ĐỌC LẠI để xác nhận → trả lời kèm nguồn
+```
+
+**Hệ thống KHÔNG làm:** tư vấn vay cho người thật; dùng dữ liệu thật của ai; tra điểm tín dụng thật; thay con người quyết định ca lớn (chỉ "leo thang").
+Toàn bộ chính sách và hồ sơ là **dữ liệu giả lập do nhóm tự viết**.
+
+**Đã được GV xác nhận:** đề tự đề xuất được chấp nhận; được dùng `matplotlib`.
+*(Lưu tin nhắn xác nhận làm bằng chứng.)*
+
+---
+
+## 2. Vì sao đề này hợp lệ (đọc để biết mình đang bảo vệ điều gì)
+
+| Tầng bắt buộc | Nghĩa | Trong dự án này |
+|---|---|---|
+| (a) Tra cứu | Câu trả lời truy được về `doc_id` + đúng version; câu không có đáp án phải bị từ chối | Mọi quyết định kèm tài liệu trích; hỏi thứ chính sách không có (vd. vay mua ô tô) → từ chối |
+| (b) Biến đổi | Không thể copy nguyên một chunk: phải tính / tổng hợp / so sánh / từ chối-vì-thiếu | Tính DTI; chọn v1 hay v2 theo ngày nộp; ghép nhiều tài liệu; thiếu sao kê → "chưa đủ dữ liệu" |
+| (c) Hành động | Có tool GHI đổi trạng thái thật + bước ĐỌC LẠI để verify | `submit_decision` → `get_decision` |
+
+**Không dính loại bị cấm:** không chỉ tra cứu · không phải tool chỉ-đọc · dữ liệu tự bịa nên không tra Google được và LLM không biết trước.
+
+**Ví dụ minh họa tầng (b)** – cùng một hồ sơ, DTI = 47%:
+- Nộp 20/3/2025 → áp chính sách v1 (tối đa 50%) → **duyệt**.
+- Nộp 10/5/2025 → áp chính sách v2 (tối đa 45%) → **từ chối**.
+
+Đây là chỗ hệ thống *có thể sai*, và chỗ có thể sai chính là chỗ chấm được điểm.
+
+---
+
+## 3. Việc của từng người (tóm tắt)
+
+| | **A – Dữ liệu & RAG** | **B – Agent** | **C – MCP, đánh giá, đóng gói** |
+|---|---|---|---|
+| Sở hữu | `data/`, `rag/`, nạp dữ liệu | `llm.py`, `agent.py`, `verifier.py`, `prompts/` | `tools.py`, `mcp_*.py`, `eval/`, `tests/`, `Makefile`, README |
+| Làm gì | Viết chính sách + hồ sơ; chunking; dense, BM25, hybrid; lọc theo ngày hiệu lực | Gọi LLM (retry/timeout/usage); vòng lặp `MAX_STEPS`; parse an toàn; verifier; trace | 5 tool; MCP server + client; testset; `make eval`; log USAGE; CSV + đồ thị; client MCP thứ hai |
+| Bonus phụ trách | #1 Metadata filter, #2 So sánh cấu hình | (hỗ trợ ca thất bại) | #3 Host thứ hai, #4 Đồ thị + CSV |
+| Vấn đáp sẽ bị hỏi | Chunking vì sao? Dense vs hybrid? Lọc ngày làm sao? | JSON hỏng thì sao? MAX_STEPS để làm gì? Verify để làm gì? | Vì sao stdout phải sạch? Client discover thế nào? Faithfulness đo ra sao? |
+
+**Quy tắc:** ai viết phần nào phải **giải thích được từng dòng** phần đó. Dùng AI để viết thì được, nhưng không giải thích được = điểm cá nhân 0 (xem mục 12).
+
+---
+
+## 4. Kiến trúc
+
+```
+make demo / make eval
+   │
+   ▼
+ agent.py  (vòng lặp tự viết, MAX_STEPS)
+   │  ┌───────────── llm.py (retry, timeout, usage) ◄── prompts/*.txt
+   │  ▼
+   │ mcp_client.py ── list_tools() ĐỘNG ──► mcp_server.py (stdio)
+   │                                          ├─ search_policy   [đọc, RAG]
+   │                                          ├─ get_application [đọc]
+   │                                          ├─ calc_dti        [đọc, tính bằng code]
+   │                                          ├─ submit_decision [GHI]
+   │                                          └─ get_decision    [đọc → VERIFY]
+   ▼
+ verifier.py (kiểm tra bằng code: doc_id có thật? số khớp? có bước verify?)
+```
+
+Quy tắc kiến trúc:
+- `tools.py` là **hàm thuần**, không biết MCP. `mcp_server.py` chỉ bọc lại. (Dễ test.)
+- Agent **không import `tools.py`**; chỉ gọi tool qua MCP client.
+- LLM **không tự nhẩm số**: mọi phép tính đi qua `calc_dti`.
+- Mọi quyết định phải trích `doc_id`; thiếu → tool trả `Error`.
+
+---
+
+## 4b. Quyết định kỹ thuật bám giáo trình (W1–W8)
+
+| Tuần | Giáo trình dạy | Áp dụng trong dự án |
+|---|---|---|
+| W1 | `dataclass`, `TypedDict`, JSON encoder tùy biến | Mọi tham số/kết quả tool là dataclass/TypedDict; log `.jsonl` dùng encoder cho `datetime` |
+| W2 | retry + backoff + jitter; lỗi nào nên/không nên retry; `string.Template`; log JSONL; không hard-code key | `llm.py`: retry `RateLimit`/`Connection`/5xx, **không** retry `Authentication`/`BadRequest`; prompt trong `prompts/*.txt` |
+| W3 | `Document`/`DocumentChunk`, `VectorStore`, cosine bằng `numpy`, chunk + overlap | Store in-memory tự viết, **bỏ Chroma**; chunk theo mục Markdown |
+| W4 | grounding contract, pipeline 5 bước, hybrid BM25 + vector (chuẩn hóa), pre-filter metadata, ngân sách token | `search_policy` + prompt agent "chỉ dựa vào ngữ cảnh; không đủ thì nói không đủ" |
+| W5 | faithfulness / relevance / precision, tự viết LLM-judge, chẩn đoán theo mẫu, đổi một biến mỗi lần | `eval/`, xem mục 11 |
+| W6 | function calling vs ReAct; `max_iterations`; không `eval()`; cửa sổ trượt | ReAct văn bản + parse an toàn, xem mục 9 |
+| W7 | MCP host/client/server; `list_tools`/`call_tool`; thiết kế tool như API công khai; stdout là giao thức; probe thô; agent không có registry viết tay | Xem mục 6.4 và 10 |
+| W8 | 4 mẫu đa agent (pipeline, orchestrator–worker, router, critic); handoff contract | **Không bắt buộc**, xem bên dưới |
+
+**Quyết định về đa agent:** dùng **một agent + verifier bằng code** (không dùng 5 agent như repo cũ). Giáo trình W8 nói: đo agent đơn trước; nếu tách ra không tốt hơn ở điểm nào chỉ ra được thì việc tách chỉ là trang trí. Verifier bằng code đã là "người phản biện" độc lập (không dùng chung ngữ cảnh với agent soạn, nên không phải con dấu cao su). Nếu còn thời gian, thử **mẫu critic** (một LLM phản biện riêng, nhận bản nháp + bằng chứng, ngân sách sửa = 1) như một thí nghiệm A/B; chỉ giữ nếu số liệu tốt hơn.
+
+**Tái dùng bài lab của chính các bạn** (Lab 3 `VectorStore`, Lab 4 `RAGSystem`, Lab 5 evaluator, Lab 6 `Agent`, Lab 7 `rag_server`): đây là code các bạn đã viết và hiểu, tiết kiệm nhiều ngày nhất. Phải sửa theo hợp đồng ở mục 6.
+
+## 5. Cấu trúc thư mục
+
+```
+RAG_VDP/
+├── PLAN.md                  # file này
+├── Makefile                 # setup | demo | eval | eval-compare | interop | test
+├── README.md                # CHỈ lệnh chạy + cách tái lập
+├── ai-usage.md              # khai báo dùng AI (bắt buộc)
+├── .env.example             # không bao giờ commit .env
+├── requirements.txt
+├── data/
+│   ├── policies/*.md        # tài liệu chính sách (có front matter)
+│   ├── applications.json    # hồ sơ vay giả lập
+│   └── index/               # vector đã tính sẵn (.npy) – commit
+├── prompts/                 # *.txt – prompt tách khỏi code
+├── src/finco/
+│   ├── types.py             # dataclass dùng chung (HỢP ĐỒNG)
+│   ├── llm.py
+│   ├── rag/                 # loader, chunker, dense, bm25, hybrid, filter
+│   ├── store/               # SQLite: applications, decisions
+│   ├── tools.py
+│   ├── mcp_server.py
+│   ├── mcp_client.py
+│   ├── agent.py
+│   ├── verifier.py
+│   └── cli.py
+├── examples/client2.py      # bonus #3: host MCP thứ hai
+├── eval/                    # run_eval.py, judge.py, out/ (CSV, hình)
+├── tests/                   # testset.jsonl + test_*.py
+├── logs/                    # >= 3 file .jsonl chạy thật
+└── report/                  # report.docx + sơ đồ
+```
+
+---
+
+## 6. HỢP ĐỒNG chung (chốt ngày 1, đổi phải báo cả nhóm)
+
+### 6.1 Front matter của mọi tài liệu chính sách
+```
+doc_id: CP-01
+title: Chính sách cho vay tiêu dùng
+version: v2
+effective_date: 2025-04-01
+owner: Phòng Quản lý rủi ro
+supersedes: CP-01 v1        # tùy chọn
+```
+
+### 6.2 Bảng `applications`
+`app_id`, `applicant_name`, `age`, `product`, `amount`, `term_months`, `monthly_income`, `income_type` (`salary`/`self_employed`), `existing_debt_monthly`, `docs_submitted` (danh sách), `submitted_date`
+
+### 6.3 Bảng `decisions` (bảng mà tool GHI thay đổi)
+`app_id`, `decision` ∈ {`approve`,`reject`,`escalate`,`need_info`}, `reason`, `cited_docs`, `decided_at`
+
+### 6.4 Chữ ký 5 tool
+| Tool | Loại | Tham số | Trả về |
+|---|---|---|---|
+| `search_policy` | đọc | `query`, `as_of_date` (tùy chọn, `YYYY-MM-DD`), `top_k` (tối đa 5) | văn bản có nguồn, mỗi đoạn dạng `[doc_id vX · effective_date] nội dung`, đã cắt theo ngân sách token |
+| `get_application` | đọc | `app_id` | hồ sơ |
+| `calc_dti` | đọc | `app_id`, `annual_rate` | `monthly_payment`, `qualified_income`, `dti`, `formula` |
+| `submit_decision` | **GHI** | `app_id`, `decision`, `reason`, `cited_docs` | xác nhận đã ghi |
+| `get_decision` | đọc (**verify**) | `app_id` | quyết định đang lưu, hoặc `Error` nếu chưa có |
+
+Ràng buộc:
+- `calc_dti` **bắt buộc nhận `annual_rate`** → agent phải tự tra lãi suất từ chính sách, không bỏ qua RAG.
+- `submit_decision` trả `Error` nếu `cited_docs` rỗng, `app_id` không tồn tại, hoặc hồ sơ đã có quyết định.
+- **Mọi tool không bao giờ `raise`**; lỗi trả chuỗi bắt đầu bằng `"Error: ..."`.
+- **Chế độ truy vấn (`dense`/`hybrid`) KHÔNG phải tham số của tool** (giáo trình W7: mỗi tham số lộ ra là một lời hứa mà model phải đặt đúng, mà model không có cơ sở để chọn). Chế độ đặt bằng biến môi trường `RETRIEVAL_MODE` truyền cho server; `make eval-compare` chạy lại với từng giá trị.
+- Không lộ ra MCP: tham số đường dẫn, `threshold`, `batch_search`, hàm ghi index. Kết quả luôn có nguồn (`doc_id`) và bị chặn độ dài.
+- `as_of_date` sai định dạng → trả `"Error: ..."` (không đoán).
+- Tool ghi/đọc dùng dataclass/TypedDict trong `types.py`, **không dùng dict thô**.
+- Mô tả tool viết như prompt: nói rõ *khi nào dùng, khi nào KHÔNG dùng, tham số lấy từ đâu*.
+
+### 6.5 Một dòng log (mỗi bước, file `.jsonl`)
+`ts`, `run_id`, `question_id`, `step`, `tool`, `args`, `result`, `usage` {`calls`,`prompt_tokens`,`completion_tokens`,`max_prompt`}, `cache_hit`
+
+### 6.6 Một dòng testset
+`id`, `question`, `type`, `expected_answer`, `expected_docs`, `is_no_answer`, `expected_decision`, `target_app_id` (nếu có)
+
+---
+
+## 7. Dữ liệu (A dẫn dắt, cả nhóm góp)
+
+Dùng **con số riêng của FinCo**, không bắt chước chính sách ngân hàng thật. Kiểm tra mỗi câu hỏi bằng cách hỏi LLM *không kèm tài liệu*: nếu nó đoán đúng → đổi con số.
+
+| doc_id | Nội dung | Bẫy cài vào |
+|---|---|---|
+| CP-01 v1 / v2 | Hạn mức, tuổi, tỷ lệ nợ tối đa | v1: 50%, v2: 45% (hiệu lực 1/4/2025) |
+| CP-02 | Chứng từ cần nộp | Lương: 3 tháng sao kê; tự doanh: 6 tháng |
+| CP-03 | Lãi suất, phí | Lãi suất đổi theo kỳ hạn |
+| CP-04 | Phân cấp phê duyệt | Ngưỡng 200 / 500 triệu |
+| CP-05 | Cách tính thu nhập đủ điều kiện | Thu nhập phụ chỉ tính 70% |
+| CP-06 | Ngoại lệ, nhóm hạn chế | Dùng cho câu tổng hợp nhiều tài liệu |
+
+**Hồ sơ mẫu (15–20)** phải gồm: đủ điều kiện · vượt DTI · thiếu chứng từ · nộp đúng 31/3 và 1/4 · vay đúng 200 triệu · vài ca dính hai bẫy.
+Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` + `applications.json`) → không cần xử lý dữ liệu phức tạp.
+
+---
+
+## 8. RAG (A)
+
+- **Chunking:** theo mục `##` của Markdown; thêm dòng đầu chunk gồm tiêu đề tài liệu + version. *Viết 3–5 dòng giải thích lý do vào report.*
+- **Embedding = họ Jina, chạy local mặc định:** đặt sau một hàm `embed(texts)`. Backend mặc định là **mô hình Jina mã nguồn mở chạy local** qua `sentence-transformers` (không cần key); `make setup` tải mô hình về cache một lần. Backend `JINA_API_KEY` chỉ là tùy chọn khi có key. **Tài liệu và truy vấn phải dùng cùng một mô hình**: file vector `.npy` lưu kèm `model_id`, lúc chạy so khớp, lệch thì báo lỗi rõ ràng (không âm thầm trộn hai không gian vector). Vector tài liệu tính sẵn và commit. Cần kiểm tra: mô hình Jina bạn chọn hỗ trợ tiếng Việt không, giấy phép (một số bản là phi thương mại, ổn cho bài tập), và có cần `trust_remote_code` không (ghim `revision` cụ thể).
+- **Không dùng vector DB** (giáo trình W3 dạy `VectorStore` tự viết, cosine bằng `numpy`; Chroma không nằm trong giáo trình): vài chục chunk, `numpy` là đủ.
+- **Hybrid theo W4:** điểm BM25 và điểm cosine **phải chuẩn hóa min–max trước khi trộn** (trộn điểm thô là lỗi kinh điển); trọng số khởi điểm 0.3 BM25 + 0.7 vector, chỉnh bằng thí nghiệm.
+- **Lọc metadata trước khi chấm điểm** (pre-filter theo `effective_date`, như W4), không lọc sau.
+- **Re-ranking (CrossEncoder) là tùy chọn:** mô hình `ms-marco` của giáo trình huấn luyện cho tiếng Anh nên tiếng Việt sẽ kém; chỉ thử nếu dữ liệu tiếng Anh và còn thời gian.
+- **Ngân sách ngữ cảnh:** đếm token bằng `tiktoken`, cắt kết quả theo ngân sách; xử lý 3 ca biên của W4: không có chunk phù hợp, truy vấn rỗng, ngữ cảnh quá dài.
+- Có thể tái dùng `VectorStore`/`RAGSystem` từ Lab 3–4 của chính các bạn (kiểu trả về `{query, answer, sources, num_chunks, context_tokens}`).
+- **Truy vấn:** `dense` và `hybrid` (dense + BM25). Tái dùng `w4/ex2_1_hybrid_search.py` của lớp, **không viết lại**.
+- **Lọc metadata:** chỉ trả chunk của tài liệu có `effective_date <= as_of_date` và là bản mới nhất còn hiệu lực.
+- **Gom theo tài liệu** khi trả kết quả để không lặp cùng một tài liệu.
+
+## 9. Agent (B)
+
+- **Dùng ReAct dạng văn bản** (Thought → Action → Observation → … → Answer, W6), không dùng function calling: yêu cầu 2.6 của đề nói về parse action an toàn (thiếu ngoặc không làm chết run) và buổi bảo vệ có bài C2/C3 về chính việc này. Định dạng đề xuất: `Action: tool_name[{"arg": ...}]` (JSON trong ngoặc), `Answer: ...`.
+- Vòng lặp: gọi LLM → có `Action` thì chạy tool và đưa `Observation` lại → có `Answer` thì dừng; hết `MAX_STEPS` (đề xuất 8) thì trả kết quả dừng gọn kèm trạng thái, không treo.
+- **Parse an toàn:** regex lỗi / thiếu ngoặc / tên tool lạ / JSON hỏng → KHÔNG raise; trả `Observation: Error: ...` kèm nhắc đúng định dạng, cho LLM thử lại tối đa 1–2 lần rồi dừng gọn. Viết test riêng cho từng kiểu hỏng (bài Break-and-Fix W6, ví dụ regex khớp `Action:` nhưng không khớp `Action Input:`).
+- **Không bao giờ `eval()`** đầu vào hay đầu ra của tool (W6); phép tính dùng hàm có kiểu hoặc bảng tra.
+- **Bộ nhớ hội thoại:** cửa sổ trượt nhưng **luôn giữ câu hỏi/nhiệm vụ gốc** (lỗi kinh điển: cửa sổ quá nhỏ làm agent quên nhiệm vụ).
+- **Agent không có `TOOL_REGISTRY` nào viết tay** (W7): mô tả tool đưa vào prompt ReAct được sinh từ `list_tools()`. Kiểm tra bằng `grep`: trong `agent.py` không có tên tool nào là chuỗi cố định.
+- Prompt nằm trong `prompts/*.txt`, không nhúng trong code.
+- Sau `submit_decision` **bắt buộc** gọi `get_decision`; verifier kiểm tra điều này trong trace.
+- **Verifier (bằng code):** `doc_id` trích có nằm trong tập chunk đã truy xuất? Con số trong câu trả lời khớp kết quả tool? Có cặp ghi → đọc lại?
+- **Calibration:** không tìm thấy căn cứ → nói rõ "không có trong tài liệu"; thiếu dữ liệu để tính → `need_info`, không đoán.
+
+## 10. MCP (C)
+
+- Dùng `mcp` SDK, chạy qua **stdio**. **Log chỉ ra stderr** để stdout sạch (một `print()` trong tool làm hỏng luồng JSON-RPC).
+- **Ghim phiên bản `mcp` trong `requirements.txt`.** Giáo trình W7 nêu 2 thế hệ: v1 (`from mcp.server.fastmcp import FastMCP`) và v2 (`from mcp.server import MCPServer`, `from mcp import Client`); decorator `@mcp.tool()` giữ nguyên. Phần lớn hướng dẫn trên mạng là v1. Repo cũ import theo kiểu v1 nhưng ghi `mcp>=2`: **phải chọn một bản và chạy thử import** trước khi viết tiếp.
+- Client spawn server bằng `sys.executable` + **đường dẫn tuyệt đối** (spawn `python` với đường dẫn tương đối gây lỗi "Connection closed during initialize" trên máy GV).
+- Nạp `VectorStore` **một lần ở mức module**, không dựng lại index trong một lần gọi tool.
+- Có script **probe JSON-RPC thô** (chỉ thư viện chuẩn: `initialize` → `tools/list` → `tools/call`) để tách lỗi server khỏi lỗi agent.
+- Client gọi `list_tools()` rồi biến kết quả thành định nghĩa tool cho LLM — **không hard-code tên tool**.
+- Server bọc đúng 5 hàm trong `tools.py`.
+
+## 11. Đánh giá (C dẫn dắt)
+
+**Testset 16 câu** (≥12, trong đó ≥4 `no_answer`):
+
+| Loại | Số câu |
+|---|---|
+| Tra 1 tài liệu | 2 |
+| Tổng hợp ≥2 tài liệu | 3 |
+| Phiên bản (chọn v1/v2) | 2 |
+| Tính toán | 3 |
+| Thiếu dữ liệu để suy luận | 2 |
+| **`no_answer`** (gần giống câu có đáp án, không lạc đề) | **4** |
+| Hành động + verify | 2 |
+
+**Cam kết:** ít nhất 6/16 câu cần tính ngày / tổng hợp / so sánh (để không bị coi là tìm kiếm thuần).
+
+**Số liệu:** độ đúng quyết định · recall@k truy xuất · tỷ lệ trích dẫn hợp lệ · faithfulness (quy tắc + LLM-judge một phần) · tỷ lệ từ chối đúng · token từng câu.
+
+**Cách đo bám W5 (tự viết, không dùng `ragas`):** faithfulness = tách câu trả lời thành các claim nguyên tử, LLM-judge (`temperature=0`) xét từng claim có được ngữ cảnh hỗ trợ không; thêm answer relevance và context precision@k; **chẩn đoán theo mẫu số liệu** (faithfulness thấp → prompt/ngữ cảnh; precision thấp → truy xuất) và chỉ đổi **một biến mỗi lần** khi cải tiến. Phải kiểm tra thủ công giám khảo LLM trên một mẫu. Testset theo phổ W4: câu trực tiếp / tổng hợp / **ngoài tài liệu**.
+
+**Quy tắc của `make eval`:**
+1. **Sao chép DB sạch trước mỗi lần chạy** (tool ghi sẽ làm lần sau đẹp giả).
+2. Ghi rõ có dùng cache hay không; 3 lần chạy trong `logs/` phải là **chạy thật**.
+3. Xuất bảng, `eval/out/per_question.csv` và đồ thị.
+
+**Phải có ≥1 ca thất bại thật** được phân tích (lỗi ở truy xuất hay suy luận?).
+
+**Thí nghiệm chứng minh "dùng đúng chính sách":**
+- Chạy **không có RAG** → độ đúng phải thấp hơn rõ rệt.
+- **Đổi một con số** trong tài liệu → đáp án phải đổi theo.
+
+---
+
+## 12. Điểm cộng (file ghi tối đa +6, nhưng chỉ liệt kê 4 mục × +1)
+
+| # | Việc làm thêm | Người | Bằng chứng nộp |
+|---|---|---|---|
+| 1 | **Metadata filter dùng thật** (`as_of_date`) | A | Trace cùng hồ sơ đổi ngày → đổi phiên bản; thí nghiệm bật/tắt filter |
+| 2 | **So sánh thêm 1 cấu hình** (dense vs hybrid; nếu còn thời gian thêm chunking) | A viết cờ, C chạy | `make eval-compare` + bảng trong report |
+| 3 | **MCP dùng được từ host thứ hai** | C | `examples/client2.py` (client dùng `mcp` SDK) **và** script probe JSON-RPC thô không dùng SDK, cùng gọi một server; `make interop` (chạy trên **bản sao DB**) |
+| 4 | **Đồ thị + CSV theo từng câu** | C | `eval/out/per_question.csv` + hình trong report |
+
+2 điểm còn lại GV "có thể cân nhắc" → xem như phần nâng chất lượng: đối chứng có/không RAG, đổi số, so sánh 2 mô hình embedding, so sánh cả chunking lẫn dense-vs-hybrid, và thí nghiệm **critic** của W8 (xem mục 4b).
+
+**Cổng quyết định:** cuối ngày 6 nếu phần lõi chưa chạy xanh → **cắt bonus #3 và #4**. Bonus #1 và #2 gần như là một phần của lõi nên giữ.
+
+---
+
+## 13. Lịch 10 ngày
+
+| Ngày | A | B | C | Mốc chung |
+|---|---|---|---|---|
+| 1 | CP-01 v1; chốt danh sách tài liệu | `llm.py` retry/timeout/usage | Khung repo, `Makefile`, `.env.example`, hợp đồng; khai báo sẵn cờ eval | Hợp đồng ký; có commit của **cả 3 người** |
+| 2 | CP-01 v2, CP-02..04 | Khung vòng lặp, tool giả | Bảng SQLite, nạp `applications.json` | |
+| 3 | Chunker, dense | Prompt; parse an toàn | `get_application`, `calc_dti`, `submit_decision`, `get_decision` | Mỗi tool chạy riêng |
+| 4 | BM25, hybrid | Ráp agent + tool thật | MCP server + client | **End-to-end lần 1** |
+| 5 | **Filter `as_of_date` (#1)** | Verify, xử lý lỗi, calibration | Testset 16 câu + `run_eval.py` có `--retrieval` | Chạy thử toàn bộ |
+| 6 | Sửa truy xuất theo lỗi | Sửa agent theo trace | `make eval` đầy đủ + CSV (#4) | **Cổng: lõi xanh?** |
+| 7 | Dense vs hybrid (#2); filter on/off | Verifier hoàn chỉnh | 3 lần chạy thật → `logs/`; chọn ca thất bại | **Đóng băng tính năng** |
+| 8 | Đối chứng không-RAG; đổi số | Phân tích ca thất bại | `client2.py` + `make interop` (#3); đồ thị | Số liệu cuối |
+| 9 | Viết report phần mình | Viết report phần mình | Report, `ai-usage.md`, README | Bản nháp |
+| 10 | Cold start trên máy sạch | Hỏi vấn đáp chéo | Điền commit hash vào report | **Nộp** |
+
+**Không thêm tính năng sau ngày 7.** Ba ngày cuối dành cho độ tin cậy, report và luyện bảo vệ.
+
+---
+
+## 14. Quy trình git
+
+- `main` luôn chạy được. Mỗi người làm nhánh riêng (`a/...`, `b/...`, `c/...`), tạo PR, **người khác review** rồi mới merge.
+- Commit nhỏ, thường xuyên, rõ ràng: `rag: add BM25 index`, `agent: parse tool call safely`.
+- **Cả ba phải có commit từ ngày 1.** Không dồn một commit cuối kỳ. Không squash toàn bộ lịch sử.
+- Không bao giờ commit `.env`. Trước khi nộp: quét repo và `git log -p` tìm khóa API.
+- Ghi commit hash tương ứng từng phần vào mục 8 của report (GV đối chiếu khi vấn đáp).
+
+---
+
+## 15. Checklist nộp bài
+
+- [ ] `report.docx` 8–9 trang, đủ 9 mục (có ≥1 ca thất bại; ≥2 hạn chế trung thực; commit hash)
+- [ ] Repo kèm `.git`, lịch sử thể hiện cả 3 người
+- [ ] `logs/`: ≥3 file `.jsonl` chạy thật, có timestamp, bước, args/kết quả tool, USAGE từng câu
+- [ ] `tests/testset.jsonl`: ≥12 câu (kế hoạch 16), ≥4 `no_answer`
+- [ ] `ai-usage.md`: công cụ nào, phần nào, prompt chính, đoạn code do AI sinh
+- [ ] `README.md`: `make setup && make demo`, `make eval`; **chạy được trên máy sạch**
+- [ ] `.env.example` đầy đủ; **không lộ key**
+- [ ] Dữ liệu có sẵn trong repo (không phụ thuộc tải từ web)
+- [ ] Mọi số trong report tái lập được bằng `make eval`
+
+## 16. Yêu cầu kỹ thuật bắt buộc (tick khi xong)
+
+- [ ] Python 3.11+, chạy bằng đúng 1 lệnh
+- [ ] Vòng agent **viết tay** (chỉ dùng: mcp SDK, thư viện embedding, `rank_bm25`, numpy, pandas, python-docx; thêm `matplotlib` đã được GV đồng ý)
+- [ ] Tool schema bằng dataclass/TypedDict có type hint
+- [ ] `call_llm` có retry + timeout + log lỗi HTTP; prompt tách khỏi code
+- [ ] ≥2 chế độ truy vấn (dense + hybrid); chunking có lý do
+- [ ] `MAX_STEPS`; tool lỗi trả `"Error: ..."`; parse action an toàn
+- [ ] ≥1 tool ghi + bước verify
+- [ ] MCP: tự viết, ≥2 tool (≥1 ghi), stdio, stdout sạch, client discover động
+
+---
+
+## 17. Bảng điểm (để biết ưu tiên)
+
+| Khối | Tiêu chí | Điểm |
+|---|---|---|
+| Nhóm (60) | Phạm vi & tính thực tiễn | 5 |
+| | Chất lượng RAG | 13 |
+| | Agent loop & thiết kế tool | 12 |
+| | Tái lập & kỹ thuật (1 lệnh, README, không lộ key, git cả nhóm, đúng checkpoint) | 12 |
+| | MCP server | 8 |
+| | Đánh giá & bằng chứng | 10 |
+| Cá nhân (40) | Bảo vệ phần mình | 15 |
+| | Trả lời câu hỏi kỹ thuật | 15 |
+| | Sửa code tại chỗ | 10 |
+| Cộng | Việc làm thêm | tối đa +6 |
+
+**Không giải thích được code mình nộp, hoặc không khai báo AI → điểm cá nhân = 0.**
+
+---
+
+## 18. Buổi bảo vệ (20 phút/nhóm)
+
+1. **Cold start:** chạy lệnh trong README trên máy GV.
+2. **Demo:** mỗi người 3 phút, trả lời **1 câu GV đưa tại chỗ** (không có trong testset). Chuẩn bị sẵn danh sách chủ đề của kho dữ liệu để GV hỏi sát.
+3. **Kiến trúc:** không đọc slide; sơ đồ in sẵn; mỗi người ~1.5 phút.
+4. **Vấn đáp riêng:** 1 câu chính + 1 câu đào sâu mỗi người.
+5. **Sửa code trực tiếp:** 1 yêu cầu mỗi người → biết file/dòng mình viết, quen IDE.
+
+---
+
+## 19. Rủi ro và cách xử lý
+
+| Rủi ro | Xử lý |
+|---|---|
+| Giới hạn tốc độ của LLM khi chạy eval nhiều lần | Chạy thử sớm, ước lượng token, giảm số câu khi thử |
+| Embedding tải nặng làm cold start chậm | Ghi rõ trong README; commit sẵn vector tài liệu; chọn mô hình nhỏ |
+| Dữ liệu quá dễ → số liệu đẹp giả | Cài bẫy; chạy đối chứng không-RAG; kiểm tra bằng thí nghiệm đổi số |
+| `make eval` lần sau hưởng lợi từ lần trước | Luôn sao chép DB sạch trước mỗi lần chạy |
+| Bonus làm hỏng lõi | Cổng cuối ngày 6; bonus #3, #4 làm sau lõi |
+| Một người không hiểu phần mình | Đọc code chéo ngày 9–10; ai cũng bị hỏi phần của mình |
+| Lộ key | `.env` trong `.gitignore`; quét trước khi nộp |
+| Thành viên chậm làm kẹt cả nhóm | Hợp đồng chốt sớm; tool giả để làm song song; họp 10 phút mỗi ngày |
+
+---
+
+## 20. Còn mở – cần chốt sớm
+
+- [ ] **Mô hình LLM** dùng là gì (quyết định mức sai của agent và giới hạn eval)? Giáo trình dùng SDK `openai` (và nói Groq tương thích, mã giống hệt). **Xác nhận với GV** SDK `openai` có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM).
+- [ ] Bản `mcp`: v1 hay v2 (xem mục 10)? Chạy thử import trước ngày 3.
+- [ ] Còn giữ bài lab W3–W7 của mình không? Đó là điểm xuất phát nhanh nhất.
+- [ ] Đã lấy `w4/ex2_1_hybrid_search.py` và DOC0001–0006 của lớp chưa? (xem file hybrid để biết GV dùng embedding nào)
+- [ ] Dữ liệu **tiếng Việt hay tiếng Anh**? (tiếng Việt cần embedding đa ngôn ngữ)
+- [ ] Chọn mô hình embedding local: thử 2 mô hình trên 10 câu rồi chọn.
+- [ ] **Bảo vệ "không cần cấu hình":** embedding local là làm được, nhưng **LLM vẫn cần API key** (xem phương án bên dưới). Chốt trước ngày 8: chạy trên laptop của nhóm với `.env` có sẵn, hay máy GV với key nhập tại chỗ, và có chế độ replay dự phòng không.
+- [ ] Máy GV có mạng lúc `make setup` không? Nếu không, kèm thư mục mô hình trong gói nộp (ngoài git) và chạy offline (`HF_HUB_OFFLINE=1`).
+
+---
+
+## 21. Trải nghiệm một lệnh cho giảng viên
+
+**Mục tiêu:** GV gõ đúng một lệnh là tương tác được ngay.
+
+```
+make run          # hoặc, nếu máy không có make:  python run.py
+```
+
+Các bước (mỗi bước chạy lại vẫn an toàn): tạo venv và cài thư viện nếu thiếu → tải mô hình Jina nếu thiếu → kiểm tra vector (`model_id` khớp) → **sao chép DB gốc sang DB chạy** → xử lý API key → mở REPL.
+
+**API key:** dùng `OPENAI_API_KEY` từ môi trường hoặc `.env` nếu có; nếu không, hỏi một lần bằng `getpass`, chỉ giữ trong bộ nhớ, không ghi ra đâu. Nếu bỏ qua thì chuyển sang **chế độ replay**, ghi rõ trên màn hình, chỉ trả lời các câu testset đã ghi sẵn, câu khác thì nói thẳng cần key.
+
+**REPL (terminal, không thêm thư viện):** gõ câu hỏi tự do để agent chạy và in từng bước kèm nguồn. Lệnh phụ:
+
+| Lệnh | Việc làm |
+|---|---|
+| `/apps` | liệt kê hồ sơ vay mẫu |
+| `/policies` | liệt kê tài liệu chính sách, version, ngày hiệu lực |
+| `/decision <APP-ID>` | đọc trạng thái quyết định trực tiếp từ DB (GV tự kiểm chứng) |
+| `/trace` | chi tiết lượt vừa chạy, kể cả USAGE |
+| `/mode dense\|hybrid` | đổi chế độ truy vấn |
+| `/reset` | khôi phục DB ban đầu |
+| `/help`, `/quit` | trợ giúp, thoát |
+
+**Độ bền trên máy lạ:** lỗi in ngắn kèm cách sửa, không in traceback dài; spawn MCP server bằng `sys.executable` + đường dẫn tuyệt đối; mỗi phiên ghi log `.jsonl` vào `logs/`.
+
+**Việc phải thử:** chạy `make run` trên một máy sạch (hoặc thư mục + venv mới) trước ngày nộp.
+- [ ] GV: 2 điểm cộng còn lại (+6 vs 4 mục) tính cho việc gì?
