@@ -1,0 +1,441 @@
+[
+  {
+    "app_id": "APP-001",
+    "applicant_name": "Nguyễn Văn An",
+    "age": 30,
+    "product": "FinCo Easy",
+    "amount": 60000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 20000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 2000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-02-10",
+    "note": "Vay mua đồ nội thất."
+  },
+  {
+    "app_id": "APP-002",
+    "applicant_name": "Trần Thị Bình",
+    "age": 35,
+    "product": "FinCo Easy",
+    "amount": 120000000,
+    "term_months": 25,
+    "income_type": "salary",
+    "monthly_income": 30000000,
+    "supplementary_income": 5000000,
+    "existing_debt_monthly": 3000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-06-05",
+    "note": "Vay sửa nhà."
+  },
+  {
+    "app_id": "APP-003",
+    "applicant_name": "Lê Hoàng Cường",
+    "age": 40,
+    "product": "FinCo Easy",
+    "amount": 150000000,
+    "term_months": 36,
+    "income_type": "salary",
+    "monthly_income": 18000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 6000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-02-20",
+    "note": "Vay trả học phí."
+  },
+  {
+    "app_id": "APP-004",
+    "applicant_name": "Phạm Minh Dũng",
+    "age": 28,
+    "product": "FinCo Easy",
+    "amount": 50000000,
+    "term_months": 12,
+    "income_type": "salary",
+    "monthly_income": 15000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 0,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD"
+    ],
+    "submitted_date": "2025-05-12",
+    "note": "Chưa nộp sao kê lương."
+  },
+  {
+    "app_id": "APP-005",
+    "applicant_name": "Võ Thị Em",
+    "age": 38,
+    "product": "FinCo Easy",
+    "amount": 100000000,
+    "term_months": 24,
+    "income_type": "self_employed",
+    "monthly_income": 40000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 5000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "DKKD"
+    ],
+    "submitted_date": "2025-03-10",
+    "note": "Chủ cửa hàng tạp hóa."
+  },
+  {
+    "app_id": "APP-006",
+    "applicant_name": "Đặng Quốc Phong",
+    "age": 45,
+    "product": "FinCo Easy",
+    "amount": 200000000,
+    "term_months": 36,
+    "income_type": "self_employed",
+    "monthly_income": 50000000,
+    "supplementary_income": 10000000,
+    "existing_debt_monthly": 4000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "DKKD",
+      "SK_TK_6T"
+    ],
+    "submitted_date": "2025-07-15",
+    "note": "Mở rộng xưởng may nhỏ."
+  },
+  {
+    "app_id": "APP-007",
+    "applicant_name": "Bùi Thanh Giang",
+    "age": 21,
+    "product": "FinCo Easy",
+    "amount": 30000000,
+    "term_months": 12,
+    "income_type": "salary",
+    "monthly_income": 15000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 0,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-04-20",
+    "note": "Nhân viên mới ra trường."
+  },
+  {
+    "app_id": "APP-008",
+    "applicant_name": "Hồ Văn Hải",
+    "age": 59,
+    "product": "FinCo Easy",
+    "amount": 100000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 35000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 2000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-05-20",
+    "note": "Vay sửa mái nhà."
+  },
+  {
+    "app_id": "APP-009",
+    "applicant_name": "Ngô Thị Lan",
+    "age": 59,
+    "product": "FinCo Easy",
+    "amount": 100000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 35000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 2000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-02-25",
+    "note": "Vay sửa mái nhà."
+  },
+  {
+    "app_id": "APP-010",
+    "applicant_name": "Dương Gia Khang",
+    "age": 33,
+    "product": "FinCo Easy",
+    "amount": 80000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 28000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 0,
+    "is_employee": false,
+    "overdue_30d_12m": true,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-08-01",
+    "note": "Có lịch sử trả chậm thẻ tín dụng."
+  },
+  {
+    "app_id": "APP-011",
+    "applicant_name": "Lý Thu Mai",
+    "age": 41,
+    "product": "FinCo Easy",
+    "amount": 350000000,
+    "term_months": 48,
+    "income_type": "salary",
+    "monthly_income": 90000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 10000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-09-03",
+    "note": "Vay đầu tư giáo dục cho con."
+  },
+  {
+    "app_id": "APP-012",
+    "applicant_name": "Trịnh Anh Nam",
+    "age": 46,
+    "product": "FinCo Easy",
+    "amount": 750000000,
+    "term_months": 48,
+    "income_type": "salary",
+    "monthly_income": 150000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 5000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-01-15",
+    "note": "Hồ sơ giá trị lớn."
+  },
+  {
+    "app_id": "APP-013",
+    "applicant_name": "Mai Quốc Oai",
+    "age": 46,
+    "product": "FinCo Easy",
+    "amount": 750000000,
+    "term_months": 48,
+    "income_type": "salary",
+    "monthly_income": 150000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 5000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-08-15",
+    "note": "Hồ sơ giá trị lớn."
+  },
+  {
+    "app_id": "APP-014",
+    "applicant_name": "Phan Thị Phượng",
+    "age": 36,
+    "product": "FinCo Easy",
+    "amount": 180000000,
+    "term_months": 36,
+    "income_type": "salary",
+    "monthly_income": 20000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 3000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-03-20",
+    "note": "Vay sửa nhà và mua xe máy."
+  },
+  {
+    "app_id": "APP-015",
+    "applicant_name": "Cao Văn Quý",
+    "age": 36,
+    "product": "FinCo Easy",
+    "amount": 180000000,
+    "term_months": 36,
+    "income_type": "salary",
+    "monthly_income": 20000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 3000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-05-10",
+    "note": "Vay sửa nhà và mua xe máy."
+  },
+  {
+    "app_id": "APP-016",
+    "applicant_name": "Đỗ Ngọc Sương",
+    "age": 32,
+    "product": "FinCo Easy",
+    "amount": 100000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 15000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 2400000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-03-31",
+    "note": "Nộp vào ngày cuối của tháng 3."
+  },
+  {
+    "app_id": "APP-017",
+    "applicant_name": "Tạ Minh Tuấn",
+    "age": 32,
+    "product": "FinCo Easy",
+    "amount": 100000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 15000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 2400000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-04-01",
+    "note": "Nộp vào ngày đầu của tháng 4."
+  },
+  {
+    "app_id": "APP-018",
+    "applicant_name": "Vương Thị Uyên",
+    "age": 34,
+    "product": "FinCo Easy",
+    "amount": 80000000,
+    "term_months": 24,
+    "income_type": "salary",
+    "monthly_income": 30000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 1000000,
+    "is_employee": true,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-06-20",
+    "note": "Nhân viên FinCo, chi nhánh miền Trung."
+  },
+  {
+    "app_id": "APP-019",
+    "applicant_name": "Lâm Văn Vinh",
+    "age": 37,
+    "product": "FinCo Easy",
+    "amount": 150000000,
+    "term_months": 36,
+    "income_type": "salary",
+    "monthly_income": 12000000,
+    "supplementary_income": 6000000,
+    "existing_debt_monthly": 3000000,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-03-05",
+    "note": "Có phụ cấp và thưởng định kỳ."
+  },
+  {
+    "app_id": "APP-020",
+    "applicant_name": "Châu Thị Xuân",
+    "age": 32,
+    "product": "FinCo Easy",
+    "amount": 90000000,
+    "term_months": 54,
+    "income_type": "salary",
+    "monthly_income": 30000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": 0,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-06-30",
+    "note": "Muốn kỳ hạn dài để giảm áp lực trả nợ."
+  },
+  {
+    "app_id": "APP-021",
+    "applicant_name": "Huỳnh Đức Yên",
+    "age": 29,
+    "product": "FinCo Easy",
+    "amount": 40000000,
+    "term_months": 12,
+    "income_type": "salary",
+    "monthly_income": 14000000,
+    "supplementary_income": 0,
+    "existing_debt_monthly": null,
+    "is_employee": false,
+    "overdue_30d_12m": false,
+    "docs_submitted": [
+      "CCCD",
+      "HDLD",
+      "SK_LUONG_3T"
+    ],
+    "submitted_date": "2025-05-05",
+    "note": "Chưa khai nghĩa vụ nợ hiện tại."
+  }
+]
