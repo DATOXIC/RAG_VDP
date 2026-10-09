@@ -1,0 +1,22 @@
+# Python 3.11+ (đã thử với 3.13)
+# Chỉ dùng các thư viện đề bài cho phép. Ghim đúng phiên bản để máy giảng viên chạy giống máy nhóm.
+
+# --- LLM client (SDK tương thích OpenAI) ---
+openai==3.26.1
+
+# --- MCP server + client (stdio) ---
+mcp==2.2.0
+
+# --- Đọc khóa API từ .env  ---
+python-dotenv==1.2.4
+
+# --- RAG: embedding cục bộ (Jina, không cần API key), BM25, vector ---
+sentence-transformers==6.1.0   
+rank-bm25==0.2.2
+numpy==2.5.3
+tiktoken==0.14.0               
+
+# --- Đánh giá, biểu đồ (bonus), báo cáo ---
+pandas==3.0.6
+matplotlib==3.11.2
+python-docx==1.2.0
