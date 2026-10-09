@@ -114,8 +114,10 @@ RAG_VDP/
 ├── requirements.txt
 ├── data/
 │   ├── policies/*.md        # tài liệu chính sách (có front matter)
-│   ├── applications.json    # hồ sơ vay giả lập
-│   └── index/               # vector đã tính sẵn (.npy) – commit
+│   ├── README.md            # từ điển dữ liệu + bảng tình huống cài sẵn
+│   ├── applications.json    # hồ sơ vay giả lập (21 hồ sơ)
+│   ├── *.db                 # SQLite sinh khi chạy – KHÔNG commit (.gitignore)
+│   └── index/               # vector đã tính sẵn (.npy + chunks + model_id) – commit
 ├── prompts/                 # *.txt – prompt tách khỏi code
 ├── src/finco/
 │   ├── types.py             # dataclass dùng chung (HỢP ĐỒNG)
@@ -130,7 +132,8 @@ RAG_VDP/
 │   └── cli.py
 ├── examples/client2.py      # bonus #3: host MCP thứ hai
 ├── eval/                    # run_eval.py, judge.py, out/ (CSV, hình)
-├── tests/                   # testset.jsonl + test_*.py
+├── tests/                   # testset.jsonl + expected_decisions.json (chỉ cho eval)
+├── scratch/                 # test cá nhân của từng người – .gitignore, không nộp
 ├── logs/                    # >= 3 file .jsonl chạy thật
 └── report/                  # report.docx + sơ đồ
 ```
@@ -140,20 +143,55 @@ RAG_VDP/
 ## 6. HỢP ĐỒNG chung (chốt ngày 1, đổi phải báo cả nhóm)
 
 ### 6.1 Front matter của mọi tài liệu chính sách
+Một dòng một khóa `khóa: giá trị`, **không dùng danh sách hay YAML lồng nhau** (parser tự viết chỉ cần tách theo dấu `:` đầu tiên).
 ```
 doc_id: CP-01
-title: Chính sách cho vay tiêu dùng
+title: Chính sách cho vay tiêu dùng FinCo Easy
 version: v2
 effective_date: 2025-04-01
 owner: Phòng Quản lý rủi ro
 supersedes: CP-01 v1        # tùy chọn
+status: active              # tùy chọn: active | superseded
+language: vi                # tùy chọn
+expiry_date: 2025-03-31     # tùy chọn; chỉ có ở bản đã bị thay thế (CP-01 v1)
 ```
+Bắt buộc: `doc_id`, `title`, `version`, `effective_date`, `owner`. Cặp (`doc_id`, `version`) là duy nhất. **Không có `expiry_date` nghĩa là còn hiệu lực.** Chi tiết: `data/README.md` mục 2.
 
-### 6.2 Bảng `applications`
-`app_id`, `applicant_name`, `age`, `product`, `amount`, `term_months`, `monthly_income`, `income_type` (`salary`/`self_employed`), `existing_debt_monthly`, `docs_submitted` (danh sách), `submitted_date`
+### 6.2 Bảng `applications` (nguồn: `data/applications.json`, đơn vị tiền: đồng, số nguyên)
+| Trường | Kiểu | Ghi chú |
+|---|---|---|
+| `app_id` | str | `APP-001`..`APP-021` |
+| `applicant_name` | str | tên giả lập |
+| `age` | int | tuổi tại ngày nộp |
+| `product` | str | `FinCo Easy` |
+| `amount` | int | số tiền vay |
+| `term_months` | int | kỳ hạn |
+| `income_type` | str | `salary` / `self_employed` |
+| `monthly_income` | int | thu nhập chính bình quân tháng |
+| `supplementary_income` | int | thu nhập phụ (chỉ tính một phần, xem CP-05) |
+| `existing_debt_monthly` | int \| None | **`None` = chưa khai báo, khác với `0`** (xem CP-02) |
+| `is_employee` | bool | là nhân viên FinCo (xem CP-06) |
+| `overdue_30d_12m` | bool | nợ quá hạn >30 ngày trong 12 tháng gần nhất |
+| `docs_submitted` | list[str] | mã chứng từ: `CCCD`, `HDLD`, `SK_LUONG_3T`, `DKKD`, `SK_TK_6T` |
+| `submitted_date` | str | `YYYY-MM-DD`, quyết định phiên bản chính sách |
+| `note` | str | ghi chú tự do, không chứa đáp án |
 
-### 6.3 Bảng `decisions` (bảng mà tool GHI thay đổi)
-`app_id`, `decision` ∈ {`approve`,`reject`,`escalate`,`need_info`}, `reason`, `cited_docs`, `decided_at`
+Lưu ý khi cài đặt SQLite: `docs_submitted` lưu chuỗi JSON; `is_employee`/`overdue_30d_12m` lưu 0/1 nhưng đọc ra phải là `bool`; `existing_debt_monthly` cho phép `NULL`.
+
+### 6.3 Bảng `decisions` (bảng mà tool GHI thay đổi; bắt đầu **rỗng**)
+| Trường | Kiểu | Ghi chú |
+|---|---|---|
+| `app_id` | str | **khóa chính** → mỗi hồ sơ chỉ một quyết định (ép ở tầng DB) |
+| `decision` | str | `approve` \| `reject` \| `escalate` \| `need_info` (có thể dùng `Literal`) |
+| `reason` | str | lý do, nêu điều kiện làm căn cứ |
+| `cited_docs` | list[str] | không được rỗng; ghi `"CP-01 v2"`, `"CP-05"` (CP-07 mục 2.2); lưu chuỗi JSON |
+| `decided_at` | str | thời điểm ghi |
+
+Ngoại lệ duy nhất cho "một quyết định": quyết định `need_info` được thay bằng quyết định khác khi hồ sơ đã bổ sung đủ (CP-07 mục 3.3). Nếu chưa làm phần này, ghi rõ là giới hạn.
+
+### 6.3b Kiểu dùng chung trong `src/finco/types.py`
+Chỉ đặt vào đây dữ liệu **được truyền giữa các module** (hai người khác nhau cùng cần hiểu). Class có logic (`VectorStore`) và hàm tính (`pmt`, `dti`) thì để ở module riêng.
+`Application`, `Decision` (cần ngay cho `db.py`); `Chunk`, `SearchHit` (ingestion, truy xuất); kết quả `calc_dti`; dòng log (khi eval và agent cùng đọc). Import theo gói: `from finco.types import Application` (tên `types` trùng module chuẩn nên **không đặt ở thư mục gốc**).
 
 ### 6.4 Chữ ký 5 tool
 | Tool | Loại | Tham số | Trả về |
@@ -186,17 +224,27 @@ Ràng buộc:
 
 Dùng **con số riêng của FinCo**, không bắt chước chính sách ngân hàng thật. Kiểm tra mỗi câu hỏi bằng cách hỏi LLM *không kèm tài liệu*: nếu nó đoán đúng → đổi con số.
 
-| doc_id | Nội dung | Bẫy cài vào |
-|---|---|---|
-| CP-01 v1 / v2 | Hạn mức, tuổi, tỷ lệ nợ tối đa | v1: 50%, v2: 45% (hiệu lực 1/4/2025) |
-| CP-02 | Chứng từ cần nộp | Lương: 3 tháng sao kê; tự doanh: 6 tháng |
-| CP-03 | Lãi suất, phí | Lãi suất đổi theo kỳ hạn |
-| CP-04 | Phân cấp phê duyệt | Ngưỡng 200 / 500 triệu |
-| CP-05 | Cách tính thu nhập đủ điều kiện | Thu nhập phụ chỉ tính 70% |
-| CP-06 | Ngoại lệ, nhóm hạn chế | Dùng cho câu tổng hợp nhiều tài liệu |
+**Trạng thái: ĐÃ VIẾT XONG.** Chi tiết từng trường, cách ingestion đọc, và bảng tình huống cài sẵn nằm ở `data/README.md` (đọc file đó trước khi viết code đọc dữ liệu). Toàn bộ là dữ liệu giả lập.
 
-**Hồ sơ mẫu (15–20)** phải gồm: đủ điều kiện · vượt DTI · thiếu chứng từ · nộp đúng 31/3 và 1/4 · vay đúng 200 triệu · vài ca dính hai bẫy.
-Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` + `applications.json`) → không cần xử lý dữ liệu phức tạp.
+9 file trong `data/policies/` (8 mã, riêng `CP-01` có 2 phiên bản; tách chunk theo `## ` cho 38 chunk):
+
+| doc_id | Nội dung | Số liệu / bẫy cài vào |
+|---|---|---|
+| CP-01 v1 | Điều kiện cho vay (hiệu lực 1/1/2024, hết hạn 31/3/2025) | tuổi 22–60, vay 10–800 triệu, kỳ hạn 6–60 tháng, DTI tối đa **50%** |
+| CP-01 v2 | Như trên (hiệu lực 1/4/2025, thay v1) | tuổi 22–58, vay 10–700 triệu, kỳ hạn 6–48 tháng, DTI tối đa **45%**; các mục gần giống chữ v1, chỉ khác số → bắt buộc lọc theo ngày |
+| CP-02 | Chứng từ hồ sơ | Lương: `CCCD`, `HDLD`, `SK_LUONG_3T`; tự kinh doanh: `CCCD`, `DKKD`, `SK_TK_6T`; để trống nợ hiện tại ≠ 0; thiếu → `need_info`, không từ chối |
+| CP-03 | Lãi suất, phí | 14,0% (6–12 tháng), 15,5% (13–24), 17,0% (25–36), 18,5% (37–60); trả góp đều (annuity) |
+| CP-04 | Phân cấp phê duyệt, thứ tự xử lý | ≤200 triệu chuyên viên; >200–500 Trưởng phòng (escalate); >500 Hội đồng (escalate). Thứ tự: loại trừ → chứng từ → DTI → thẩm quyền |
+| CP-05 | Thu nhập đủ điều kiện, DTI | Lương = chính + 70% phụ; tự kinh doanh = 80% chính + 50% phụ. `DTI = (PMT + nợ hiện tại) / thu nhập đủ điều kiện`; **bằng ngưỡng vẫn qua**, chỉ lớn hơn mới rớt |
+| CP-06 | Ngoại lệ, nhóm hạn chế | Nợ quá hạn >30 ngày/12 tháng → từ chối; nhân viên FinCo luôn escalate lên Hội đồng sau khi đạt mọi điều kiện; không có ngoại lệ DTI |
+| CP-07 | Ghi nhận quyết định | 4 trạng thái; phải trích tài liệu; một quyết định/hồ sơ; đọc lại sau khi ghi |
+| CP-08 | Giải ngân, chăm sóc khách hàng | **Tài liệu nhiễu** cố ý (giờ làm việc, khiếu nại), kiểm tra truy xuất bỏ qua đúng chỗ |
+
+`data/applications.json`: **21 hồ sơ** (`APP-001`..`APP-021`) gồm các ca: sạch · vượt DTI · thiếu chứng từ · nộp đúng ranh giới 31/3 và 1/4 · vay đúng 200 triệu · cặp hồ sơ giống nhau khác phiên bản (008/009, 012/013, 014/015, 016/017) · bẫy thu nhập phụ (019) · nhân viên FinCo (018) · nợ chưa khai (`null`, 021).
+
+`tests/expected_decisions.json`: đáp án chuẩn từng hồ sơ (quyết định, phiên bản, DTI, lý do, tài liệu cần trích). **Chỉ dùng cho eval, agent không được đọc.** Đáp án do một bộ quy tắc tham chiếu viết theo văn bản chính sách tính ra: **sửa số trong chính sách thì phải tính lại file này.** Phân bố: 6 approve, 9 reject, 3 need_info, 3 escalate.
+
+Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` + `applications.json`) → không cần xử lý dữ liệu phức tạp. Nhóm nên **tự tính tay** vài hồ sơ (APP-014, APP-019) để kiểm tra chéo đáp án chuẩn.
 
 ---
 
@@ -211,7 +259,7 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 - **Ngân sách ngữ cảnh:** đếm token bằng `tiktoken`, cắt kết quả theo ngân sách; xử lý 3 ca biên của W4: không có chunk phù hợp, truy vấn rỗng, ngữ cảnh quá dài.
 - Có thể tái dùng `VectorStore`/`RAGSystem` từ Lab 3–4 của chính các bạn (kiểu trả về `{query, answer, sources, num_chunks, context_tokens}`).
 - **Truy vấn:** `dense` và `hybrid` (dense + BM25). Tái dùng `w4/ex2_1_hybrid_search.py` của lớp, **không viết lại**.
-- **Lọc metadata:** chỉ trả chunk của tài liệu có `effective_date <= as_of_date` và là bản mới nhất còn hiệu lực.
+- **Lọc metadata:** chỉ trả chunk của tài liệu có `effective_date <= as_of_date` và (không có `expiry_date` hoặc `as_of_date <= expiry_date`). Ví dụ: `as_of_date=2025-03-31` → CP-01 v1; `2025-04-01` → CP-01 v2. Không truyền `as_of_date` thì dùng bản đang hiệu lực. Đây là phép thử quan trọng nhất của tầng truy xuất.
 - **Gom theo tài liệu** khi trả kết quả để không lặp cùng một tài liệu.
 
 ## 9. Agent (B)
@@ -255,7 +303,7 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 
 **Số liệu:** độ đúng quyết định · recall@k truy xuất · tỷ lệ trích dẫn hợp lệ · faithfulness (quy tắc + LLM-judge một phần) · tỷ lệ từ chối đúng · token từng câu.
 
-**Cách đo bám W5 (tự viết, không dùng `ragas`):** faithfulness = tách câu trả lời thành các claim nguyên tử, LLM-judge (`temperature=0`) xét từng claim có được ngữ cảnh hỗ trợ không; thêm answer relevance và context precision@k; **chẩn đoán theo mẫu số liệu** (faithfulness thấp → prompt/ngữ cảnh; precision thấp → truy xuất) và chỉ đổi **một biến mỗi lần** khi cải tiến. Phải kiểm tra thủ công giám khảo LLM trên một mẫu. Testset theo phổ W4: câu trực tiếp / tổng hợp / **ngoài tài liệu**.
+**Cách đo bám W5 (tự viết; `ragas` chưa dùng, xem mục 20):** faithfulness = tách câu trả lời thành các claim nguyên tử, LLM-judge (`temperature=0`) xét từng claim có được ngữ cảnh hỗ trợ không; thêm answer relevance và context precision@k; **chẩn đoán theo mẫu số liệu** (faithfulness thấp → prompt/ngữ cảnh; precision thấp → truy xuất) và chỉ đổi **một biến mỗi lần** khi cải tiến. Phải kiểm tra thủ công giám khảo LLM trên một mẫu. Testset theo phổ W4: câu trực tiếp / tổng hợp / **ngoài tài liệu**.
 
 **Quy tắc của `make eval`:**
 1. **Sao chép DB sạch trước mỗi lần chạy** (tool ghi sẽ làm lần sau đẹp giả).
@@ -329,7 +377,7 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 ## 16. Yêu cầu kỹ thuật bắt buộc (tick khi xong)
 
 - [ ] Python 3.11+, chạy bằng đúng 1 lệnh
-- [ ] Vòng agent **viết tay** (chỉ dùng: mcp SDK, thư viện embedding, `rank_bm25`, numpy, pandas, python-docx; thêm `matplotlib` đã được GV đồng ý)
+- [ ] Vòng agent **viết tay** (chỉ dùng: mcp SDK, thư viện embedding, `rank_bm25`, numpy, pandas, python-docx; thêm `matplotlib` đã được GV đồng ý; `openai` và `python-dotenv` ngoài danh sách nên ghi trong `ai-usage.md`/README và xác nhận với GV)
 - [ ] Tool schema bằng dataclass/TypedDict có type hint
 - [ ] `call_llm` có retry + timeout + log lỗi HTTP; prompt tách khỏi code
 - [ ] ≥2 chế độ truy vấn (dense + hybrid); chunking có lý do
@@ -383,13 +431,23 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 
 ---
 
-## 20. Còn mở – cần chốt sớm
+## 20. Đã chốt và còn mở
 
+**Đã chốt:**
+- [x] **Ngôn ngữ dữ liệu: tiếng Việt** (chính sách, hồ sơ, câu hỏi). Cần embedding hỗ trợ tiếng Việt.
+- [x] **Dữ liệu đầu vào đã viết xong** (mục 7): 9 chính sách, 21 hồ sơ, đáp án chuẩn.
+- [x] **Client LLM: SDK `openai`** (nhóm chọn; vẫn nên xác nhận với GV, xem dưới).
+- [x] **`requirements.txt` đã có** và ghim phiên bản; có thêm `python-dotenv` (đọc `.env`, đề có nhắc `.env.example`).
+- [x] **Test cá nhân** để trong `scratch/` (không commit). `tests/testset.jsonl` vẫn là sản phẩm nộp và **phải commit**.
+
+**Còn mở:**
+- [ ] **`ragas`: chưa dùng.** Có trong giáo trình/GV có dùng, nhưng danh sách thư viện được dùng ở đề (mục 2.2) không nhắc, và nó kéo `langchain`/`datasets` có thể xung đột phiên bản. Hỏi GV; nếu được phép, tách ra `requirements-eval.txt` riêng để không ảnh hưởng `make setup`. Mặc định: tự viết `eval/judge.py` (mục 11).
 - [ ] **Mô hình LLM** dùng là gì (quyết định mức sai của agent và giới hạn eval)? Giáo trình dùng SDK `openai` (và nói Groq tương thích, mã giống hệt). **Xác nhận với GV** SDK `openai` có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM).
-- [ ] Bản `mcp`: v1 hay v2 (xem mục 10)? Chạy thử import trước ngày 3.
+- [ ] GV: 2 điểm cộng còn lại (+6 vs 4 mục) tính cho việc gì?
+- [ ] **Mô hình LLM** dùng là gì (quyết định mức sai của agent và giới hạn eval)? Giáo trình dùng SDK `openai` (và nói Groq tương thích, mã giống hệt). **Xác nhận với GV** SDK `openai` có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM).
+- [ ] Bản `mcp`: v1 hay v2 (xem mục 10)? `requirements.txt` đang ghim `mcp==2.2.0` (bản máy nhóm đang cài); nếu giáo trình dùng `FastMCP` v1 thì đổi sang `mcp==1.30.0` và báo người làm MCP. Chạy thử import trước ngày 3.
 - [ ] Còn giữ bài lab W3–W7 của mình không? Đó là điểm xuất phát nhanh nhất.
 - [ ] Đã lấy `w4/ex2_1_hybrid_search.py` và DOC0001–0006 của lớp chưa? (xem file hybrid để biết GV dùng embedding nào)
-- [ ] Dữ liệu **tiếng Việt hay tiếng Anh**? (tiếng Việt cần embedding đa ngôn ngữ)
 - [ ] Chọn mô hình embedding local: thử 2 mô hình trên 10 câu rồi chọn.
 - [ ] **Bảo vệ "không cần cấu hình":** embedding local là làm được, nhưng **LLM vẫn cần API key** (xem phương án bên dưới). Chốt trước ngày 8: chạy trên laptop của nhóm với `.env` có sẵn, hay máy GV với key nhập tại chỗ, và có chế độ replay dự phòng không.
 - [ ] Máy GV có mạng lúc `make setup` không? Nếu không, kèm thư mục mô hình trong gói nộp (ngoài git) và chạy offline (`HF_HUB_OFFLINE=1`).
@@ -423,4 +481,3 @@ Các bước (mỗi bước chạy lại vẫn an toàn): tạo venv và cài th
 **Độ bền trên máy lạ:** lỗi in ngắn kèm cách sửa, không in traceback dài; spawn MCP server bằng `sys.executable` + đường dẫn tuyệt đối; mỗi phiên ghi log `.jsonl` vào `logs/`.
 
 **Việc phải thử:** chạy `make run` trên một máy sạch (hoặc thư mục + venv mới) trước ngày nộp.
-- [ ] GV: 2 điểm cộng còn lại (+6 vs 4 mục) tính cho việc gì?
