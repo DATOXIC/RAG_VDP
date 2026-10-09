@@ -6,7 +6,7 @@
 
 | Đường dẫn | Là gì | Đi vào đâu khi ingestion |
 |---|---|---|
-| `data/policies/*.md` | 9 tài liệu chính sách (8 mã `CP-01..CP-08`, riêng `CP-01` có 2 phiên bản) | Tách chunk → embedding → chỉ mục RAG |
+| `data/policies/*.md` | 15 tài liệu chính sách (14 mã `CP-01..CP-14`, riêng `CP-01` có 2 phiên bản). `CP-01..CP-07` là lõi của FinCo Easy, quyết định đáp án chuẩn. `CP-08..CP-14` là **tài liệu nhiễu** (xem dưới) | Tách chunk → embedding → chỉ mục RAG |
 | `data/applications.json` | 21 hồ sơ vay giả lập | Nạp vào bảng SQLite `applications` |
 | `tests/expected_decisions.json` | Đáp án chuẩn từng hồ sơ (quyết định, phiên bản, DTI, lý do, tài liệu cần trích) | **Chỉ dùng cho eval**, agent không được đọc |
 
@@ -23,10 +23,12 @@ Mỗi file là Markdown, phần đầu là front matter dạng `khóa: giá tr�
 | `owner` | có | Đơn vị sở hữu |
 | `expiry_date` | không | Ngày cuối cùng còn hiệu lực. Không có nghĩa là còn hiệu lực |
 | `supersedes` | không | Phiên bản bị thay thế |
-| `status` | không | `active` hoặc `superseded` |
+| `status` | không | `active`, `superseded` (bị bản mới thay) hoặc `expired` (chương trình đã hết hạn) |
 | `language` | không | `vi` |
 
-**Chunk theo mục `## `.** Mỗi mục là một chunk. Khi nhúng, thêm một dòng đầu `[doc_id version | hiệu lực từ ...] tiêu đề – mục` để chunk giữa tài liệu vẫn biết nó thuộc đâu. Bản chạy thử cho 38 chunk, mỗi chunk khoảng 35–170 từ, nên không cần chia nhỏ hơn.
+**Chunk theo mục `## `.** Mỗi mục là một chunk. Khi nhúng, thêm một dòng đầu `[doc_id version | hiệu lực từ ...] tiêu đề – mục` để chunk giữa tài liệu vẫn biết nó thuộc đâu. Cả 15 tài liệu cho **68 chunk** (lõi 38 + nhiễu 30), mỗi chunk khoảng 35–170 từ, nên không cần chia nhỏ hơn.
+
+**Tài liệu nhiễu (`CP-08..CP-14`)** thuộc sản phẩm khác của FinCo, cố ý dùng từ vựng gần giống FinCo Easy để truy xuất phải phân biệt: `CP-09` thẻ tín dụng (có DTI 40%, lãi suất 28%, kỳ miễn lãi, đều **không** áp dụng cho FinCo Easy); `CP-10` tiền gửi tiết kiệm (có bảng lãi **tiền gửi** theo kỳ hạn, dễ nhầm với lãi suất vay ở `CP-03`); `CP-11` bảo mật dữ liệu; `CP-12` khiếu nại thẻ và tiền gửi (dễ nhầm với khiếu nại thẩm định ở `CP-08`); `CP-13` ưu đãi mùa hè 2025 (đã hết hạn 31/08/2025, để kiểm tra lọc theo `expiry_date`); `CP-14` định danh khách hàng. **Không tài liệu nhiễu nào làm đổi đáp án của 21 hồ sơ**, và không tài liệu nào nói về vay thế chấp, vay mua ô tô hay vay doanh nghiệp, để các câu hỏi `no_answer` về những chủ đề đó vẫn đúng. Khi viết thêm tài liệu, giữ hai nguyên tắc này.
 
 **Chọn đúng phiên bản.** Hồ sơ nộp trước `2025-04-01` áp `CP-01 v1`, từ ngày đó áp `CP-01 v2`. Hai phiên bản có các mục gần như giống hệt nhau chỉ khác con số (ví dụ mục "4. Tỷ lệ nợ trên thu nhập (DTI) tối đa": 50% so với 45%). Vì vậy tìm kiếm ngữ nghĩa thuần sẽ **không phân biệt được**; phải lọc theo `effective_date` (bonus metadata filter).
 

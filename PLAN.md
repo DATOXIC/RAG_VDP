@@ -151,7 +151,7 @@ version: v2
 effective_date: 2025-04-01
 owner: Phòng Quản lý rủi ro
 supersedes: CP-01 v1        # tùy chọn
-status: active              # tùy chọn: active | superseded
+status: active              # tùy chọn: active | superseded | expired
 language: vi                # tùy chọn
 expiry_date: 2025-03-31     # tùy chọn; chỉ có ở bản đã bị thay thế (CP-01 v1)
 ```
@@ -226,7 +226,7 @@ Dùng **con số riêng của FinCo**, không bắt chước chính sách ngân 
 
 **Trạng thái: ĐÃ VIẾT XONG.** Chi tiết từng trường, cách ingestion đọc, và bảng tình huống cài sẵn nằm ở `data/README.md` (đọc file đó trước khi viết code đọc dữ liệu). Toàn bộ là dữ liệu giả lập.
 
-9 file trong `data/policies/` (8 mã, riêng `CP-01` có 2 phiên bản; tách chunk theo `## ` cho 38 chunk):
+15 file trong `data/policies/` (14 mã, riêng `CP-01` có 2 phiên bản; tách chunk theo `## ` cho **68 chunk**). `CP-01..CP-07` là lõi quyết định đáp án; `CP-08..CP-14` là tài liệu nhiễu của sản phẩm khác (thẻ, tiền gửi, bảo mật, khiếu nại, ưu đãi đã hết hạn, định danh), cố ý gần từ vựng với FinCo Easy nhưng không làm đổi đáp án nào (xem `data/README.md` mục 2). Phần lõi:
 
 | doc_id | Nội dung | Số liệu / bẫy cài vào |
 |---|---|---|
