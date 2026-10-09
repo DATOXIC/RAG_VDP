@@ -1,0 +1,358 @@
+[
+  {
+    "app_id": "APP-001",
+    "policy_version": "v1",
+    "reasons": [
+      "APPROVED"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.155,
+    "monthly_payment": 2923473,
+    "qualified_income": 20000000,
+    "dti": 0.2462,
+    "max_dti": 0.5,
+    "decision": "approve"
+  },
+  {
+    "app_id": "APP-002",
+    "policy_version": "v2",
+    "reasons": [
+      "APPROVED"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.17,
+    "monthly_payment": 5733639,
+    "qualified_income": 33500000,
+    "dti": 0.2607,
+    "max_dti": 0.45,
+    "decision": "approve"
+  },
+  {
+    "app_id": "APP-003",
+    "policy_version": "v1",
+    "reasons": [
+      "DTI_EXCEEDED"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05"
+    ],
+    "annual_rate": 0.17,
+    "monthly_payment": 5347909,
+    "qualified_income": 18000000,
+    "dti": 0.6304,
+    "max_dti": 0.5,
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-004",
+    "policy_version": "v2",
+    "reasons": [
+      "MISSING_DOCS"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02"
+    ],
+    "decision": "need_info",
+    "missing_docs": [
+      "SK_LUONG_3T"
+    ]
+  },
+  {
+    "app_id": "APP-005",
+    "policy_version": "v1",
+    "reasons": [
+      "MISSING_DOCS"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02"
+    ],
+    "decision": "need_info",
+    "missing_docs": [
+      "SK_TK_6T"
+    ]
+  },
+  {
+    "app_id": "APP-006",
+    "policy_version": "v2",
+    "reasons": [
+      "APPROVED"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.17,
+    "monthly_payment": 7130546,
+    "qualified_income": 45000000,
+    "dti": 0.2473,
+    "max_dti": 0.45,
+    "decision": "approve"
+  },
+  {
+    "app_id": "APP-007",
+    "policy_version": "v2",
+    "reasons": [
+      "AGE"
+    ],
+    "cited": [
+      "CP-01@v2"
+    ],
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-008",
+    "policy_version": "v2",
+    "reasons": [
+      "AGE"
+    ],
+    "cited": [
+      "CP-01@v2"
+    ],
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-009",
+    "policy_version": "v1",
+    "reasons": [
+      "APPROVED"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.155,
+    "monthly_payment": 4872454,
+    "qualified_income": 35000000,
+    "dti": 0.1964,
+    "max_dti": 0.5,
+    "decision": "approve"
+  },
+  {
+    "app_id": "APP-010",
+    "policy_version": "v2",
+    "reasons": [
+      "OVERDUE"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-06"
+    ],
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-011",
+    "policy_version": "v2",
+    "reasons": [
+      "ESCALATE_MANAGER"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.185,
+    "monthly_payment": 10372921,
+    "qualified_income": 90000000,
+    "dti": 0.2264,
+    "max_dti": 0.45,
+    "decision": "escalate"
+  },
+  {
+    "app_id": "APP-012",
+    "policy_version": "v1",
+    "reasons": [
+      "ESCALATE_COUNCIL"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.185,
+    "monthly_payment": 22227687,
+    "qualified_income": 150000000,
+    "dti": 0.1815,
+    "max_dti": 0.5,
+    "decision": "escalate"
+  },
+  {
+    "app_id": "APP-013",
+    "policy_version": "v2",
+    "reasons": [
+      "AMOUNT_RANGE"
+    ],
+    "cited": [
+      "CP-01@v2"
+    ],
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-014",
+    "policy_version": "v1",
+    "reasons": [
+      "APPROVED"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.17,
+    "monthly_payment": 6417491,
+    "qualified_income": 20000000,
+    "dti": 0.4709,
+    "max_dti": 0.5,
+    "decision": "approve"
+  },
+  {
+    "app_id": "APP-015",
+    "policy_version": "v2",
+    "reasons": [
+      "DTI_EXCEEDED"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02",
+      "CP-03",
+      "CP-05"
+    ],
+    "annual_rate": 0.17,
+    "monthly_payment": 6417491,
+    "qualified_income": 20000000,
+    "dti": 0.4709,
+    "max_dti": 0.45,
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-016",
+    "policy_version": "v1",
+    "reasons": [
+      "APPROVED"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04"
+    ],
+    "annual_rate": 0.155,
+    "monthly_payment": 4872454,
+    "qualified_income": 15000000,
+    "dti": 0.4848,
+    "max_dti": 0.5,
+    "decision": "approve"
+  },
+  {
+    "app_id": "APP-017",
+    "policy_version": "v2",
+    "reasons": [
+      "DTI_EXCEEDED"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02",
+      "CP-03",
+      "CP-05"
+    ],
+    "annual_rate": 0.155,
+    "monthly_payment": 4872454,
+    "qualified_income": 15000000,
+    "dti": 0.4848,
+    "max_dti": 0.45,
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-018",
+    "policy_version": "v2",
+    "reasons": [
+      "ESCALATE_EMPLOYEE"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02",
+      "CP-03",
+      "CP-05",
+      "CP-04",
+      "CP-06"
+    ],
+    "annual_rate": 0.155,
+    "monthly_payment": 3897963,
+    "qualified_income": 30000000,
+    "dti": 0.1633,
+    "max_dti": 0.45,
+    "decision": "escalate"
+  },
+  {
+    "app_id": "APP-019",
+    "policy_version": "v1",
+    "reasons": [
+      "DTI_EXCEEDED"
+    ],
+    "cited": [
+      "CP-01@v1",
+      "CP-02",
+      "CP-03",
+      "CP-05"
+    ],
+    "annual_rate": 0.17,
+    "monthly_payment": 5347909,
+    "qualified_income": 16200000,
+    "dti": 0.5153,
+    "max_dti": 0.5,
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-020",
+    "policy_version": "v2",
+    "reasons": [
+      "TERM_RANGE"
+    ],
+    "cited": [
+      "CP-01@v2"
+    ],
+    "decision": "reject"
+  },
+  {
+    "app_id": "APP-021",
+    "policy_version": "v2",
+    "reasons": [
+      "MISSING_DEBT_DECLARATION"
+    ],
+    "cited": [
+      "CP-01@v2",
+      "CP-02"
+    ],
+    "decision": "need_info",
+    "missing_docs": []
+  }
+]
