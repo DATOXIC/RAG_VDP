@@ -1,25 +1,52 @@
 from dataclasses import asdict
 from datetime import datetime
+import hashlib
 import json
 from pathlib import Path
+import sys
 from typing import Optional, Union
 
 from finco.types import Chunk, SearchHit
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 # 1. Cố định mô hình embedding cho toàn hệ thống
 MODEL_NAME = "BAAI/bge-m3"
 
 # Biến toàn cục lưu trữ mô hình để không nạp lại nhiều lần
-_MODEL_INSTANCE: Optional[SentenceTransformer] = None
+_MODEL_INSTANCE = None  # SentenceTransformer, nạp lười để import module nhanh
 
 
-def get_model() -> SentenceTransformer:
-    """Nạp và tái sử dụng mô hình embedding ở chế độ local offline."""
+def _log(msg: str) -> None:
+    """Ghi log ra stderr: stdout phải sạch cho MCP stdio."""
+    print(msg, file=sys.stderr, flush=True)
+
+
+def corpus_hash(chunks: list[Chunk]) -> str:
+    """Mã băm nội dung toàn bộ chunk, dùng để phát hiện index cũ so với dữ liệu mới."""
+    h = hashlib.sha256()
+    for c in chunks:
+        h.update(c.chunk_id.encode("utf-8"))
+        h.update(b"\x00")
+        h.update(c.text.encode("utf-8"))
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
+def get_model():
+    # Import lười: torch/sentence-transformers nặng, chỉ nạp khi thật sự cần embed.
+    """Nạp và tái sử dụng mô hình embedding.
+
+    Ưu tiên cache local (offline); nếu máy chưa có thì tải một lần từ Hugging Face.
+    """
     global _MODEL_INSTANCE
     if _MODEL_INSTANCE is None:
-        _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME, local_files_only=True)
+        from sentence_transformers import SentenceTransformer
+
+        try:
+            _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME, local_files_only=True)
+        except Exception:
+            _log(f"Chưa có '{MODEL_NAME}' trong cache, đang tải về (lần đầu, ~2 GB)...")
+            _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME)
     return _MODEL_INSTANCE
 
 
@@ -61,28 +88,56 @@ class VectorStore:
         self.chunks = chunks
         texts = [c.text for c in chunks]
         self.vectors = embed(texts)
-        print(f" Đã nhúng và lưu trữ {len(self.chunks)} chunks (Shape: {self.vectors.shape}).")
+        _log(f"Đã nhúng và lưu trữ {len(self.chunks)} chunks (shape: {self.vectors.shape}).")
 
-    def search(self, query: str, top_k: int = 5) -> list[SearchHit]:
-        
+    def _valid_mask(self, as_of_date: str) -> np.ndarray:
+        """Mặt nạ chunk còn hiệu lực tại as_of_date (so sánh chuỗi ISO YYYY-MM-DD)."""
+        return np.array(
+            [
+                c.effective_date <= as_of_date
+                and (c.expiry_date is None or as_of_date <= c.expiry_date)
+                for c in self.chunks
+            ],
+            dtype=bool,
+        )
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        as_of_date: Optional[str] = None,
+    ) -> list[SearchHit]:
+        """Tìm top_k chunk gần nhất theo cosine.
+
+        Args:
+            query: Câu truy vấn.
+            top_k: Số kết quả tối đa.
+            as_of_date: "YYYY-MM-DD". Nếu có, chỉ xét chunk có hiệu lực tại ngày này
+                (lọc trước khi xếp hạng). None = không lọc.
+        Returns:
+            Danh sách SearchHit, điểm giảm dần; rỗng nếu không chunk nào hiệu lực.
+        """
         if self.vectors is None or not self.chunks:
             raise ValueError("VectorStore chưa có dữ liệu!")
 
         query_vector = embed([query])[0]
-
         scores = np.dot(self.vectors, query_vector)
 
-        top_indices = np.argsort(scores)[::-1][:top_k]
+        candidates = np.arange(len(self.chunks))
+        if as_of_date is not None:
+            candidates = candidates[self._valid_mask(as_of_date)]
+        if candidates.size == 0:
+            return []
 
-        results = []
-
-        for i in top_indices:
-            results.append(SearchHit(
-                chunk = self.chunks[i],
-                score = float(scores[i])
-            ))
-
-        return results
+        order = candidates[np.argsort(scores[candidates])[::-1][:top_k]]
+        return [
+            SearchHit(
+                chunk=self.chunks[i],
+                score=float(scores[i]),
+                dense_score=float(scores[i]),
+            )
+            for i in order
+        ]
 
     def save(self, index_dir: str | Path = "data/index") -> None:
         """Lưu ma trận vector và chunks và metadata ra ổ cứng."""
@@ -101,39 +156,65 @@ class VectorStore:
             "model_id": MODEL_NAME,
             "num_chunks": len(self.chunks),
             "vector_dim": int(self.vectors.shape[1]),
+            "corpus_hash": corpus_hash(self.chunks),
             "created_at": datetime.now().isoformat(),
         }
 
         with open(out_dir / "meta.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=2)
-        print(f" Đã lưu index thành công vào thư mục: {out_dir}")
+        _log(f"Đã lưu index thành công vào thư mục: {out_dir}")
 
-    def load(self, index_dir: str | Path = "data/index") -> None:
+    def load(
+        self,
+        index_dir: str | Path = "data/index",
+        expected_chunks: Optional[list[Chunk]] = None,
+    ) -> None:
+        """Nạp index từ ổ cứng và kiểm tra tính nhất quán.
 
+        Args:
+            index_dir: Thư mục chứa vectors.npy, chunks.json, meta.json.
+            expected_chunks: Nếu truyền vào (chunk hiện tại từ chunk_all), so mã băm
+                để phát hiện index cũ so với dữ liệu/chunker mới.
+        Raises:
+            FileNotFoundError: Thiếu file index.
+            ValueError: Lệch mô hình, lệch số lượng/chiều vector, hoặc index đã cũ.
+        """
         in_dir = Path(index_dir)
-        if not (in_dir / "vectors.npy").exists() or not (
-            in_dir / "chunks.json"
-        ).exists():
-            raise FileNotFoundError(
-                f"Không tìm thấy dữ liệu index trong: {in_dir}"
-            )
-
-        # 1. Kiểm tra đối soát model_id (tránh nạp nhầm model khác)
-        if (in_dir / "meta.json").exists():
-            with open(in_dir / "meta.json", "r", encoding="utf-8") as f:
-                meta = json.load(f)
-            if meta.get("model_id") != MODEL_NAME:
-                raise ValueError(
-                    f"Lệch mô hình: Index được tạo bởi '{meta.get('model_id')}', "
-                    f"nhưng hệ thống đang chạy '{MODEL_NAME}'!"
+        for name in ("vectors.npy", "chunks.json", "meta.json"):
+            if not (in_dir / name).exists():
+                raise FileNotFoundError(
+                    f"Không tìm thấy '{name}' trong: {in_dir}. Hãy build lại index."
                 )
 
-        # 2. Nạp vector bằng NumPy
-        self.vectors = np.load(in_dir / "vectors.npy")
-        # 3. Nạp chunks và tái tạo lại đối tượng Chunk
+        with open(in_dir / "meta.json", "r", encoding="utf-8") as f:
+            meta = json.load(f)
+
+        # 1. Đối soát model_id (tránh nạp nhầm model khác)
+        if meta.get("model_id") != MODEL_NAME:
+            raise ValueError(
+                f"Lệch mô hình: Index được tạo bởi '{meta.get('model_id')}', "
+                f"nhưng hệ thống đang chạy '{MODEL_NAME}'!"
+            )
+
+        vectors = np.load(in_dir / "vectors.npy")
         with open(in_dir / "chunks.json", "r", encoding="utf-8") as f:
-            chunks_data = json.load(f)
-        self.chunks = [Chunk(**item) for item in chunks_data]
-        print(
-            f" Đã nạp thành công {len(self.chunks)} chunks từ index offline!"
-        )
+            chunks = [Chunk(**item) for item in json.load(f)]
+
+        # 2. Vector và chunk phải khớp nhau, khớp với meta
+        if vectors.ndim != 2 or vectors.shape[0] != len(chunks):
+            raise ValueError(
+                f"Index hỏng: {vectors.shape[0] if vectors.ndim == 2 else '?'} vector "
+                f"nhưng {len(chunks)} chunk. Hãy build lại index."
+            )
+        if meta.get("vector_dim") != vectors.shape[1] or meta.get("num_chunks") != len(chunks):
+            raise ValueError("Index hỏng: meta.json không khớp dữ liệu. Hãy build lại index.")
+
+        # 3. Phát hiện index cũ so với dữ liệu hiện tại
+        if expected_chunks is not None and meta.get("corpus_hash") != corpus_hash(expected_chunks):
+            raise ValueError(
+                "Index đã cũ so với dữ liệu/chunker hiện tại. Hãy build lại index."
+            )
+
+        self.vectors = vectors
+        self.chunks = chunks    
+        _log(f"Đã nạp thành công {len(self.chunks)} chunks từ index offline.")
