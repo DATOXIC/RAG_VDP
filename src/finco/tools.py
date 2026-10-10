@@ -216,7 +216,7 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
         return f"Error: Đã xảy ra lỗi khi tính DTI: {e}"
 
 
-def submit_descision(app_id: str, decision: str, reason: str, cited_docs: list[str]) -> str:
+def submit_decision(app_id: str, decision: str, reason: str, cited_docs: list[str]) -> str:
     """
     Args:
         app_id: Mã hồ sơ vay (ví dụ: 'APP-001').
@@ -274,6 +274,8 @@ def submit_descision(app_id: str, decision: str, reason: str, cited_docs: list[s
             f"Thành công: Đã ghi nhận quyết định '{clean_decision}' cho hồ sơ {clean_app_id}.\n"
             f"- Căn cứ trích dẫn: {', '.join(clean_cited)}\n"
             f"- Lý do: {reason.strip()}"
+            f" BƯỚC TIẾP THEO BẮT BUỘC: Bạn phải gọi get_decision('{clean_app_id}') "
+            f"để xác nhận quyết định đã được lưu an toàn trước khi đưa ra Final Answer."
         )
     except db.AppNotFound:
         return f"Error: Không tìm thấy hồ sơ với mã '{app_id}'."
@@ -283,4 +285,37 @@ def submit_descision(app_id: str, decision: str, reason: str, cited_docs: list[s
         return f"Error: Quyết định không hợp lệ: {e}"
     except Exception as e:
         return f"Error: Đã xảy ra lỗi khi ghi quyết định: {e}"
-    ...
+
+
+def get_decision(app_id: str) -> str:
+    """Đọc lại quyết định thẩm định đang lưu trong cơ sở dữ liệu để kiểm chứng.
+    Khi nào dùng:
+        Bắt buộc dùng ngay sau submit_decision để tự kiểm chứng xem quyết định
+        đã được lưu chính xác vào cơ sở dữ liệu hay chưa (Read-Your-Writes).
+    Khi nào KHÔNG dùng:
+        Không dùng khi hồ sơ chưa từng được xử lý quyết định.
+    Args:
+        app_id: Mã hồ sơ vay cần kiểm tra (ví dụ: 'APP-001').
+    Returns:
+        Chuỗi văn bản chi tiết quyết định đang lưu trong DB, hoặc 'Error: ...' nếu chưa có.
+    """
+    try:
+        if not app_id or not app_id.strip():
+            return "Error: app_id không được để trống."
+        
+        clean_app_id = app_id.strip().upper()
+        dec = db.get_decision(clean_app_id)
+
+        info = [
+            f"=== QUYẾT ĐỊNH ĐANG LƯU CHO HỒ SƠ {dec.app_id} ===",
+            f"- Trạng thái quyết định: {dec.decision.upper()}",
+            f"- Căn cứ chính sách (cited_docs): {', '.join(dec.cited_docs)}",
+            f"- Thời điểm ghi nhận: {dec.decided_at}",
+            f"- Lý do chi tiết: {dec.reason}",
+        ]
+        return "\n".join(info)
+
+    except db.DecisionNotFound:
+        return f"Error: Hồ sơ '{app_id}' chưa có quyết định nào trong hệ thống."
+    except Exception as e:
+        return f"Error: Đã xảy ra lỗi khi đọc quyết định: {e}"
