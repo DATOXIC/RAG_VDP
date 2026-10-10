@@ -14,6 +14,13 @@ def parse_time(date_time: Optional[str]):
     except ValueError:
         raise ValueError(f"Ngày '{date_time}' không đúng định dạng chuẩn YYYY-MM-DD.")
 
+def _validate_date(date_str: str) -> bool:
+    """Kiểm tra chuỗi ngày có đúng định dạng YYYY-MM-DD hay không."""
+    try:
+        datetime.strptime(date_str.strip(), "%Y-%m-%d")
+        return True
+    except (ValueError, AttributeError):
+        return False
 
 
 def is_active_chunk(chunks: list[Chunk], as_of_date: str):
