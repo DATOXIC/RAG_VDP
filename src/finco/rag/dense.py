@@ -91,7 +91,11 @@ class VectorStore:
         _log(f"Đã nhúng và lưu trữ {len(self.chunks)} chunks (shape: {self.vectors.shape}).")
 
     def _valid_mask(self, as_of_date: str) -> np.ndarray:
-        """Mặt nạ chunk còn hiệu lực tại as_of_date (so sánh chuỗi ISO YYYY-MM-DD)."""
+        """Tạo một mảng Boolean dựa trên một thời điểm xác định
+        
+        TRUE nếu còn hiệu lực
+        FALSE ngược lại 
+        """
         return np.array(
             [
                 c.effective_date <= as_of_date
@@ -141,17 +145,22 @@ class VectorStore:
 
     def save(self, index_dir: str | Path = "data/index") -> None:
         """Lưu ma trận vector và chunks và metadata ra ổ cứng."""
+
         if self.vectors is None or not self.chunks:
             raise ValueError("VectorStore đang rỗng, không thể lưu!")
+
         out_dir = Path(index_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
+        # Lưu VECTOR
         np.save(out_dir / "vectors.npy", self.vectors)
 
+        # Lưu CHUNKS
         chunks_data = [asdict(c) for c in self.chunks]
         with open(out_dir / "chunks.json", "w", encoding="utf-8") as f:
             json.dump(chunks_data, f, ensure_ascii=False, indent=2)
 
+        # Lưu METADATA
         meta = {
             "model_id": MODEL_NAME,
             "num_chunks": len(self.chunks),
@@ -159,7 +168,6 @@ class VectorStore:
             "corpus_hash": corpus_hash(self.chunks),
             "created_at": datetime.now().isoformat(),
         }
-
         with open(out_dir / "meta.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=2)
         _log(f"Đã lưu index thành công vào thư mục: {out_dir}")
@@ -180,32 +188,37 @@ class VectorStore:
             ValueError: Lệch mô hình, lệch số lượng/chiều vector, hoặc index đã cũ.
         """
         in_dir = Path(index_dir)
+
+        # CHECK
         for name in ("vectors.npy", "chunks.json", "meta.json"):
             if not (in_dir / name).exists():
                 raise FileNotFoundError(
                     f"Không tìm thấy '{name}' trong: {in_dir}. Hãy build lại index."
                 )
 
+        # Nạp METADA
         with open(in_dir / "meta.json", "r", encoding="utf-8") as f:
             meta = json.load(f)
-
-        # 1. Đối soát model_id (tránh nạp nhầm model khác)
         if meta.get("model_id") != MODEL_NAME:
             raise ValueError(
                 f"Lệch mô hình: Index được tạo bởi '{meta.get('model_id')}', "
                 f"nhưng hệ thống đang chạy '{MODEL_NAME}'!"
             )
 
+        # Nạp Vector
         vectors = np.load(in_dir / "vectors.npy")
+
+        # Nạp Chunks
         with open(in_dir / "chunks.json", "r", encoding="utf-8") as f:
             chunks = [Chunk(**item) for item in json.load(f)]
 
-        # 2. Vector và chunk phải khớp nhau, khớp với meta
+        
         if vectors.ndim != 2 or vectors.shape[0] != len(chunks):
             raise ValueError(
                 f"Index hỏng: {vectors.shape[0] if vectors.ndim == 2 else '?'} vector "
                 f"nhưng {len(chunks)} chunk. Hãy build lại index."
             )
+        
         if meta.get("vector_dim") != vectors.shape[1] or meta.get("num_chunks") != len(chunks):
             raise ValueError("Index hỏng: meta.json không khớp dữ liệu. Hãy build lại index.")
 
@@ -214,7 +227,7 @@ class VectorStore:
             raise ValueError(
                 "Index đã cũ so với dữ liệu/chunker hiện tại. Hãy build lại index."
             )
-
+        
         self.vectors = vectors
         self.chunks = chunks    
         _log(f"Đã nạp thành công {len(self.chunks)} chunks từ index offline.")
