@@ -2,5 +2,6 @@
   "model_id": "BAAI/bge-m3",
   "num_chunks": 112,
   "vector_dim": 1024,
-  "created_at": "2026-10-10T09:50:03.313534"
+  "corpus_hash": "f928299d57e55f0f1bc08a54bf542a2e1854525e694a913b6d9c5f44cada8266",
+  "created_at": "2026-10-10T11:23:38.002106"
 }
