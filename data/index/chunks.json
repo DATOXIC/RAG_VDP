@@ -1,0 +1,1010 @@
+[
+  {
+    "chunk_id": "CP-01-v1-00",
+    "doc_id": "CP-01",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi áp dụng",
+    "text": "[CP-01 v1 | hiệu lực từ 2024-01-01] Chính sách cho vay tiêu dùng FinCo Easy – 1. Phạm vi áp dụng\n1.1. Chính sách này áp dụng cho sản phẩm vay tiêu dùng FinCo Easy, cấp cho cá nhân cư trú tại Việt Nam, không có tài sản bảo đảm.\n\n1.2. Phiên bản v1 áp dụng cho hồ sơ có **ngày nộp** từ 01/01/2024 đến hết 31/03/2025. Ngày nộp là ngày hồ sơ được ghi nhận trong hệ thống, không phải ngày giải ngân hay ngày thẩm định.",
+    "expiry_date": "2025-03-31"
+  },
+  {
+    "chunk_id": "CP-01-v1-01",
+    "doc_id": "CP-01",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Điều kiện về người vay",
+    "text": "[CP-01 v1 | hiệu lực từ 2024-01-01] Chính sách cho vay tiêu dùng FinCo Easy – 2. Điều kiện về người vay\n2.1. Tuổi tại ngày nộp hồ sơ: từ 22 đến 60 tuổi (tính cả 22 và 60).\n\n2.2. Người vay thuộc một trong hai nhóm thu nhập: người hưởng lương (`salary`) hoặc người tự kinh doanh (`self_employed`). Chứng từ cho từng nhóm quy định tại CP-02.\n\n2.3. Người vay không có khoản nợ quá hạn trên 30 ngày trong 12 tháng gần nhất. Chi tiết xem CP-06.",
+    "expiry_date": "2025-03-31"
+  },
+  {
+    "chunk_id": "CP-01-v1-02",
+    "doc_id": "CP-01",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Số tiền vay và kỳ hạn",
+    "text": "[CP-01 v1 | hiệu lực từ 2024-01-01] Chính sách cho vay tiêu dùng FinCo Easy – 3. Số tiền vay và kỳ hạn\n3.1. Số tiền vay: từ 10 triệu đồng đến 800 triệu đồng cho mỗi hồ sơ.\n\n3.2. Kỳ hạn vay: từ 6 tháng đến 60 tháng.",
+    "expiry_date": "2025-03-31"
+  },
+  {
+    "chunk_id": "CP-01-v1-03",
+    "doc_id": "CP-01",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Tỷ lệ nợ trên thu nhập (DTI) tối đa",
+    "text": "[CP-01 v1 | hiệu lực từ 2024-01-01] Chính sách cho vay tiêu dùng FinCo Easy – 4. Tỷ lệ nợ trên thu nhập (DTI) tối đa\n4.1. Tỷ lệ nợ trên thu nhập (DTI) tối đa được phép là **50%**. Hồ sơ có DTI lớn hơn 50% bị từ chối.\n\n4.2. Cách tính DTI và thu nhập đủ điều kiện xem CP-05. Lãi suất để tính khoản trả hàng tháng xem CP-03.",
+    "expiry_date": "2025-03-31"
+  },
+  {
+    "chunk_id": "CP-01-v1-04",
+    "doc_id": "CP-01",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Xử lý hồ sơ đang trong quá trình thẩm định",
+    "text": "[CP-01 v1 | hiệu lực từ 2024-01-01] Chính sách cho vay tiêu dùng FinCo Easy – 5. Xử lý hồ sơ đang trong quá trình thẩm định\n5.1. Hồ sơ có ngày nộp trong thời gian hiệu lực của phiên bản này tiếp tục được xét theo phiên bản này, kể cả khi việc xét duyệt kết thúc sau ngày 31/03/2025.",
+    "expiry_date": "2025-03-31"
+  },
+  {
+    "chunk_id": "CP-01-v2-00",
+    "doc_id": "CP-01",
+    "version": "v2",
+    "effective_date": "2025-04-01",
+    "section": "1. Phạm vi áp dụng",
+    "text": "[CP-01 v2 | hiệu lực từ 2025-04-01] Chính sách cho vay tiêu dùng FinCo Easy – 1. Phạm vi áp dụng\n1.1. Chính sách này áp dụng cho sản phẩm vay tiêu dùng FinCo Easy, cấp cho cá nhân cư trú tại Việt Nam, không có tài sản bảo đảm.\n\n1.2. Phiên bản v2 thay thế phiên bản v1 và áp dụng cho hồ sơ có **ngày nộp** từ 01/04/2025 trở đi. Ngày nộp là ngày hồ sơ được ghi nhận trong hệ thống, không phải ngày giải ngân hay ngày thẩm định.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-01-v2-01",
+    "doc_id": "CP-01",
+    "version": "v2",
+    "effective_date": "2025-04-01",
+    "section": "2. Điều kiện về người vay",
+    "text": "[CP-01 v2 | hiệu lực từ 2025-04-01] Chính sách cho vay tiêu dùng FinCo Easy – 2. Điều kiện về người vay\n2.1. Tuổi tại ngày nộp hồ sơ: từ 22 đến 58 tuổi (tính cả 22 và 58).\n\n2.2. Người vay thuộc một trong hai nhóm thu nhập: người hưởng lương (`salary`) hoặc người tự kinh doanh (`self_employed`). Chứng từ cho từng nhóm quy định tại CP-02.\n\n2.3. Người vay không có khoản nợ quá hạn trên 30 ngày trong 12 tháng gần nhất. Chi tiết xem CP-06.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-01-v2-02",
+    "doc_id": "CP-01",
+    "version": "v2",
+    "effective_date": "2025-04-01",
+    "section": "3. Số tiền vay và kỳ hạn",
+    "text": "[CP-01 v2 | hiệu lực từ 2025-04-01] Chính sách cho vay tiêu dùng FinCo Easy – 3. Số tiền vay và kỳ hạn\n3.1. Số tiền vay: từ 10 triệu đồng đến 700 triệu đồng cho mỗi hồ sơ.\n\n3.2. Kỳ hạn vay: từ 6 tháng đến 48 tháng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-01-v2-03",
+    "doc_id": "CP-01",
+    "version": "v2",
+    "effective_date": "2025-04-01",
+    "section": "4. Tỷ lệ nợ trên thu nhập (DTI) tối đa",
+    "text": "[CP-01 v2 | hiệu lực từ 2025-04-01] Chính sách cho vay tiêu dùng FinCo Easy – 4. Tỷ lệ nợ trên thu nhập (DTI) tối đa\n4.1. Tỷ lệ nợ trên thu nhập (DTI) tối đa được phép là **45%**. Hồ sơ có DTI lớn hơn 45% bị từ chối.\n\n4.2. Cách tính DTI và thu nhập đủ điều kiện xem CP-05. Lãi suất để tính khoản trả hàng tháng xem CP-03.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-01-v2-04",
+    "doc_id": "CP-01",
+    "version": "v2",
+    "effective_date": "2025-04-01",
+    "section": "5. Xử lý hồ sơ đã nộp trước ngày hiệu lực",
+    "text": "[CP-01 v2 | hiệu lực từ 2025-04-01] Chính sách cho vay tiêu dùng FinCo Easy – 5. Xử lý hồ sơ đã nộp trước ngày hiệu lực\n5.1. Hồ sơ có ngày nộp trước 01/04/2025 tiếp tục được xét theo phiên bản v1, kể cả khi việc xét duyệt kết thúc sau ngày này.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-01-v2-05",
+    "doc_id": "CP-01",
+    "version": "v2",
+    "effective_date": "2025-04-01",
+    "section": "6. Thay đổi so với phiên bản v1",
+    "text": "[CP-01 v2 | hiệu lực từ 2025-04-01] Chính sách cho vay tiêu dùng FinCo Easy – 6. Thay đổi so với phiên bản v1\n6.1. Tuổi tối đa giảm từ 60 xuống 58.\n\n6.2. Số tiền vay tối đa giảm từ 800 triệu đồng xuống 700 triệu đồng.\n\n6.3. Kỳ hạn tối đa giảm từ 60 tháng xuống 48 tháng.\n\n6.4. DTI tối đa giảm từ 50% xuống 45%.\n\n6.5. Các nội dung còn lại không thay đổi.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-02-v1-00",
+    "doc_id": "CP-02",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Chứng từ chung cho mọi hồ sơ",
+    "text": "[CP-02 v1 | hiệu lực từ 2024-01-01] Quy định chứng từ hồ sơ vay – 1. Chứng từ chung cho mọi hồ sơ\n1.1. Căn cước công dân còn hiệu lực (mã chứng từ `CCCD`).",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-02-v1-01",
+    "doc_id": "CP-02",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Nhóm người hưởng lương (salary)",
+    "text": "[CP-02 v1 | hiệu lực từ 2024-01-01] Quy định chứng từ hồ sơ vay – 2. Nhóm người hưởng lương (salary)\n2.1. Hợp đồng lao động còn hiệu lực (mã `HDLD`).\n\n2.2. Sao kê tài khoản nhận lương của **3 tháng gần nhất** (mã `SK_LUONG_3T`).\n\n2.3. Hồ sơ nhóm này đủ chứng từ khi có cả ba mã: `CCCD`, `HDLD`, `SK_LUONG_3T`.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-02-v1-02",
+    "doc_id": "CP-02",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Nhóm người tự kinh doanh (self_employed)",
+    "text": "[CP-02 v1 | hiệu lực từ 2024-01-01] Quy định chứng từ hồ sơ vay – 3. Nhóm người tự kinh doanh (self_employed)\n3.1. Giấy đăng ký kinh doanh còn hiệu lực (mã `DKKD`).\n\n3.2. Sao kê tài khoản kinh doanh của **6 tháng gần nhất** (mã `SK_TK_6T`).\n\n3.3. Hồ sơ nhóm này đủ chứng từ khi có cả ba mã: `CCCD`, `DKKD`, `SK_TK_6T`.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-02-v1-03",
+    "doc_id": "CP-02",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Khai báo nghĩa vụ nợ hiện tại",
+    "text": "[CP-02 v1 | hiệu lực từ 2024-01-01] Quy định chứng từ hồ sơ vay – 4. Khai báo nghĩa vụ nợ hiện tại\n4.1. Người vay phải khai báo tổng số tiền trả nợ hàng tháng của các khoản vay hiện có. Nếu không có khoản vay nào thì khai là 0 đồng.\n\n4.2. Hồ sơ không có khai báo nghĩa vụ nợ (để trống, khác với khai 0 đồng) được coi là chưa đủ thông tin để tính DTI.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-02-v1-04",
+    "doc_id": "CP-02",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Xử lý hồ sơ thiếu chứng từ hoặc thiếu thông tin",
+    "text": "[CP-02 v1 | hiệu lực từ 2024-01-01] Quy định chứng từ hồ sơ vay – 5. Xử lý hồ sơ thiếu chứng từ hoặc thiếu thông tin\n5.1. Hồ sơ thiếu một hoặc nhiều chứng từ, hoặc thiếu khai báo nghĩa vụ nợ, **không bị từ chối** mà được ghi nhận trạng thái `need_info` (cần bổ sung), kèm danh sách mục còn thiếu.\n\n5.2. Việc xét DTI và thẩm quyền chỉ tiến hành sau khi hồ sơ đã đủ chứng từ và thông tin.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-03-v1-00",
+    "doc_id": "CP-03",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Lãi suất theo kỳ hạn",
+    "text": "[CP-03 v1 | hiệu lực từ 2024-01-01] Biểu lãi suất và phí sản phẩm FinCo Easy – 1. Lãi suất theo kỳ hạn\n1.1. Lãi suất cố định theo năm, áp dụng cho toàn bộ kỳ hạn vay, theo bảng sau:\n\n| Kỳ hạn vay | Lãi suất cố định (%/năm) |\n|---|---|\n| Từ 6 đến 12 tháng | 14,0 |\n| Từ 13 đến 24 tháng | 15,5 |\n| Từ 25 đến 36 tháng | 17,0 |\n| Từ 37 đến 60 tháng | 18,5 |\n\n1.2. Kỳ hạn được tính bằng số tháng của khoản vay. Khoản vay 24 tháng thuộc mức 15,5%; khoản vay 25 tháng thuộc mức 17,0%.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-03-v1-01",
+    "doc_id": "CP-03",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Phương thức trả nợ",
+    "text": "[CP-03 v1 | hiệu lực từ 2024-01-01] Biểu lãi suất và phí sản phẩm FinCo Easy – 2. Phương thức trả nợ\n2.1. Trả nợ gốc và lãi đều hàng tháng (niên kim): số tiền trả mỗi tháng bằng nhau trong suốt kỳ hạn. Công thức tính khoản trả hàng tháng xem CP-05.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-03-v1-02",
+    "doc_id": "CP-03",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Phí thẩm định",
+    "text": "[CP-03 v1 | hiệu lực từ 2024-01-01] Biểu lãi suất và phí sản phẩm FinCo Easy – 3. Phí thẩm định\n3.1. Phí thẩm định hồ sơ là 0,5% số tiền vay, khấu trừ một lần khi giải ngân. Phí này không được tính vào khoản trả nợ hàng tháng khi xét DTI.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-03-v1-03",
+    "doc_id": "CP-03",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Phí trả nợ trước hạn",
+    "text": "[CP-03 v1 | hiệu lực từ 2024-01-01] Biểu lãi suất và phí sản phẩm FinCo Easy – 4. Phí trả nợ trước hạn\n4.1. Trả nợ trước hạn trong 12 tháng đầu: phí 2% trên số dư nợ gốc trả trước.\n\n4.2. Trả nợ trước hạn từ tháng thứ 13 đến tháng thứ 24: phí 1% trên số dư nợ gốc trả trước.\n\n4.3. Trả nợ trước hạn từ tháng thứ 25 trở đi: không thu phí.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-03-v1-04",
+    "doc_id": "CP-03",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Phí phạt chậm trả",
+    "text": "[CP-03 v1 | hiệu lực từ 2024-01-01] Biểu lãi suất và phí sản phẩm FinCo Easy – 5. Phí phạt chậm trả\n5.1. Khoản trả chậm bị tính lãi phạt bằng 150% lãi suất trong hạn trên số tiền chậm trả, tính theo số ngày chậm.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-04-v1-00",
+    "doc_id": "CP-04",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Thẩm quyền theo số tiền vay",
+    "text": "[CP-04 v1 | hiệu lực từ 2024-01-01] Phân cấp phê duyệt và thứ tự xử lý hồ sơ – 1. Thẩm quyền theo số tiền vay\n1.1. Số tiền vay từ 200 triệu đồng trở xuống (tính cả 200 triệu): chuyên viên thẩm định có thẩm quyền quyết định duyệt.\n\n1.2. Số tiền vay trên 200 triệu đến 500 triệu đồng (tính cả 500 triệu): chuyên viên không được tự duyệt, phải chuyển lên **Trưởng phòng** phê duyệt.\n\n1.3. Số tiền vay trên 500 triệu đồng: phải chuyển lên **Hội đồng tín dụng** phê duyệt.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-04-v1-01",
+    "doc_id": "CP-04",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Thứ tự xử lý hồ sơ",
+    "text": "[CP-04 v1 | hiệu lực từ 2024-01-01] Phân cấp phê duyệt và thứ tự xử lý hồ sơ – 2. Thứ tự xử lý hồ sơ\nChuyên viên xử lý hồ sơ theo đúng thứ tự dưới đây, dừng ngay ở bước đầu tiên không đạt:\n\n2.1. **Bước 1 – Điều kiện loại trừ:** kiểm tra tuổi, số tiền vay, kỳ hạn theo chính sách CP-01 đúng phiên bản, và tình trạng nợ quá hạn theo CP-06. Không đạt thì **từ chối** (`reject`).\n\n2.2. **Bước 2 – Chứng từ và thông tin:** kiểm tra theo CP-02. Thiếu thì ghi nhận **cần bổ sung** (`need_info`).\n\n2.3. **Bước 3 – Tỷ lệ nợ trên thu nhập:** tính DTI theo CP-05. DTI vượt ngưỡng của CP-01 thì **từ chối** (`reject`), ở mọi mức số tiền vay.\n\n2.4. **Bước 4 – Thẩm quyền:** nếu hồ sơ đạt các bước trên, xét thẩm quyền theo mục 1. Trong thẩm quyền của chuyên viên thì **duyệt** (`approve`); vượt thẩm quyền thì **chuyển cấp trên** (`escalate`).",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-04-v1-02",
+    "doc_id": "CP-04",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Nguyên tắc",
+    "text": "[CP-04 v1 | hiệu lực từ 2024-01-01] Phân cấp phê duyệt và thứ tự xử lý hồ sơ – 3. Nguyên tắc\n3.1. Hồ sơ không đạt DTI không được chuyển cấp trên để xin ngoại lệ. Cấp trên chỉ xét các hồ sơ đã đạt mọi điều kiện.\n\n3.2. Mỗi hồ sơ chỉ có một quyết định tại một thời điểm. Cách ghi nhận quyết định xem CP-07.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-05-v1-00",
+    "doc_id": "CP-05",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Thu nhập đủ điều kiện",
+    "text": "[CP-05 v1 | hiệu lực từ 2024-01-01] Cách tính thu nhập đủ điều kiện và tỷ lệ nợ trên thu nhập (DTI) – 1. Thu nhập đủ điều kiện\n1.1. Nhóm hưởng lương (`salary`): thu nhập đủ điều kiện hàng tháng bằng **thu nhập chính** cộng **70%** thu nhập phụ (phụ cấp, thưởng định kỳ).\n\n1.2. Nhóm tự kinh doanh (`self_employed`): thu nhập đủ điều kiện hàng tháng bằng **80%** thu nhập chính cộng **50%** thu nhập phụ.\n\n1.3. Thu nhập chính và thu nhập phụ là số bình quân hàng tháng đã được xác minh từ chứng từ theo CP-02.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-05-v1-01",
+    "doc_id": "CP-05",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Khoản trả nợ hàng tháng của khoản vay mới",
+    "text": "[CP-05 v1 | hiệu lực từ 2024-01-01] Cách tính thu nhập đủ điều kiện và tỷ lệ nợ trên thu nhập (DTI) – 2. Khoản trả nợ hàng tháng của khoản vay mới\n2.1. Khoản trả hàng tháng theo phương thức niên kim:\n\n`PMT = P × r / (1 − (1 + r)^(−n))`\n\ntrong đó P là số tiền vay, r là lãi suất năm chia 12 (lãi suất theo kỳ hạn tại CP-03), n là số tháng của kỳ hạn.\n\n2.2. Phí thẩm định và phí khác không tính vào khoản trả hàng tháng khi xét DTI.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-05-v1-02",
+    "doc_id": "CP-05",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Công thức DTI",
+    "text": "[CP-05 v1 | hiệu lực từ 2024-01-01] Cách tính thu nhập đủ điều kiện và tỷ lệ nợ trên thu nhập (DTI) – 3. Công thức DTI\n3.1. `DTI = (PMT của khoản vay mới + nghĩa vụ nợ hiện tại hàng tháng) / thu nhập đủ điều kiện hàng tháng`\n\n3.2. Nghĩa vụ nợ hiện tại hàng tháng là số tiền người vay đã khai báo theo CP-02 mục 4.\n\n3.3. DTI được so sánh với ngưỡng tối đa của CP-01 theo đúng phiên bản áp dụng. DTI **bằng** ngưỡng thì đạt; chỉ DTI **lớn hơn** ngưỡng mới bị từ chối. Khi so sánh dùng giá trị chưa làm tròn; khi báo cáo có thể làm tròn đến một chữ số thập phân của phần trăm.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-05-v1-03",
+    "doc_id": "CP-05",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Ví dụ minh họa (không phải hồ sơ thật)",
+    "text": "[CP-05 v1 | hiệu lực từ 2024-01-01] Cách tính thu nhập đủ điều kiện và tỷ lệ nợ trên thu nhập (DTI) – 4. Ví dụ minh họa (không phải hồ sơ thật)\n4.1. Vay 100 triệu đồng, 12 tháng, lãi suất 14,0%/năm thì PMT khoảng 8,98 triệu đồng mỗi tháng. Với thu nhập đủ điều kiện 30 triệu đồng và nợ hiện tại 2 triệu đồng thì DTI = (8,98 + 2) / 30 ≈ 36,6%.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-06-v1-00",
+    "doc_id": "CP-06",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Nợ quá hạn",
+    "text": "[CP-06 v1 | hiệu lực từ 2024-01-01] Quy định về ngoại lệ và nhóm khách hàng hạn chế – 1. Nợ quá hạn\n1.1. Người vay có bất kỳ khoản nợ nào quá hạn trên 30 ngày trong 12 tháng gần nhất bị **từ chối** ngay ở bước điều kiện loại trừ, bất kể thu nhập và số tiền vay.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-06-v1-01",
+    "doc_id": "CP-06",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Nhân viên FinCo",
+    "text": "[CP-06 v1 | hiệu lực từ 2024-01-01] Quy định về ngoại lệ và nhóm khách hàng hạn chế – 2. Nhân viên FinCo\n2.1. Hồ sơ vay của nhân viên FinCo không được duyệt ở cấp chuyên viên thẩm định, dù số tiền vay nhỏ đến đâu.\n\n2.2. Sau khi hồ sơ của nhân viên FinCo đã đạt mọi điều kiện (loại trừ, chứng từ, DTI), hồ sơ luôn được **chuyển Hội đồng tín dụng** (`escalate`) quyết định.\n\n2.3. Nhân viên FinCo không được miễn điều kiện nào. Hồ sơ không đạt vẫn bị từ chối hoặc yêu cầu bổ sung như mọi khách hàng khác.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-06-v1-02",
+    "doc_id": "CP-06",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Không có ngoại lệ về DTI",
+    "text": "[CP-06 v1 | hiệu lực từ 2024-01-01] Quy định về ngoại lệ và nhóm khách hàng hạn chế – 3. Không có ngoại lệ về DTI\n3.1. Không có ngoại lệ đối với ngưỡng DTI. Không cấp nào, kể cả Hội đồng tín dụng, được duyệt hồ sơ có DTI vượt ngưỡng của CP-01.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-06-v1-03",
+    "doc_id": "CP-06",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Đối tượng không phục vụ",
+    "text": "[CP-06 v1 | hiệu lực từ 2024-01-01] Quy định về ngoại lệ và nhóm khách hàng hạn chế – 4. Đối tượng không phục vụ\n4.1. Sản phẩm FinCo Easy chỉ cấp cho cá nhân cư trú tại Việt Nam. Doanh nghiệp, hộ kinh doanh có tư cách pháp nhân và người không cư trú nằm ngoài phạm vi sản phẩm này.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-07-v1-00",
+    "doc_id": "CP-07",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Bốn trạng thái quyết định",
+    "text": "[CP-07 v1 | hiệu lực từ 2024-01-01] Quy trình ghi nhận quyết định thẩm định – 1. Bốn trạng thái quyết định\n1.1. `approve` – duyệt: hồ sơ đạt mọi điều kiện và nằm trong thẩm quyền của chuyên viên.\n\n1.2. `reject` – từ chối: hồ sơ không đạt điều kiện loại trừ hoặc DTI vượt ngưỡng.\n\n1.3. `escalate` – chuyển cấp trên: hồ sơ đạt mọi điều kiện nhưng vượt thẩm quyền chuyên viên, hoặc thuộc nhóm bắt buộc chuyển cấp trên theo CP-06.\n\n1.4. `need_info` – cần bổ sung: hồ sơ thiếu chứng từ hoặc thiếu thông tin theo CP-02.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-07-v1-01",
+    "doc_id": "CP-07",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Nội dung bắt buộc của mỗi quyết định",
+    "text": "[CP-07 v1 | hiệu lực từ 2024-01-01] Quy trình ghi nhận quyết định thẩm định – 2. Nội dung bắt buộc của mỗi quyết định\n2.1. Lý do quyết định, nêu rõ điều kiện làm căn cứ.\n\n2.2. Danh sách tài liệu chính sách đã căn cứ, ghi theo mã tài liệu và phiên bản (ví dụ CP-01 v2, CP-05). Quyết định không có tài liệu căn cứ không được ghi nhận.\n\n2.3. Thời điểm ghi nhận quyết định.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-07-v1-02",
+    "doc_id": "CP-07",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Nguyên tắc ghi nhận",
+    "text": "[CP-07 v1 | hiệu lực từ 2024-01-01] Quy trình ghi nhận quyết định thẩm định – 3. Nguyên tắc ghi nhận\n3.1. Mỗi hồ sơ chỉ có một quyết định. Hồ sơ đã có quyết định thì không ghi thêm quyết định mới; muốn sửa phải có yêu cầu của cấp phê duyệt cao hơn.\n\n3.2. Ngay sau khi ghi nhận, chuyên viên phải đọc lại quyết định từ hệ thống để xác nhận đã lưu đúng trạng thái và nội dung.\n\n3.3. Quyết định `need_info` có thể được thay bằng quyết định khác khi hồ sơ đã bổ sung đầy đủ.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-08-v1-00",
+    "doc_id": "CP-08",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Giải ngân",
+    "text": "[CP-08 v1 | hiệu lực từ 2024-01-01] Quy trình giải ngân và chăm sóc khách hàng – 1. Giải ngân\n1.1. Sau khi hồ sơ được duyệt (kể cả duyệt ở cấp Trưởng phòng hoặc Hội đồng tín dụng), FinCo giải ngân trong vòng 03 ngày làm việc.\n\n1.2. Khoản vay được giải ngân vào tài khoản ngân hàng đứng tên người vay.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-08-v1-01",
+    "doc_id": "CP-08",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Thông báo kết quả",
+    "text": "[CP-08 v1 | hiệu lực từ 2024-01-01] Quy trình giải ngân và chăm sóc khách hàng – 2. Thông báo kết quả\n2.1. Kết quả thẩm định được thông báo cho khách hàng qua tin nhắn và email trong vòng 01 ngày làm việc kể từ khi có quyết định.\n\n2.2. Hồ sơ ở trạng thái cần bổ sung được thông báo kèm danh sách chứng từ còn thiếu và thời hạn bổ sung là 15 ngày.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-08-v1-02",
+    "doc_id": "CP-08",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Hỗ trợ khách hàng",
+    "text": "[CP-08 v1 | hiệu lực từ 2024-01-01] Quy trình giải ngân và chăm sóc khách hàng – 3. Hỗ trợ khách hàng\n3.1. Giờ làm việc của bộ phận chăm sóc khách hàng: 8 giờ đến 17 giờ, từ thứ Hai đến thứ Sáu.\n\n3.2. Khiếu nại về kết quả thẩm định được tiếp nhận trong 30 ngày kể từ ngày thông báo kết quả.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-09-v1-00",
+    "doc_id": "CP-09",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi áp dụng",
+    "text": "[CP-09 v1 | hiệu lực từ 2024-01-01] Chính sách phát hành thẻ tín dụng FinCo Card – 1. Phạm vi áp dụng\n1.1. Chính sách này áp dụng cho sản phẩm thẻ tín dụng FinCo Card, cấp cho cá nhân cư trú tại Việt Nam.\n\n1.2. Chính sách này **không áp dụng** cho khoản vay tiêu dùng FinCo Easy. Điều kiện, lãi suất và ngưỡng của FinCo Easy được quy định riêng tại các chính sách về cho vay, lãi suất, thu nhập và phân cấp phê duyệt của sản phẩm đó.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-09-v1-01",
+    "doc_id": "CP-09",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Điều kiện phát hành thẻ",
+    "text": "[CP-09 v1 | hiệu lực từ 2024-01-01] Chính sách phát hành thẻ tín dụng FinCo Card – 2. Điều kiện phát hành thẻ\n2.1. Người đăng ký có độ tuổi từ 20 đến 60 tại ngày nộp hồ sơ.\n\n2.2. Thu nhập chính bình quân tối thiểu là 8.000.000 đồng mỗi tháng.\n\n2.3. Không có khoản nợ nào quá hạn trên 10 ngày trong 6 tháng gần nhất.\n\n2.4. Hồ sơ đăng ký thẻ gồm căn cước công dân và sao kê tài khoản nhận lương hoặc doanh thu 3 tháng gần nhất.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-09-v1-02",
+    "doc_id": "CP-09",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Hạn mức thẻ",
+    "text": "[CP-09 v1 | hiệu lực từ 2024-01-01] Chính sách phát hành thẻ tín dụng FinCo Card – 3. Hạn mức thẻ\n3.1. Hạn mức thẻ tối đa bằng 3 lần thu nhập chính bình quân hàng tháng, và không vượt quá 100.000.000 đồng.\n\n3.2. Hạn mức đến 50.000.000 đồng do chuyên viên phát hành thẻ phê duyệt. Hạn mức trên 50.000.000 đồng phải do Trưởng phòng sản phẩm thẻ phê duyệt.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-09-v1-03",
+    "doc_id": "CP-09",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Tỷ lệ nợ trên thu nhập của thẻ",
+    "text": "[CP-09 v1 | hiệu lực từ 2024-01-01] Chính sách phát hành thẻ tín dụng FinCo Card – 4. Tỷ lệ nợ trên thu nhập của thẻ\n4.1. Tổng nghĩa vụ trả nợ hàng tháng của khách hàng, kể cả khoản thanh toán tối thiểu dự kiến của thẻ, không được vượt quá **40%** thu nhập đủ điều kiện.\n\n4.2. Thu nhập đủ điều kiện để xét thẻ chỉ tính thu nhập chính. Thu nhập phụ không được tính khi xét thẻ.\n\n4.3. Ngưỡng 40% là của sản phẩm thẻ, không dùng để xét khoản vay FinCo Easy.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-09-v1-04",
+    "doc_id": "CP-09",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Lãi suất và phí thẻ",
+    "text": "[CP-09 v1 | hiệu lực từ 2024-01-01] Chính sách phát hành thẻ tín dụng FinCo Card – 5. Lãi suất và phí thẻ\n5.1. Lãi suất 28% mỗi năm áp dụng cho dư nợ không được thanh toán đúng hạn.\n\n5.2. Thời gian miễn lãi tối đa là 45 ngày kể từ ngày giao dịch.\n\n5.3. Phí thường niên là 300.000 đồng, được miễn trong năm đầu tiên.\n\n5.4. Số tiền thanh toán tối thiểu hàng tháng là 5% dư nợ, và không thấp hơn 100.000 đồng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-10-v1-00",
+    "doc_id": "CP-10",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi áp dụng",
+    "text": "[CP-10 v1 | hiệu lực từ 2024-01-01] Quy định tiền gửi tiết kiệm FinCo Save – 1. Phạm vi áp dụng\n1.1. Quy định này áp dụng cho sản phẩm tiền gửi tiết kiệm FinCo Save của khách hàng cá nhân.\n\n1.2. Lãi suất trong tài liệu này là **lãi suất tiền gửi** mà FinCo trả cho khách hàng. Đây không phải lãi suất cho vay. Lãi suất cho vay FinCo Easy được quy định ở biểu lãi suất riêng của sản phẩm vay.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-10-v1-01",
+    "doc_id": "CP-10",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Điều kiện mở sổ",
+    "text": "[CP-10 v1 | hiệu lực từ 2024-01-01] Quy định tiền gửi tiết kiệm FinCo Save – 2. Điều kiện mở sổ\n2.1. Khách hàng từ đủ 18 tuổi, có căn cước công dân còn hiệu lực.\n\n2.2. Số tiền gửi tối thiểu cho mỗi sổ là 1.000.000 đồng.\n\n2.3. Mỗi khách hàng được mở nhiều sổ với các kỳ hạn khác nhau.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-10-v1-02",
+    "doc_id": "CP-10",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Lãi suất tiền gửi theo kỳ hạn",
+    "text": "[CP-10 v1 | hiệu lực từ 2024-01-01] Quy định tiền gửi tiết kiệm FinCo Save – 3. Lãi suất tiền gửi theo kỳ hạn\n3.1. Lãi suất tiền gửi tính theo năm, trả cuối kỳ:\n\n| Kỳ hạn gửi | Lãi suất năm |\n|---|---|\n| 1 đến 3 tháng | 3,5% |\n| 6 tháng | 5,0% |\n| 9 tháng | 5,3% |\n| 12 tháng | 5,8% |\n| 24 tháng | 6,0% |\n\n3.2. Lãi suất áp dụng là lãi suất niêm yết tại ngày mở sổ và giữ nguyên trong suốt kỳ hạn.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-10-v1-03",
+    "doc_id": "CP-10",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Rút tiền trước hạn",
+    "text": "[CP-10 v1 | hiệu lực từ 2024-01-01] Quy định tiền gửi tiết kiệm FinCo Save – 4. Rút tiền trước hạn\n4.1. Khách hàng được rút toàn bộ tiền trước hạn. Phần gốc được giữ nguyên, không bị phạt.\n\n4.2. Lãi suất áp dụng khi rút trước hạn là lãi suất không kỳ hạn 0,5% mỗi năm, tính trên số ngày thực gửi.\n\n4.3. Không hỗ trợ rút một phần gốc. Muốn rút một phần, khách hàng tất toán sổ rồi mở sổ mới.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-10-v1-04",
+    "doc_id": "CP-10",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Tái tục khi đáo hạn",
+    "text": "[CP-10 v1 | hiệu lực từ 2024-01-01] Quy định tiền gửi tiết kiệm FinCo Save – 5. Tái tục khi đáo hạn\n5.1. Sổ đến hạn được tự động tái tục phần gốc với cùng kỳ hạn nếu khách hàng không đến rút trong 3 ngày làm việc kể từ ngày đáo hạn.\n\n5.2. Lãi của kỳ cũ được chuyển vào tài khoản thanh toán của khách hàng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-11-v1-00",
+    "doc_id": "CP-11",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Nguyên tắc thu thập",
+    "text": "[CP-11 v1 | hiệu lực từ 2024-01-01] Quy định bảo mật và xử lý dữ liệu cá nhân khách hàng – 1. Nguyên tắc thu thập\n1.1. FinCo chỉ thu thập dữ liệu cá nhân cần thiết cho mục đích thẩm định, cung cấp và chăm sóc sản phẩm.\n\n1.2. Mọi nhân viên chỉ được truy cập dữ liệu của hồ sơ được phân công cho mình.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-11-v1-01",
+    "doc_id": "CP-11",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Thời hạn lưu trữ",
+    "text": "[CP-11 v1 | hiệu lực từ 2024-01-01] Quy định bảo mật và xử lý dữ liệu cá nhân khách hàng – 2. Thời hạn lưu trữ\n2.1. Hồ sơ đã phát sinh hợp đồng hoặc giao dịch được lưu 10 năm kể từ ngày hợp đồng chấm dứt.\n\n2.2. Hồ sơ không phát sinh hợp đồng, bao gồm hồ sơ bị từ chối và hồ sơ đã hết hạn bổ sung, được lưu 2 năm kể từ ngày có kết quả cuối cùng.\n\n2.3. Hết thời hạn lưu trữ, dữ liệu phải được xóa hoặc ẩn danh trong vòng 30 ngày.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-11-v1-02",
+    "doc_id": "CP-11",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quyền của khách hàng",
+    "text": "[CP-11 v1 | hiệu lực từ 2024-01-01] Quy định bảo mật và xử lý dữ liệu cá nhân khách hàng – 3. Quyền của khách hàng\n3.1. Khách hàng có quyền yêu cầu xem dữ liệu cá nhân FinCo đang lưu về mình. FinCo trả lời trong 7 ngày làm việc.\n\n3.2. Khách hàng có quyền yêu cầu chỉnh sửa dữ liệu sai. FinCo hoàn tất chỉnh sửa trong 7 ngày làm việc.\n\n3.3. Khách hàng không được yêu cầu xóa dữ liệu của hồ sơ còn trong thời hạn lưu trữ bắt buộc.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-11-v1-03",
+    "doc_id": "CP-11",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Nhật ký truy cập",
+    "text": "[CP-11 v1 | hiệu lực từ 2024-01-01] Quy định bảo mật và xử lý dữ liệu cá nhân khách hàng – 4. Nhật ký truy cập\n4.1. Mọi lần xem hoặc sửa hồ sơ khách hàng đều được ghi nhật ký gồm người thực hiện, thời điểm và hồ sơ.\n\n4.2. Nhật ký truy cập được lưu 12 tháng và chỉ Ban Tuân thủ được xem.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-11-v1-04",
+    "doc_id": "CP-11",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Xử lý sự cố lộ dữ liệu",
+    "text": "[CP-11 v1 | hiệu lực từ 2024-01-01] Quy định bảo mật và xử lý dữ liệu cá nhân khách hàng – 5. Xử lý sự cố lộ dữ liệu\n5.1. Mọi nhân viên phát hiện sự cố phải báo Ban Tuân thủ trong vòng 72 giờ.\n\n5.2. Nếu sự cố ảnh hưởng đến khách hàng, FinCo thông báo cho khách hàng bị ảnh hưởng trong vòng 5 ngày làm việc kể từ khi xác nhận sự cố.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-12-v1-00",
+    "doc_id": "CP-12",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi áp dụng",
+    "text": "[CP-12 v1 | hiệu lực từ 2024-01-01] Quy trình xử lý khiếu nại dịch vụ thẻ và tiền gửi – 1. Phạm vi áp dụng\n1.1. Quy trình này áp dụng cho khiếu nại về giao dịch thẻ FinCo Card, tiền gửi FinCo Save và thái độ phục vụ.\n\n1.2. Quy trình này **không áp dụng** cho khiếu nại về kết quả thẩm định hồ sơ vay. Khiếu nại kết quả thẩm định thực hiện theo quy trình giải ngân và chăm sóc khách hàng của sản phẩm vay.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-12-v1-01",
+    "doc_id": "CP-12",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Kênh tiếp nhận",
+    "text": "[CP-12 v1 | hiệu lực từ 2024-01-01] Quy trình xử lý khiếu nại dịch vụ thẻ và tiền gửi – 2. Kênh tiếp nhận\n2.1. Khách hàng gửi khiếu nại qua tổng đài, email chăm sóc khách hàng hoặc trực tiếp tại quầy giao dịch.\n\n2.2. Mọi khiếu nại được cấp một mã tiếp nhận ngay khi ghi nhận.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-12-v1-02",
+    "doc_id": "CP-12",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Thời hạn",
+    "text": "[CP-12 v1 | hiệu lực từ 2024-01-01] Quy trình xử lý khiếu nại dịch vụ thẻ và tiền gửi – 3. Thời hạn\n3.1. Khách hàng gửi khiếu nại trong vòng 60 ngày kể từ ngày phát sinh giao dịch bị khiếu nại.\n\n3.2. FinCo phản hồi trong vòng 15 ngày làm việc kể từ khi nhận khiếu nại.\n\n3.3. Với khiếu nại phức tạp cần phối hợp bên thứ ba, thời hạn phản hồi được gia hạn tối đa đến 30 ngày làm việc, và khách hàng phải được thông báo về việc gia hạn.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-12-v1-03",
+    "doc_id": "CP-12",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Giao dịch thẻ gian lận",
+    "text": "[CP-12 v1 | hiệu lực từ 2024-01-01] Quy trình xử lý khiếu nại dịch vụ thẻ và tiền gửi – 4. Giao dịch thẻ gian lận\n4.1. Nếu khách hàng báo giao dịch gian lận trong vòng 48 giờ kể từ khi giao dịch phát sinh, FinCo hoàn tiền trong vòng 10 ngày làm việc.\n\n4.2. Báo sau 48 giờ thì FinCo xem xét từng trường hợp, không bảo đảm hoàn tiền.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-12-v1-04",
+    "doc_id": "CP-12",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Cấp xử lý",
+    "text": "[CP-12 v1 | hiệu lực từ 2024-01-01] Quy trình xử lý khiếu nại dịch vụ thẻ và tiền gửi – 5. Cấp xử lý\n5.1. Khiếu nại có giá trị đến 5.000.000 đồng do chuyên viên chăm sóc khách hàng giải quyết.\n\n5.2. Khiếu nại có giá trị trên 5.000.000 đồng do Trưởng nhóm chăm sóc khách hàng giải quyết.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-13-v1-00",
+    "doc_id": "CP-13",
+    "version": "v1",
+    "effective_date": "2025-06-01",
+    "section": "1. Thời gian và đối tượng",
+    "text": "[CP-13 v1 | hiệu lực từ 2025-06-01] Chương trình ưu đãi mùa hè 2025 – 1. Thời gian và đối tượng\n1.1. Chương trình diễn ra từ ngày 01/06/2025 đến hết ngày 31/08/2025.\n\n1.2. Chương trình áp dụng cho khách hàng cá nhân của sản phẩm thẻ FinCo Card và tiền gửi FinCo Save.",
+    "expiry_date": "2025-08-31"
+  },
+  {
+    "chunk_id": "CP-13-v1-01",
+    "doc_id": "CP-13",
+    "version": "v1",
+    "effective_date": "2025-06-01",
+    "section": "2. Ưu đãi cho FinCo Card",
+    "text": "[CP-13 v1 | hiệu lực từ 2025-06-01] Chương trình ưu đãi mùa hè 2025 – 2. Ưu đãi cho FinCo Card\n2.1. Hoàn tiền 1% trên giao dịch chi tiêu hợp lệ, tối đa 200.000 đồng mỗi tháng cho mỗi thẻ.\n\n2.2. Khách hàng mở thẻ mới trong thời gian chương trình được miễn phí thường niên thêm năm thứ hai.",
+    "expiry_date": "2025-08-31"
+  },
+  {
+    "chunk_id": "CP-13-v1-02",
+    "doc_id": "CP-13",
+    "version": "v1",
+    "effective_date": "2025-06-01",
+    "section": "3. Ưu đãi cho FinCo Save",
+    "text": "[CP-13 v1 | hiệu lực từ 2025-06-01] Chương trình ưu đãi mùa hè 2025 – 3. Ưu đãi cho FinCo Save\n3.1. Sổ tiết kiệm kỳ hạn từ 12 tháng trở lên mở trong thời gian chương trình được cộng thêm 0,3% mỗi năm vào lãi suất niêm yết.\n\n3.2. Phần lãi suất cộng thêm chỉ áp dụng cho sổ mở mới, không áp dụng khi tái tục.",
+    "expiry_date": "2025-08-31"
+  },
+  {
+    "chunk_id": "CP-13-v1-03",
+    "doc_id": "CP-13",
+    "version": "v1",
+    "effective_date": "2025-06-01",
+    "section": "4. Điều kiện loại trừ",
+    "text": "[CP-13 v1 | hiệu lực từ 2025-06-01] Chương trình ưu đãi mùa hè 2025 – 4. Điều kiện loại trừ\n4.1. Giao dịch rút tiền mặt, chuyển khoản và thanh toán lãi thẻ không được tính hoàn tiền.\n\n4.2. Mỗi khách hàng chỉ được hưởng ưu đãi một lần cho mỗi sản phẩm.",
+    "expiry_date": "2025-08-31"
+  },
+  {
+    "chunk_id": "CP-13-v1-04",
+    "doc_id": "CP-13",
+    "version": "v1",
+    "effective_date": "2025-06-01",
+    "section": "5. Lưu ý",
+    "text": "[CP-13 v1 | hiệu lực từ 2025-06-01] Chương trình ưu đãi mùa hè 2025 – 5. Lưu ý\n5.1. Chương trình này không áp dụng cho khoản vay tiêu dùng FinCo Easy và không làm thay đổi lãi suất cho vay.\n\n5.2. Chương trình đã kết thúc vào ngày 31/08/2025. Các ưu đãi sau ngày này không còn hiệu lực.",
+    "expiry_date": "2025-08-31"
+  },
+  {
+    "chunk_id": "CP-14-v1-00",
+    "doc_id": "CP-14",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi áp dụng",
+    "text": "[CP-14 v1 | hiệu lực từ 2024-01-01] Quy định nhận biết khách hàng và giám sát giao dịch – 1. Phạm vi áp dụng\n1.1. Quy định này áp dụng cho việc mở sổ tiết kiệm FinCo Save, phát hành thẻ FinCo Card và các giao dịch trên hai sản phẩm đó.\n\n1.2. Hồ sơ vay tiêu dùng FinCo Easy không áp dụng quy định này. Chứng từ của hồ sơ vay thực hiện theo quy định chứng từ hồ sơ vay.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-14-v1-01",
+    "doc_id": "CP-14",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Giấy tờ định danh",
+    "text": "[CP-14 v1 | hiệu lực từ 2024-01-01] Quy định nhận biết khách hàng và giám sát giao dịch – 2. Giấy tờ định danh\n2.1. Khách hàng xuất trình căn cước công dân còn hiệu lực. FinCo đối chiếu thông tin với ảnh và dữ liệu dân cư.\n\n2.2. Khách hàng có thể xác thực trực tiếp tại quầy hoặc bằng xác thực sinh trắc học trên ứng dụng.\n\n2.3. Giấy tờ hết hạn không được chấp nhận để mở sản phẩm mới.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-14-v1-02",
+    "doc_id": "CP-14",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Giao dịch lớn",
+    "text": "[CP-14 v1 | hiệu lực từ 2024-01-01] Quy định nhận biết khách hàng và giám sát giao dịch – 3. Giao dịch lớn\n3.1. Tiền gửi từ 300.000.000 đồng trong một ngày phải kèm giải trình nguồn tiền.\n\n3.2. Giao dịch tiền mặt từ 400.000.000 đồng trong một ngày phải được báo cáo cho Ban Tuân thủ trong cùng ngày làm việc.\n\n3.3. FinCo có quyền tạm dừng giao dịch cho đến khi nhận được giải trình hợp lệ.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-14-v1-03",
+    "doc_id": "CP-14",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Kiểm tra danh sách hạn chế",
+    "text": "[CP-14 v1 | hiệu lực từ 2024-01-01] Quy định nhận biết khách hàng và giám sát giao dịch – 4. Kiểm tra danh sách hạn chế\n4.1. Trước khi mở sản phẩm, FinCo kiểm tra khách hàng với danh sách đối tượng bị hạn chế do Ban Tuân thủ quản lý.\n\n4.2. Khách hàng nằm trong danh sách hạn chế bị từ chối mở sản phẩm mà không cần giải thích chi tiết.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-14-v1-04",
+    "doc_id": "CP-14",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Cập nhật thông tin",
+    "text": "[CP-14 v1 | hiệu lực từ 2024-01-01] Quy định nhận biết khách hàng và giám sát giao dịch – 5. Cập nhật thông tin\n5.1. Khách hàng cập nhật giấy tờ và thông tin liên hệ ít nhất 24 tháng một lần.\n\n5.2. Tài khoản không cập nhật quá hạn sẽ bị hạn chế giao dịch cho đến khi cập nhật xong.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-00",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Mục đích và cách dùng sổ tay",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 1. Mục đích và cách dùng sổ tay (phần 1/2)\n1.1. Sổ tay này hướng dẫn chuyên viên thẩm định thực hiện từng thao tác khi xử lý một hồ sơ vay FinCo Easy, từ lúc nhận hồ sơ đến lúc ghi nhận quyết định. Sổ tay **không đặt ra quy định mới**. Mọi ngưỡng, tỷ lệ và thẩm quyền đều lấy từ các chính sách gốc: CP-01 (điều kiện cho vay), CP-02 (chứng từ), CP-03 (lãi suất và phí), CP-04 (phân cấp phê duyệt), CP-05 (cách tính DTI), CP-06 (ngoại lệ) và CP-07 (ghi nhận quyết định).\n\n1.2. Khi nội dung sổ tay khác với chính sách gốc, chính sách gốc được ưu tiên. Chuyên viên phát hiện điểm khác biệt phải báo cho Phòng Vận hành tín dụng để sửa sổ tay, không tự áp dụng theo cách hiểu riêng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-01",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Mục đích và cách dùng sổ tay",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 1. Mục đích và cách dùng sổ tay (phần 2/2)\n1.3. Sổ tay dành cho chuyên viên thẩm định nội bộ. Khách hàng muốn tìm hiểu điều kiện vay nên xem tài liệu hỏi đáp dành cho khách vay (CP-16).",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-02",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Thuật ngữ thường dùng",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 2. Thuật ngữ thường dùng (phần 1/2)\n2.1. **Ngày nộp**: ngày hồ sơ được ghi nhận trong hệ thống. Đây là mốc duy nhất để chọn phiên bản chính sách. Ngày thẩm định, ngày bổ sung chứng từ và ngày giải ngân không được dùng để chọn phiên bản.\n\n2.2. **Thu nhập chính**: thu nhập bình quân hàng tháng của người vay, xác minh được từ chứng từ. Với người hưởng lương đó là lương cơ bản; với người tự kinh doanh đó là doanh thu ròng bình quân từ sao kê.\n\n2.3. **Thu nhập phụ**: các khoản như phụ cấp, thưởng định kỳ hoặc thu nhập ngoài hoạt động chính, có bằng chứng định kỳ. Thu nhập phụ chỉ được tính một phần vào thu nhập đủ điều kiện (xem CP-05).\n\n2.4. **Thu nhập đủ điều kiện**: con số dùng làm mẫu số của DTI sau khi áp hệ số theo nhóm thu nhập. Không dùng thu nhập chính cộng thu nhập phụ trực tiếp.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-03",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Thuật ngữ thường dùng",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 2. Thuật ngữ thường dùng (phần 2/2)\n2.5. **Nghĩa vụ nợ hiện tại**: tổng số tiền người vay phải trả hàng tháng cho các khoản vay đang có, theo khai báo của chính người vay. Khai 0 đồng nghĩa là không có khoản nợ nào; để trống là chưa khai.\n\n2.6. **PMT**: khoản trả hàng tháng của khoản vay mới theo phương thức niên kim, tính bằng công thức ở CP-05 mục 2.\n\n2.7. **DTI**: tỷ lệ giữa tổng nghĩa vụ trả nợ hàng tháng (PMT cộng nghĩa vụ nợ hiện tại) và thu nhập đủ điều kiện. DTI càng cao thì người vay càng khó cân đối chi tiêu.\n\n2.8. **Chuyển cấp trên** (`escalate`): hồ sơ đã đạt mọi điều kiện nhưng không thuộc thẩm quyền quyết định của chuyên viên, nên chuyển lên Trưởng phòng hoặc Hội đồng tín dụng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-04",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quy trình xử lý từng bước",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 3. Quy trình xử lý từng bước (phần 1/6)\n3.1. **Bước 0 – Xác định phiên bản chính sách.** Đọc ngày nộp của hồ sơ. Ngày nộp trước 01/04/2025 thì áp dụng CP-01 phiên bản v1. Ngày nộp từ 01/04/2025 trở đi thì áp dụng CP-01 phiên bản v2. Hồ sơ nộp ngày 31/03/2025 vẫn xét theo v1 dù việc thẩm định diễn ra sau ngày 01/04/2025. Ghi lại phiên bản đã chọn ngay từ đầu vì mọi bước sau đều dựa vào đó.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-05",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quy trình xử lý từng bước",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 3. Quy trình xử lý từng bước (phần 2/6)\n3.2. **Bước 1 – Điều kiện loại trừ.** Kiểm tra lần lượt bốn nội dung. Thứ nhất, tuổi tại ngày nộp phải nằm trong khoảng cho phép của phiên bản (bảng ở mục 4). Thứ hai, số tiền vay phải nằm trong khoảng cho phép. Thứ ba, kỳ hạn phải nằm trong khoảng cho phép. Thứ tư, người vay không có nợ quá hạn trên 30 ngày trong 12 tháng gần nhất (CP-06 mục 1). Chỉ cần một nội dung không đạt thì quyết định là `reject`, và không cần xem tiếp các bước sau. Lý do từ chối nêu đúng nội dung không đạt cùng ngưỡng của phiên bản đã áp dụng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-06",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quy trình xử lý từng bước",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 3. Quy trình xử lý từng bước (phần 3/6)\n3.3. **Bước 2 – Chứng từ và thông tin.** Đối chiếu mã chứng từ trong hồ sơ với nhóm thu nhập của người vay. Nhóm hưởng lương cần `CCCD`, `HDLD`, `SK_LUONG_3T`. Nhóm tự kinh doanh cần `CCCD`, `DKKD`, `SK_TK_6T`. Kiểm tra thêm phần khai báo nghĩa vụ nợ: để trống thì hồ sơ chưa đủ thông tin. Hồ sơ thiếu bất kỳ mục nào được ghi nhận `need_info` và liệt kê rõ từng mục còn thiếu, không được ghi chung chung là \"thiếu hồ sơ\". Không tính DTI khi hồ sơ chưa đủ thông tin, vì một con số tính trên dữ liệu thiếu sẽ dễ bị hiểu nhầm là kết quả cuối.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-07",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quy trình xử lý từng bước",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 3. Quy trình xử lý từng bước (phần 4/6)\n3.4. **Bước 3 – Tính DTI.** Thực hiện theo thứ tự sau để tránh sai sót. Chọn lãi suất theo kỳ hạn tại CP-03, chú ý ranh giới giữa các mức, ví dụ 24 tháng thuộc mức 15,5% còn 25 tháng thuộc mức 17,0%. Tính PMT bằng công thức niên kim. Tính thu nhập đủ điều kiện theo nhóm thu nhập. Cộng PMT với nghĩa vụ nợ hiện tại rồi chia cho thu nhập đủ điều kiện. So sánh với ngưỡng DTI của phiên bản đã chọn ở Bước 0. DTI bằng ngưỡng thì đạt, chỉ DTI lớn hơn ngưỡng mới bị `reject`. Phải dùng giá trị chưa làm tròn khi so sánh. Không có ngoại lệ về DTI ở bất kỳ cấp nào (CP-06 mục 3).",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-08",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quy trình xử lý từng bước",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 3. Quy trình xử lý từng bước (phần 5/6)\n3.5. **Bước 4 – Thẩm quyền.** Chỉ hồ sơ đã qua ba bước trên mới đến bước này. Nếu người vay là nhân viên FinCo thì hồ sơ luôn được chuyển Hội đồng tín dụng, bất kể số tiền. Nếu không, xét số tiền vay: không quá 200 triệu đồng thì chuyên viên `approve`; trên 200 triệu đến 500 triệu đồng thì `escalate` lên Trưởng phòng; trên 500 triệu đồng thì `escalate` lên Hội đồng tín dụng. Số tiền vay đúng bằng 200 triệu hay 500 triệu thuộc cấp thấp hơn.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-09",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Quy trình xử lý từng bước",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 3. Quy trình xử lý từng bước (phần 6/6)\n3.6. **Bước 5 – Ghi nhận và kiểm tra lại.** Ghi quyết định vào hệ thống kèm lý do và danh sách tài liệu căn cứ theo mã tài liệu và phiên bản. Ngay sau đó đọc lại quyết định đã lưu để xác nhận trạng thái và nội dung đúng. Chỉ khi đã đọc lại và khớp mới được báo kết quả cho khách hàng. Nếu hệ thống báo hồ sơ đã có quyết định thì không ghi đè (CP-07 mục 3).",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-10",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Bảng ngưỡng theo phiên bản chính sách",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 4. Bảng ngưỡng theo phiên bản chính sách (phần 1/2)\n4.1. Bảng dưới đây tổng hợp các ngưỡng của CP-01 để tra nhanh. Chọn cột theo ngày nộp, không theo ngày thẩm định.\n\n| Nội dung | CP-01 v1 (nộp trước 01/04/2025) | CP-01 v2 (nộp từ 01/04/2025) |\n|---|---|---|\n| Tuổi | 22 đến 60 | 22 đến 58 |\n| Số tiền vay | 10 triệu đến 800 triệu đồng | 10 triệu đến 700 triệu đồng |\n| Kỳ hạn | 6 đến 60 tháng | 6 đến 48 tháng |\n| DTI tối đa | 50% | 45% |\n\n4.2. Các nội dung không đổi giữa hai phiên bản gồm: nhóm người vay, chứng từ (CP-02), biểu lãi suất (CP-03), phân cấp phê duyệt (CP-04), cách tính DTI (CP-05), ngoại lệ (CP-06) và ghi nhận quyết định (CP-07).",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-11",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Bảng ngưỡng theo phiên bản chính sách",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 4. Bảng ngưỡng theo phiên bản chính sách (phần 2/2)\n4.3. Hệ số thu nhập theo nhóm, dùng chung cho cả hai phiên bản:\n\n| Nhóm thu nhập | Hệ số thu nhập chính | Hệ số thu nhập phụ |\n|---|---|---|\n| Hưởng lương (`salary`) | 100% | 70% |\n| Tự kinh doanh (`self_employed`) | 80% | 50% |",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-12",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Ví dụ xử lý minh họa",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 5. Ví dụ xử lý minh họa (phần 1/3)\nCác ví dụ dưới đây là tình huống giả định để tập thao tác, không phải hồ sơ thật.\n\n5.1. **Ví dụ A – hồ sơ đạt, chuyên viên duyệt.** Người vay hưởng lương, nộp ngày 10/06/2025 nên áp dụng v2. Vay 150 triệu đồng trong 24 tháng, thu nhập chính 22 triệu, thu nhập phụ 4 triệu, nghĩa vụ nợ hiện tại 1,5 triệu đồng mỗi tháng. Tuổi, số tiền, kỳ hạn đều trong khoảng cho phép và chứng từ đầy đủ. Kỳ hạn 24 tháng thuộc mức lãi 15,5% nên PMT khoảng 7,31 triệu đồng. Thu nhập đủ điều kiện là 22 triệu cộng 70% của 4 triệu, bằng 24,8 triệu đồng. DTI khoảng (7,31 + 1,5) / 24,8 ≈ 35,5%, thấp hơn ngưỡng 45%. Số tiền 150 triệu không vượt 200 triệu, nên chuyên viên `approve`.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-13",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Ví dụ xử lý minh họa",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 5. Ví dụ xử lý minh họa (phần 2/3)\n5.2. **Ví dụ B – hồ sơ cần chuyển Trưởng phòng.** Người vay tự kinh doanh, nộp ngày 20/02/2025 nên áp dụng v1. Vay 300 triệu đồng trong 36 tháng, thu nhập chính 40 triệu, thu nhập phụ 10 triệu, nghĩa vụ nợ hiện tại 3 triệu đồng mỗi tháng. Kỳ hạn 36 tháng thuộc mức lãi 17,0% nên PMT khoảng 10,70 triệu đồng. Thu nhập đủ điều kiện là 80% của 40 triệu cộng 50% của 10 triệu, bằng 37 triệu đồng. DTI khoảng (10,70 + 3) / 37 ≈ 37,0%, thấp hơn ngưỡng 50% của v1. Số tiền 300 triệu nằm trong khoảng trên 200 đến 500 triệu, nên chuyên viên `escalate` lên Trưởng phòng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-14",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Ví dụ xử lý minh họa",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 5. Ví dụ xử lý minh họa (phần 3/3)\n5.3. **Ví dụ C – DTI vượt ngưỡng, không chuyển cấp trên.** Người vay hưởng lương, nộp ngày 05/05/2025 nên áp dụng v2. Vay 80 triệu đồng trong 12 tháng với lãi suất 14,0%, thu nhập chính 15 triệu, không có thu nhập phụ, nghĩa vụ nợ hiện tại 3 triệu đồng. PMT khoảng 7,18 triệu đồng nên DTI khoảng (7,18 + 3) / 15 ≈ 67,9%, lớn hơn ngưỡng 45%. Quyết định là `reject`. Dù số tiền vay nhỏ, chuyên viên không được chuyển hồ sơ lên cấp trên để xin ngoại lệ, vì CP-04 mục 3.1 và CP-06 mục 3.1 không cho phép.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-15",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "6. Sai sót thường gặp khi thẩm định",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 6. Sai sót thường gặp khi thẩm định (phần 1/3)\n6.1. **Chọn phiên bản theo ngày thẩm định.** Đây là lỗi phổ biến nhất. Hồ sơ nộp cuối tháng 03/2025 nhưng được thẩm định đầu tháng 04/2025 vẫn áp dụng v1.\n\n6.2. **Cộng đủ 100% thu nhập phụ.** Thu nhập phụ chỉ được tính theo hệ số của nhóm thu nhập (70% với người hưởng lương, 50% với người tự kinh doanh). Tính đủ 100% làm DTI thấp hơn thực tế và có thể đẩy một hồ sơ đáng lẽ bị từ chối thành đạt.\n\n6.3. **Nhầm ranh giới kỳ hạn.** Khoản vay 24 tháng thuộc mức 15,5% còn 25 tháng thuộc mức 17,0%. Lãi suất sai làm PMT và DTI sai theo.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-16",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "6. Sai sót thường gặp khi thẩm định",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 6. Sai sót thường gặp khi thẩm định (phần 2/3)\n6.4. **Làm tròn trước khi so sánh ngưỡng.** DTI 45,04% làm tròn thành 45,0% trông như bằng ngưỡng nhưng thực tế vẫn lớn hơn 45%. Luôn so sánh giá trị chưa làm tròn.\n\n6.5. **Tính phí thẩm định vào khoản trả hàng tháng.** Phí thẩm định thu một lần khi giải ngân và không nằm trong PMT khi xét DTI.\n\n6.6. **Coi ô nợ hiện tại để trống là 0 đồng.** Để trống là chưa khai báo và hồ sơ phải ghi `need_info`. Chỉ khi người vay khai 0 đồng mới được hiểu là không có nợ.\n\n6.7. **Chuyển hồ sơ nhân viên FinCo lên cấp chuyên viên.** Hồ sơ nhân viên FinCo đã đạt mọi điều kiện luôn lên Hội đồng tín dụng. Ngược lại, nhân viên FinCo không đạt điều kiện vẫn bị `reject` hoặc `need_info` như khách hàng khác.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-17",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "6. Sai sót thường gặp khi thẩm định",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 6. Sai sót thường gặp khi thẩm định (phần 3/3)\n6.8. **Ghi quyết định không có tài liệu căn cứ.** Hệ thống từ chối ghi quyết định thiếu danh sách tài liệu. Hãy ghi đúng mã tài liệu và phiên bản của những chính sách thực sự đã dùng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-15-v1-18",
+    "doc_id": "CP-15",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "7. Lưu trữ và đối soát",
+    "text": "[CP-15 v1 | hiệu lực từ 2024-01-01] Sổ tay thẩm định hồ sơ vay FinCo Easy – 7. Lưu trữ và đối soát\n7.1. Mỗi quyết định phải truy được về: hồ sơ gốc, phiên bản chính sách đã áp dụng, các con số trung gian (PMT, thu nhập đủ điều kiện, DTI) và người ghi nhận. Chuyên viên nên ghi các con số trung gian vào phần lý do để người kiểm tra sau này tái hiện được kết quả.\n\n7.2. Khi chính sách có phiên bản mới, hồ sơ đã có quyết định không bị xét lại. Chỉ hồ sơ chưa có quyết định và có ngày nộp từ ngày hiệu lực mới áp dụng phiên bản mới.\n\n7.3. Cuối mỗi tháng, Phòng Vận hành tín dụng chọn ngẫu nhiên một số hồ sơ đã quyết định để đối soát. Các điểm kiểm tra gồm phiên bản chính sách, cách tính DTI, thẩm quyền và việc đọc lại quyết định sau khi ghi.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-00",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Về tài liệu này",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 1. Về tài liệu này\n1.1. Tài liệu giải thích bằng ngôn ngữ đơn giản các câu hỏi khách hàng thường đặt ra khi tìm hiểu khoản vay tiêu dùng FinCo Easy. Tài liệu chỉ có giá trị tham khảo. Khi nội dung khác với chính sách chính thức (CP-01 đến CP-08) thì chính sách chính thức được ưu tiên.\n\n1.2. Các con số trong tài liệu gắn với **ngày nộp hồ sơ**. FinCo đã cập nhật chính sách cho vay vào ngày 01/04/2025, nên cùng một câu hỏi có thể có hai đáp án tùy hồ sơ nộp trước hay từ ngày đó. Tài liệu này ghi rõ cả hai trường hợp.\n\n1.3. FinCo Easy là khoản vay tiêu dùng không có tài sản bảo đảm, cấp cho cá nhân cư trú tại Việt Nam. Khách hàng quan tâm đến thẻ tín dụng hay tiền gửi tiết kiệm vui lòng xem tài liệu của FinCo Card và FinCo Save, hai sản phẩm có điều kiện riêng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-01",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Tôi có đủ điều kiện vay không",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 2. Tôi có đủ điều kiện vay không (phần 1/3)\n2.1. **Tôi bao nhiêu tuổi thì vay được?** Tuổi tính tại ngày nộp hồ sơ. Hồ sơ nộp trước 01/04/2025: từ 22 đến 60 tuổi. Hồ sơ nộp từ 01/04/2025: từ 22 đến 58 tuổi. Cả hai trường hợp đều tính cả tuổi đầu và tuổi cuối của khoảng. Như vậy người 59 tuổi nộp hồ sơ trước ngày 01/04/2025 vẫn đủ điều kiện về tuổi, còn nộp từ ngày đó thì không.\n\n2.2. **Tôi vay được tối đa bao nhiêu tiền và trong bao lâu?** Số tiền tối thiểu là 10 triệu đồng. Số tiền tối đa là 800 triệu đồng với hồ sơ nộp trước 01/04/2025 và 700 triệu đồng với hồ sơ nộp từ ngày đó. Kỳ hạn tối thiểu là 6 tháng. Kỳ hạn tối đa là 60 tháng với hồ sơ cũ và 48 tháng với hồ sơ mới.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-02",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Tôi có đủ điều kiện vay không",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 2. Tôi có đủ điều kiện vay không (phần 2/3)\n2.3. **Tôi đang có khoản vay khác thì có vay thêm được không?** Được, miễn là tổng số tiền phải trả hàng tháng của các khoản vay (bao gồm khoản mới) không vượt quá giới hạn so với thu nhập đủ điều kiện của bạn. Tỷ lệ này gọi là DTI. Giới hạn DTI là 50% với hồ sơ nộp trước 01/04/2025 và 45% với hồ sơ nộp từ ngày đó. Bạn phải khai đúng số tiền đang trả hàng tháng cho các khoản vay hiện có. Nếu không có khoản nào thì khai 0 đồng; để trống thì hồ sơ sẽ bị yêu cầu bổ sung.\n\n2.4. **Tôi từng trả chậm một lần thì có bị từ chối không?** FinCo chỉ từ chối khi bạn có khoản nợ quá hạn **trên 30 ngày** trong 12 tháng gần nhất. Trả chậm vài ngày rồi tất toán thì không thuộc diện này. Khoản quá hạn trên 30 ngày bị từ chối ngay, bất kể thu nhập hay số tiền vay.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-03",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Tôi có đủ điều kiện vay không",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 2. Tôi có đủ điều kiện vay không (phần 3/3)\n2.5. **Tôi là nhân viên FinCo thì có được ưu tiên không?** Không có ưu tiên. Hồ sơ của nhân viên FinCo phải đạt mọi điều kiện như khách hàng khác và sau đó luôn được chuyển Hội đồng tín dụng quyết định, kể cả khi số tiền vay rất nhỏ.\n\n2.6. **Tôi kinh doanh tự do, thu nhập có được tính hết không?** Không. Với người tự kinh doanh, FinCo chỉ tính 80% thu nhập chính và 50% thu nhập phụ khi xét khả năng trả nợ. Với người hưởng lương, FinCo tính đủ thu nhập chính và 70% thu nhập phụ. Cách tính này nhằm phản ánh mức độ ổn định khác nhau của từng nguồn thu.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-04",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Hồ sơ và chứng từ",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 3. Hồ sơ và chứng từ (phần 1/2)\n3.1. **Tôi cần nộp những giấy tờ gì?** Mọi hồ sơ đều cần căn cước công dân còn hiệu lực. Người hưởng lương nộp thêm hợp đồng lao động còn hiệu lực và sao kê tài khoản nhận lương của 3 tháng gần nhất. Người tự kinh doanh nộp thêm giấy đăng ký kinh doanh còn hiệu lực và sao kê tài khoản kinh doanh của 6 tháng gần nhất.\n\n3.2. **Vì sao người tự kinh doanh phải nộp sao kê 6 tháng mà người hưởng lương chỉ 3 tháng?** Thu nhập từ kinh doanh biến động nhiều hơn, nên FinCo cần thời gian quan sát dài hơn để ước tính mức bình quân.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-05",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Hồ sơ và chứng từ",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 3. Hồ sơ và chứng từ (phần 2/2)\n3.3. **Hồ sơ của tôi thiếu giấy tờ thì sao?** Hồ sơ không bị từ chối. FinCo ghi nhận trạng thái cần bổ sung và thông báo cho bạn danh sách giấy tờ còn thiếu, kèm thời hạn bổ sung là 15 ngày. Khi bạn nộp đủ, hồ sơ được thẩm định tiếp.\n\n3.4. **Nộp bổ sung xong thì áp dụng chính sách nào?** Phiên bản chính sách được chọn theo **ngày nộp** hồ sơ ban đầu, không theo ngày bạn bổ sung giấy tờ. Hồ sơ nộp cuối tháng 03/2025 và bổ sung trong tháng 04/2025 vẫn xét theo chính sách cũ.\n\n3.5. **Tôi nộp hồ sơ nhưng chưa có thông tin về nợ hiện tại thì sao?** Bạn vẫn có thể nộp, nhưng hồ sơ sẽ ở trạng thái cần bổ sung cho đến khi bạn khai số tiền đang trả nợ hàng tháng. FinCo không tự suy đoán thông tin này.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-06",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Lãi suất và chi phí",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 4. Lãi suất và chi phí (phần 1/3)\n4.1. **Lãi suất là bao nhiêu?** Lãi suất cố định theo năm, phụ thuộc kỳ hạn bạn chọn và giữ nguyên suốt kỳ hạn. Kỳ hạn 6 đến 12 tháng: 14,0%. Kỳ hạn 13 đến 24 tháng: 15,5%. Kỳ hạn 25 đến 36 tháng: 17,0%. Kỳ hạn 37 đến 60 tháng: 18,5%. Kỳ hạn càng dài thì lãi suất càng cao.\n\n4.2. **Tôi trả nợ như thế nào?** Bạn trả cả gốc và lãi mỗi tháng theo phương thức niên kim, nghĩa là số tiền trả mỗi tháng bằng nhau trong suốt kỳ hạn. Nhờ vậy bạn dễ lên kế hoạch chi tiêu.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-07",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Lãi suất và chi phí",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 4. Lãi suất và chi phí (phần 2/3)\n4.3. **Có những khoản phí nào?** Phí thẩm định bằng 0,5% số tiền vay, khấu trừ một lần khi giải ngân. Ví dụ vay 100 triệu đồng thì phí thẩm định là 500 nghìn đồng và bạn nhận 99,5 triệu đồng. Phí trả nợ trước hạn là 2% số dư gốc trả trước nếu trả trong 12 tháng đầu, 1% nếu trả từ tháng thứ 13 đến tháng thứ 24, và miễn phí từ tháng thứ 25 trở đi. Trả chậm bị tính lãi phạt bằng 150% lãi suất trong hạn trên số tiền chậm.\n\n4.4. **Phí thẩm định có làm tăng khoản trả hàng tháng của tôi không?** Không. Phí này chỉ thu một lần khi giải ngân và không nằm trong khoản trả hàng tháng, cũng không được tính khi FinCo xét tỷ lệ nợ trên thu nhập.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-08",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Lãi suất và chi phí",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 4. Lãi suất và chi phí (phần 3/3)\n4.5. **Có chương trình ưu đãi nào làm giảm lãi suất vay không?** Khoản vay FinCo Easy áp dụng biểu lãi suất cố định nêu trên. Các chương trình khuyến mại của FinCo dành cho sản phẩm khác, nếu có, không làm thay đổi lãi suất cho vay của FinCo Easy.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-09",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Kết quả thẩm định",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 5. Kết quả thẩm định (phần 1/3)\n5.1. **Bao lâu thì tôi biết kết quả?** FinCo thông báo kết quả qua tin nhắn và email trong vòng 01 ngày làm việc kể từ khi có quyết định. Hồ sơ được duyệt sẽ được giải ngân trong vòng 03 ngày làm việc vào tài khoản ngân hàng đứng tên bạn.\n\n5.2. **Có bốn loại kết quả nào?** Duyệt, nghĩa là hồ sơ đạt mọi điều kiện và nằm trong thẩm quyền của chuyên viên. Từ chối, nghĩa là hồ sơ không đạt điều kiện loại trừ hoặc DTI vượt ngưỡng. Chuyển cấp trên, nghĩa là hồ sơ đạt điều kiện nhưng cần cấp cao hơn phê duyệt. Cần bổ sung, nghĩa là hồ sơ còn thiếu giấy tờ hoặc thông tin.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-10",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Kết quả thẩm định",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 5. Kết quả thẩm định (phần 2/3)\n5.3. **Vì sao hồ sơ của tôi bị chuyển cấp trên?** Có hai nguyên nhân. Thứ nhất, số tiền vay vượt thẩm quyền của chuyên viên: trên 200 triệu đồng đến 500 triệu đồng do Trưởng phòng phê duyệt, trên 500 triệu đồng do Hội đồng tín dụng phê duyệt. Thứ hai, bạn là nhân viên FinCo. Hồ sơ bị chuyển cấp trên không có nghĩa là bị từ chối; hồ sơ đã đạt mọi điều kiện và chỉ chờ cấp có thẩm quyền quyết định.\n\n5.4. **Tôi không đồng ý với kết quả thì làm sao?** Bạn gửi khiếu nại về kết quả thẩm định trong vòng 30 ngày kể từ ngày FinCo thông báo kết quả, qua bộ phận chăm sóc khách hàng làm việc từ 8 giờ đến 17 giờ, thứ Hai đến thứ Sáu.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-11",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Kết quả thẩm định",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 5. Kết quả thẩm định (phần 3/3)\n5.5. **Nếu bị từ chối vì DTI cao, có cách nào để được duyệt không?** Không có ngoại lệ về DTI ở bất kỳ cấp nào của FinCo. Bạn có thể nộp hồ sơ mới với khoản vay nhỏ hơn hoặc kỳ hạn phù hợp hơn để giảm khoản trả hàng tháng, hoặc tất toán bớt nợ hiện có trước khi nộp lại. Hồ sơ mới sẽ được xét theo phiên bản chính sách có hiệu lực tại ngày nộp mới.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-16-v1-12",
+    "doc_id": "CP-16",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "6. Trong thời gian vay",
+    "text": "[CP-16 v1 | hiệu lực từ 2024-01-01] Hỏi đáp dành cho khách hàng vay FinCo Easy – 6. Trong thời gian vay\n6.1. **Tôi có thể trả nợ trước hạn không?** Được, mức phí phụ thuộc thời điểm trả như nêu ở mục 4.3. Trả từ tháng thứ 25 trở đi không mất phí.\n\n6.2. **Nếu tôi lỡ trả chậm thì sao?** Khoản chậm bị tính lãi phạt. FinCo cũng sẽ nhắc nợ qua tin nhắn và cuộc gọi. Nợ quá hạn trên 30 ngày làm hồ sơ vay mới của bạn bị từ chối nếu khoản quá hạn đó xảy ra trong 12 tháng gần nhất tính đến ngày nộp hồ sơ. Quy trình nhắc nợ được mô tả trong tài liệu về xử lý nợ quá hạn (CP-17).\n\n6.3. **Thông tin của tôi có được bảo mật không?** Thông tin cá nhân của khách hàng được bảo vệ theo quy định về bảo mật dữ liệu của FinCo.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-00",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi và nguyên tắc",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 1. Phạm vi và nguyên tắc (phần 1/2)\n1.1. Quy trình này áp dụng cho khoản vay FinCo Easy **sau khi đã giải ngân** mà người vay chưa trả đủ khoản đến hạn. Quy trình không áp dụng cho việc thẩm định hồ sơ mới. Việc nợ quá hạn ảnh hưởng đến hồ sơ vay mới được quy định riêng tại CP-06 mục 1.\n\n1.2. Nợ quá hạn là khoản gốc hoặc lãi đến hạn thanh toán nhưng chưa được trả đủ vào ngày đến hạn. **Số ngày quá hạn** tính từ ngày làm việc kế tiếp ngày đến hạn đến ngày người vay trả đủ khoản chậm.\n\n1.3. Nguyên tắc chung: nhắc nợ lịch sự, đúng đối tượng, đúng thời gian, không đe dọa, không gây áp lực và không tiết lộ khoản nợ cho người không liên quan. Nhân viên thu hồi nợ phải ghi lại mọi lần liên hệ.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-01",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "1. Phạm vi và nguyên tắc",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 1. Phạm vi và nguyên tắc (phần 2/2)\n1.4. Khoản vay FinCo Easy không có tài sản bảo đảm, nên quy trình này không có bước xử lý tài sản. Mục tiêu của quy trình là giúp người vay trả nợ trở lại và hạn chế phát sinh quá hạn kéo dài.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-02",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Phân nhóm nợ theo số ngày quá hạn",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 2. Phân nhóm nợ theo số ngày quá hạn (phần 1/2)\n2.1. FinCo chia nợ quá hạn thành bốn nhóm để áp dụng biện pháp phù hợp.\n\n| Nhóm | Số ngày quá hạn | Biện pháp chính |\n|---|---|---|\n| Nhóm 1 | 1 đến 10 ngày | Nhắc nợ tự động qua tin nhắn và thông báo ứng dụng |\n| Nhóm 2 | 11 đến 30 ngày | Gọi điện trực tiếp cho người vay, gửi thư nhắc nợ |\n| Nhóm 3 | 31 đến 90 ngày | Làm việc trực tiếp với người vay, thỏa thuận kế hoạch trả nợ, ghi nhận nợ quá hạn trên 30 ngày |\n| Nhóm 4 | Trên 90 ngày | Chuyển bộ phận xử lý nợ có vấn đề, gửi thông báo chính thức bằng văn bản |",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-03",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "2. Phân nhóm nợ theo số ngày quá hạn",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 2. Phân nhóm nợ theo số ngày quá hạn (phần 2/2)\n2.2. Khoản nợ chuyển từ nhóm thấp lên nhóm cao khi số ngày quá hạn vượt ngưỡng của nhóm hiện tại. Khoản nợ chỉ trở về trạng thái bình thường khi người vay đã trả đủ toàn bộ số tiền chậm cùng lãi phạt.\n\n2.3. Mốc 30 ngày là mốc quan trọng nhất. Người vay có khoản quá hạn **trên 30 ngày** bị ghi nhận vào lịch sử nợ quá hạn. Theo CP-06 mục 1, hồ sơ vay mới của người đó bị từ chối nếu khoản quá hạn trên 30 ngày xảy ra trong 12 tháng gần nhất tính đến ngày nộp hồ sơ.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-04",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Lãi phạt chậm trả",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 3. Lãi phạt chậm trả (phần 1/2)\n3.1. Lãi phạt tính trên số tiền chậm trả, bằng 150% lãi suất trong hạn của khoản vay (CP-03 mục 5). Lãi suất trong hạn là mức lãi suất theo kỳ hạn mà người vay đã ký kết.\n\n3.2. Công thức lãi phạt: số tiền chậm trả nhân với lãi suất trong hạn theo năm, nhân với 150%, nhân với số ngày chậm rồi chia cho 365 ngày.\n\n3.3. Ví dụ minh họa: người vay có khoản trả hàng tháng 8.000.000 đồng, lãi suất trong hạn 15,5% mỗi năm, trả chậm 10 ngày. Lãi phạt xấp xỉ 8.000.000 × 15,5% × 150% × 10 / 365 ≈ 50.959 đồng. Với 40 ngày chậm thì lãi phạt gấp bốn lần, xấp xỉ 203.836 đồng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-05",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "3. Lãi phạt chậm trả",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 3. Lãi phạt chậm trả (phần 2/2)\n3.4. Lãi phạt chỉ tính trên số tiền đang chậm, không tính trên toàn bộ dư nợ còn lại. Khi người vay trả một phần, lãi phạt tiếp tục tính trên phần còn thiếu.\n\n3.5. Người vay trả khoản chậm thì thanh toán được áp dụng theo thứ tự: lãi phạt, lãi trong hạn, rồi gốc.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-06",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Quy trình nhắc nợ theo từng nhóm",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 4. Quy trình nhắc nợ theo từng nhóm (phần 1/2)\n4.1. **Nhóm 1 (1 đến 10 ngày).** Hệ thống gửi tin nhắn nhắc nợ vào ngày thứ nhất, thứ ba và thứ bảy kể từ ngày quá hạn. Nội dung nêu số tiền phải trả, ngày đến hạn và cách thanh toán. Nhân viên chưa gọi điện ở nhóm này trừ khi người vay đã có tiền sử chậm trả.\n\n4.2. **Nhóm 2 (11 đến 30 ngày).** Nhân viên thu hồi nợ gọi điện cho người vay trong giờ làm việc, từ 8 giờ đến 17 giờ các ngày từ thứ Hai đến thứ Sáu. Cuộc gọi phải xác minh đúng người vay, hỏi nguyên nhân chậm và thống nhất thời điểm trả. Nếu không liên lạc được sau ba lần gọi trong ba ngày làm việc liên tiếp, nhân viên gửi thư nhắc nợ tới địa chỉ người vay đã đăng ký.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-07",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "4. Quy trình nhắc nợ theo từng nhóm",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 4. Quy trình nhắc nợ theo từng nhóm (phần 2/2)\n4.3. **Nhóm 3 (31 đến 90 ngày).** Nhân viên làm việc trực tiếp với người vay để lập kế hoạch trả nợ bằng văn bản. Kế hoạch nêu rõ số tiền, ngày trả từng đợt và hậu quả nếu không thực hiện. Khoản nợ được ghi nhận quá hạn trên 30 ngày vào lịch sử tín dụng nội bộ. Người vay được thông báo rằng ghi nhận này ảnh hưởng đến khả năng vay mới theo CP-06.\n\n4.4. **Nhóm 4 (trên 90 ngày).** Hồ sơ được chuyển sang bộ phận xử lý nợ có vấn đề. FinCo gửi thông báo chính thức bằng văn bản nêu tổng số tiền nợ gốc, lãi, lãi phạt và thời hạn cuối để người vay thanh toán hoặc đề xuất kế hoạch trả nợ. Từ nhóm này, khoản vay được xem xét việc trích lập dự phòng theo quy định nội bộ.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-08",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Kế hoạch trả nợ và hỗ trợ người vay",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 5. Kế hoạch trả nợ và hỗ trợ người vay (phần 1/2)\n5.1. Người vay gặp khó khăn tạm thời (mất việc, bệnh nặng, thu nhập giảm đột ngột) có thể đề nghị gia hạn thời điểm trả hoặc chia nhỏ khoản chậm thành nhiều đợt. Người vay phải gửi đề nghị bằng văn bản kèm giấy tờ chứng minh hoàn cảnh.\n\n5.2. Đề nghị được xét trong vòng 05 ngày làm việc. Nhân viên thu hồi nợ có thể chấp thuận gia hạn tối đa 15 ngày cho một lần. Gia hạn trên 15 ngày hoặc chia nhỏ khoản chậm thành nhiều đợt cần Trưởng nhóm thu hồi nợ phê duyệt.\n\n5.3. Trong thời gian được gia hạn hợp lệ, lãi phạt vẫn tính theo công thức mục 3 nhưng FinCo không thực hiện các biện pháp nhắc nợ của nhóm cao hơn. Gia hạn không xóa nợ và không đưa khoản nợ về trạng thái bình thường nếu người vay chưa trả.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-09",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "5. Kế hoạch trả nợ và hỗ trợ người vay",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 5. Kế hoạch trả nợ và hỗ trợ người vay (phần 2/2)\n5.4. Khoản gia hạn không được làm thay đổi lãi suất trong hạn đã ký và không thay đổi kỳ hạn gốc của khoản vay. Nếu người vay muốn thay đổi kỳ hạn thì phải thực hiện theo quy trình riêng của sản phẩm.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-10",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "6. Cách liên hệ và hành vi bị cấm",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 6. Cách liên hệ và hành vi bị cấm\n6.1. Nhân viên chỉ liên hệ người vay qua số điện thoại, email và địa chỉ đã đăng ký với FinCo. Nhân viên chỉ liên hệ người thân hoặc đồng nghiệp của người vay khi không thể liên lạc được và chỉ để xin thông tin liên hệ, không được tiết lộ khoản nợ.\n\n6.2. Các hành vi sau bị cấm tuyệt đối: đe dọa, lăng mạ, gọi điện ngoài giờ làm việc hoặc vào ngày lễ, gọi quá ba lần mỗi ngày, giả danh cơ quan nhà nước, đăng thông tin khoản nợ lên mạng xã hội hoặc nơi công cộng, và yêu cầu người thân thay người vay trả nợ khi họ không phải là người đồng vay.\n\n6.3. Nhân viên vi phạm mục 6.2 bị xử lý theo nội quy lao động của FinCo. Người vay gặp hành vi như vậy có thể phản ánh tới bộ phận chăm sóc khách hàng.",
+    "expiry_date": null
+  },
+  {
+    "chunk_id": "CP-17-v1-11",
+    "doc_id": "CP-17",
+    "version": "v1",
+    "effective_date": "2024-01-01",
+    "section": "7. Ghi nhận, báo cáo và kết thúc",
+    "text": "[CP-17 v1 | hiệu lực từ 2024-01-01] Quy trình nhắc nợ và xử lý nợ quá hạn FinCo Easy – 7. Ghi nhận, báo cáo và kết thúc\n7.1. Mỗi lần liên hệ phải được ghi vào hệ thống gồm thời gian, kênh liên hệ, người tiếp nhận, nội dung trao đổi và cam kết của người vay. Ghi nhận phải đủ chi tiết để người khác có thể tiếp tục xử lý mà không cần hỏi lại người vay.\n\n7.2. Cuối mỗi tuần, Phòng Thu hồi nợ báo cáo cho Ban Tín dụng số lượng và giá trị khoản nợ theo từng nhóm, tỷ lệ thu hồi và các trường hợp được gia hạn.\n\n7.3. Khi người vay đã trả đủ khoản chậm cùng lãi phạt, nhân viên cập nhật trạng thái khoản vay về bình thường trong vòng 01 ngày làm việc và gửi thông báo xác nhận cho người vay.\n\n7.4. Khi người vay tất toán toàn bộ khoản vay, FinCo xác nhận tất toán bằng văn bản trong vòng 05 ngày làm việc. Văn bản xác nhận không xóa lịch sử nợ quá hạn đã ghi nhận trước đó.",
+    "expiry_date": null
+  }
+]
