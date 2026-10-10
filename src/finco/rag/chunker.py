@@ -21,6 +21,7 @@ def _split_sections(doc: Document) -> list[tuple[str, str]]:
     Returns:
         list[tuple[str, str]]: Danh sách các cặp (tên_section, nội_dung_body).
     """
+
     lines = doc.body.splitlines()
     sections: list[tuple[str, str]] = []
     current_section = None
@@ -46,9 +47,10 @@ def _split_sections(doc: Document) -> list[tuple[str, str]]:
 
     return sections
 
-
 def _split_blocks(body: str) -> list[str]:
-
+    """
+    Chia theo chỉ mục nhỏ VD(1.1 1.2 1.3) 
+    """
     lines = body.splitlines()
     blocks: list[str] = []
     current_block_lines: list[str] = []

@@ -22,43 +22,40 @@ def _log(msg: str) -> None:
 
 
 def corpus_hash(chunks: list[Chunk]) -> str:
-    """Mã băm nội dung toàn bộ chunk, dùng để phát hiện index cũ so với dữ liệu mới."""
-    h = hashlib.sha256()
+    """Hash làm khóa để phát hiện thay đổi"""
+
+    h = hashlib.sha256() # khởi tạo Hash
+
     for c in chunks:
-        h.update(c.chunk_id.encode("utf-8"))
+        h.update(c.chunk_id.encode("utf-8")) # Băm ID
         h.update(b"\x00")
-        h.update(c.text.encode("utf-8"))
+        h.update(c.text.encode("utf-8")) # Băm body
         h.update(b"\x00")
     return h.hexdigest()
 
 
 def get_model():
-    # Import lười: torch/sentence-transformers nặng, chỉ nạp khi thật sự cần embed.
-    """Nạp và tái sử dụng mô hình embedding.
-
-    Ưu tiên cache local (offline); nếu máy chưa có thì tải một lần từ Hugging Face.
-    """
     global _MODEL_INSTANCE
     if _MODEL_INSTANCE is None:
         from sentence_transformers import SentenceTransformer
 
         try:
-            _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME, local_files_only=True)
+            _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME, local_files_only=True) # Lấy sẵn nếu có
         except Exception:
             _log(f"Chưa có '{MODEL_NAME}' trong cache, đang tải về (lần đầu, ~2 GB)...")
-            _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME)
+            _MODEL_INSTANCE = SentenceTransformer(MODEL_NAME) # Nếu chưa thì tải
+
     return _MODEL_INSTANCE
 
 
 def embed(texts: list[str]) -> np.ndarray:
     """Nhúng danh sách văn bản thành ma trận vector NumPy (đã chuẩn hóa L2).
-
     Args:
         texts: Danh sách các đoạn văn bản cần nhúng.
-
     Returns:
         np.ndarray: Ma trận 2D kích thước (N, 1024), kiểu np.float32.
     """
+
     if not texts:
         return np.empty((0, 1024), dtype=np.float32)
 
@@ -66,7 +63,7 @@ def embed(texts: list[str]) -> np.ndarray:
 
     embeddings = model.encode(
         texts,
-        normalize_embeddings=True,
+        normalize_embeddings=True, # Chuẩn hóa độ dài
         show_progress_bar=False,
         batch_size=16,
     )
@@ -88,6 +85,7 @@ class VectorStore:
         self.chunks = chunks
         texts = [c.text for c in chunks]
         self.vectors = embed(texts)
+
         _log(f"Đã nhúng và lưu trữ {len(self.chunks)} chunks (shape: {self.vectors.shape}).")
 
     def _valid_mask(self, as_of_date: str) -> np.ndarray:
@@ -105,14 +103,8 @@ class VectorStore:
             dtype=bool,
         )
 
-    def search(
-        self,
-        query: str,
-        top_k: int = 5,
-        as_of_date: Optional[str] = None,
-    ) -> list[SearchHit]:
+    def search(self, query: str, top_k: int = 5, as_of_date: Optional[str] = None) -> list[SearchHit]:
         """Tìm top_k chunk gần nhất theo cosine.
-
         Args:
             query: Câu truy vấn.
             top_k: Số kết quả tối đa.
@@ -127,9 +119,10 @@ class VectorStore:
         query_vector = embed([query])[0]
         scores = np.dot(self.vectors, query_vector)
 
-        candidates = np.arange(len(self.chunks))
+        candidates = np.arange(len(self.chunks)) # Khởi tạo mảng 
+
         if as_of_date is not None:
-            candidates = candidates[self._valid_mask(as_of_date)]
+            candidates = candidates[self._valid_mask(as_of_date)] # Lấy những phần tử có giá trị True
         if candidates.size == 0:
             return []
 
