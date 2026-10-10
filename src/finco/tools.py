@@ -8,6 +8,7 @@ from finco.rag.bm25 import BM25Index
 from finco.rag.dense import VectorStore
 from finco.rag.hybrid import HybridSearcher
 from finco.store import db
+from finco.types import Decision
 
 PROJECT_ROOT = Path(__file__).parents[2]
 INDEX_DIR = PROJECT_ROOT / "data" / "index"
@@ -213,4 +214,73 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
         return f"Error: Không tìm thấy hồ sơ với mã '{app_id}'."
     except Exception as e:
         return f"Error: Đã xảy ra lỗi khi tính DTI: {e}"
+
+
+def submit_descision(app_id: str, decision: str, reason: str, cited_docs: list[str]) -> str:
+    """
+    Args:
+        app_id: Mã hồ sơ vay (ví dụ: 'APP-001').
+        decision: Trạng thái: 'approve' | 'reject' | 'escalate' | 'need_info'.
+        reason: Lý do chi tiết nêu rõ các căn cứ điều kiện.
+        cited_docs: Danh sách tài liệu chính sách làm căn cứ (ví dụ: ['CP-01 v1', 'CP-03']).
+
+    1. Kiểm tra app_id
+    2. Kiểm tra decision có hợp lệ
+    3. Kiểm tra reason
+    4. Kiểm tra cited_docs không được rỗng, Đây là bằng chứng quan trọng
+    5. Tạo Class Decision và ghi vào DTB
+    """
+    try:
+        # 1. Kiểm tra đầu vào
+        if not app_id or not app_id.strip():
+            return "Error: app_id không được để trống."
+        
+        clean_app_id = app_id.strip().upper()
+
+        if not decision or not decision.strip():
+            return "Error: decision không được để trống."
+        
+        clean_decision = decision.strip().lower()
+
+        if clean_decision not in ("approve", "reject", "escalate", "need_info"):
+            return (
+                f"Error: decision '{decision}' không hợp lệ. Phải là một trong: "
+                "'approve', 'reject', 'escalate', 'need_info'."
+            )
+        
+        if not reason or not reason.strip():
+            return "Error: reason (lý do) không được để trống."
+        
+        # 2. Kiểm tra cited_docs bắt buộc không được rỗng
+        if not cited_docs or not isinstance(cited_docs, list) or len(cited_docs) == 0:
+            return "Error: cited_docs không được rỗng. Quyết định phải trích dẫn ít nhất một chính sách làm căn cứ."
+        
+        # Làm sạch danh sách cited_docs
+        clean_cited = [str(d).strip() for d in cited_docs if str(d).strip()]
+        if not clean_cited:
+            return "Error: cited_docs không chứa mã tài liệu hợp lệ nào."
+        
+        # 3. Tạo đối tượng Decision và gọi DB để ghi
+        dec = Decision(
+            app_id=clean_app_id,
+            decision=clean_decision,
+            reason=reason.strip(),
+            cited_docs=clean_cited,
+            decided_at=datetime.now().isoformat(timespec="seconds"),
+        )
+
+        db.insert_decision(dec)
+        return (
+            f"Thành công: Đã ghi nhận quyết định '{clean_decision}' cho hồ sơ {clean_app_id}.\n"
+            f"- Căn cứ trích dẫn: {', '.join(clean_cited)}\n"
+            f"- Lý do: {reason.strip()}"
+        )
+    except db.AppNotFound:
+        return f"Error: Không tìm thấy hồ sơ với mã '{app_id}'."
+    except db.DecisionExists:
+        return f"Error: Hồ sơ '{app_id}' đã có quyết định trong hệ thống, không thể ghi đè."
+    except db.InvalidDecision as e:
+        return f"Error: Quyết định không hợp lệ: {e}"
+    except Exception as e:
+        return f"Error: Đã xảy ra lỗi khi ghi quyết định: {e}"
     ...
