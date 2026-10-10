@@ -1,5 +1,6 @@
 from typing import Optional
 from finco.types import Chunk
+import numpy as np
 import datetime
 
 def parse_time(date_time: Optional[str]):
@@ -15,10 +16,15 @@ def parse_time(date_time: Optional[str]):
 
 
 
-def is_active_chunk(chunk: Chunk, as_of_date: str):
-    if chunk.effective_date > as_of_date:
-        return False
-    if chunk.expiry_date and as_of_date > chunk.expiry_date:
-        return False
-    return True
+def is_active_chunk(chunks: list[Chunk], as_of_date: str):
+    return np.array(
+                [
+                    c.effective_date <= as_of_date
+                    and (c.expiry_date is None or as_of_date <= c.expiry_date)
+                    for c in chunks
+                ],
+                dtype=bool,
+            )
+
+
     
