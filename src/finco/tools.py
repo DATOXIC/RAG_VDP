@@ -7,15 +7,7 @@ from finco.types import Decision
 
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
-    """Tra cứu chính sách tín dụng FinCo Easy theo ngày nộp hồ sơ.
 
-    Args:
-        query: Câu hỏi hoặc từ khóa cần tra cứu.
-        as_of_date: Ngày nộp hồ sơ (YYYY-MM-DD), quyết định phiên bản chính sách.
-        top_k: Số lượng đoạn trích tối đa (1-5).
-    Returns:
-        Văn bản trích dẫn chính sách có nguồn, cắt theo ngân sách token.
-    """
     return retrieve(query=query, as_of_date=as_of_date, top_k=top_k)
 
 
