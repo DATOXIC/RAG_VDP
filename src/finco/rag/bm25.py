@@ -23,6 +23,7 @@ from rank_bm25 import BM25Okapi
 from finco.types import Chunk, SearchHit
 from finco.filter import get_top_valid_indices
 
+
 # Số (có thể thập phân, kèm %) hoặc một từ. Số đứng trước để "15,5%" không bị tách.
 _TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*%?|\w+")
 

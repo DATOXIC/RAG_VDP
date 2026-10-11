@@ -9,7 +9,7 @@ def parse_time(date_time: Optional[str]):
     clean_date = date_time.strip()
 
     try:
-        parsed = datetime.strptime(date_time,"%Y-%m-%d")
+        parsed = datetime.strptime(clean_date,"%Y-%m-%d")
         return parsed.strftime("%Y-%m-%d")
     except ValueError:
         raise ValueError(f"Ngày '{date_time}' không đúng định dạng chuẩn YYYY-MM-DD.")

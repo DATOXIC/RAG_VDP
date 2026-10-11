@@ -27,6 +27,7 @@ from finco.rag.dense import VectorStore
 from finco.rag.hybrid import HybridSearcher
 from finco.rag.loader import load_all_policies
 from finco.types import SearchHit
+from finco.filter import _validate_date
 
 # Đường dẫn tuyệt đối từ vị trí file: MCP server do client spawn, cwd không chắc là gốc repo.
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -88,17 +89,17 @@ def reset() -> None:
     _ENGINES = None
 
 
-def _validate_date(as_of_date: Optional[str]) -> Optional[str]:
-    """Trả thông báo lỗi nếu as_of_date sai định dạng, ngược lại None."""
-    if as_of_date is None:
-        return None
-    if not isinstance(as_of_date, str) or not _DATE_RE.match(as_of_date):
-        return f"Error: as_of_date phải có dạng YYYY-MM-DD, nhận được {as_of_date!r}."
-    try:
-        datetime.strptime(as_of_date, "%Y-%m-%d")
-    except ValueError:
-        return f"Error: as_of_date {as_of_date!r} không phải ngày hợp lệ."
-    return None
+# def _validate_date(as_of_date: Optional[str]) -> Optional[str]:
+#     """Trả thông báo lỗi nếu as_of_date sai định dạng, ngược lại None."""
+#     if as_of_date is None:
+#         return None
+#     if not isinstance(as_of_date, str) or not _DATE_RE.match(as_of_date):
+#         return f"Error: as_of_date phải có dạng YYYY-MM-DD, nhận được {as_of_date!r}."
+#     try:
+#         datetime.strptime(as_of_date, "%Y-%m-%d")
+#     except ValueError:
+#         return f"Error: as_of_date {as_of_date!r} không phải ngày hợp lệ."
+#     return None
 
 
 def _body(text: str) -> str:
