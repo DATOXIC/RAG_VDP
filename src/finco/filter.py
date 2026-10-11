@@ -23,11 +23,15 @@ def _validate_date(date_str: str) -> bool:
         return False
 
 
-def bit_mask(chunks: list[Chunk], as_of_date: str):
+def bit_mask(chunks: list[Chunk], as_of_date: Optional[str] = None):
     """
         Returns:
             Mảng array True False 
     """
+    if as_of_date is None:
+        # Nếu không có ngày: chỉ lấy văn bản hiện hành (chưa có ngày hết hạn)
+        return np.array([c.expiry_date is None for c in chunks], dtype=bool)
+    
     return np.array(
                 [
                     c.effective_date <= as_of_date
