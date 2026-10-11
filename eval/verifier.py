@@ -5,8 +5,14 @@
 3. Kiểm tra chuỗi gọi Tool
 4. Kiểm tra tính toán các con số
 """
+import csv
 from dataclasses import dataclass, asdict, field
+from pathlib import Path
 from typing import Optional
+import json
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_PATH = REPO_ROOT / "tests" / "expected_decisions.json"
 
 @dataclass
 class VerifyResult:
@@ -89,14 +95,15 @@ def normalize_doc_id(doc_id: str) -> str:
     """Chuẩn hóa 'CP-01@v1' -> 'CP-01' để so sánh công bằng."""
     return doc_id.split("@")[0].strip().upper()
 
+
 def verify_citations(actual_cited: list[str], expected_cited: list[str], min_recall: float = 0.8) -> dict:
     """
     Logic:
 
     """
 
-    actual_set = {normalize_doc_id(d) for d in actual_cited}
-    expect_set = {normalize_doc_id(d) for d in expected_cited}
+    actual_set = {normalize_doc_id(d) for d in actual_cited if d and d.strip()}
+    expect_set = {normalize_doc_id(d) for d in expected_cited if d and d.strip()}
 
     if not expect_set:
         return {
@@ -234,8 +241,11 @@ def verify_decision_record(actual: AgentSubmission, expect: ExpectedDecision) ->
     if not math_res["dti_correct"]:
         errors.append(f"Sai DTI (AI: {actual.calculated_dti} != Chuẩn: {expect.dti})")
         
-    if not math_res["rate_correct"] and actual.used_rate is not None:
-        errors.append(f"Dùng sai lãi suất (AI: {actual.used_rate} != Chuẩn: {expect.annual_rate})")
+    if not math_res["rate_correct"]:
+        if actual.used_rate is None:
+            errors.append(f"Thiếu thông tin lãi suất sử dụng (Chuẩn: {expect.annual_rate})")
+        else:
+            errors.append(f"Dùng sai lãi suất (AI: {actual.used_rate} != Chuẩn: {expect.annual_rate})")
 
     return VerifyResult(
         app_id=app_id,
@@ -256,3 +266,107 @@ def verify_decision_record(actual: AgentSubmission, expect: ExpectedDecision) ->
         is_overall_pass=is_overall_pass,
         error_message="; ".join(errors),
     )
+
+def verify_all_decisions(
+    submissions: list[AgentSubmission], 
+    expected_path: Path = EXPECTED_PATH
+) -> list[VerifyResult]:
+
+    with open(expected_path, encoding="utf-8") as f:
+        raw_data = json.load(f)
+
+    expected_map = {
+        item["app_id"]: ExpectedDecision.from_dict(item) 
+        for item in raw_data
+    }
+
+    results: list[VerifyResult] = []
+
+    for actual in submissions:
+        app_id = actual.app_id
+        if app_id in expected_map:
+            expect = expected_map[app_id]
+            results.append(verify_decision_record(actual, expect))
+        else:
+            # Ghi nhận bài thi có mã hồ sơ không hợp lệ
+            results.append(
+                VerifyResult(
+                    app_id=app_id,
+                    decision_correct=False,
+                    actual_decision=actual.decision,
+                    expected_decision="N/A",
+                    citation_recall=0.0,
+                    citation_precision=0.0,
+                    citation_valid=False,
+                    has_search_policy=False,
+                    has_calc_dti=False,
+                    read_after_write=False,
+                    trace_valid=False,
+                    rate_correct=False,
+                    dti_correct=False,
+                    actual_dti=actual.calculated_dti,
+                    expected_dti=0.0,
+                    is_overall_pass=False,
+                    error_message=f"Mã hồ sơ {app_id} không tồn tại trong bộ đề thi",
+                )
+            )
+    return results
+
+
+
+# ========================AI-USAGE =================================
+
+def calculate_summary_metrics(results: list[VerifyResult]) -> dict[str, float]:
+    """Tính toán các chỉ số phần trăm đánh giá tổng thể theo PLAN.md."""
+    total = len(results)
+    if total == 0:
+        return {}
+    return {
+        "total_cases": total,
+        "pass_count": sum(1 for r in results if r.is_overall_pass),
+        "overall_pass_rate": round(sum(1 for r in results if r.is_overall_pass) / total * 100, 2),
+        "decision_accuracy": round(sum(1 for r in results if r.decision_correct) / total * 100, 2),
+        "citation_recall_avg": round(sum(r.citation_recall for r in results) / total * 100, 2),
+        "trace_valid_rate": round(sum(1 for r in results if r.trace_valid) / total * 100, 2),
+        "math_valid_rate": round(sum(1 for r in results if (r.dti_correct and r.rate_correct)) / total * 100, 2),
+    }
+def print_summary_table(results: list[VerifyResult]) -> None:
+    """In bảng tổng kết kết quả chấm thi trực quan ra console."""
+    metrics = calculate_summary_metrics(results)
+    print("\n" + "=" * 90)
+    print(f"{'BẢNG KẾT QUẢ SÁT HẠCH AGENT THẨM ĐỊNH (FINCO VERIFIER)':^90}")
+    print("=" * 90)
+    print(f"{'Mã HS':<9} | {'Quyết định':<12} | {'Trích dẫn':<10} | {'Trace':<8} | {'Toán (DTI/Lãi)':<15} | {'Kết quả':<8} | {'Lỗi ghi nhận'}")
+    print("-" * 90)
+    for r in results:
+        dec_str = "ĐÚNG" if r.decision_correct else f"SAI ({r.actual_decision})"
+        cite_str = f"R={r.citation_recall:.2f}"
+        trace_str = "ĐẠT" if r.trace_valid else "LỖI"
+        math_str = "ĐẠT" if (r.dti_correct and r.rate_correct) else "SAI"
+        status_str = "PASS [V]" if r.is_overall_pass else "FAIL [X]"
+        err_str = r.error_message if r.error_message else "-"
+        print(f"{r.app_id:<9} | {dec_str:<12} | {cite_str:<10} | {trace_str:<8} | {math_str:<15} | {status_str:<8} | {err_str}")
+    print("=" * 90)
+    print(f"Tổng số hồ sơ: {metrics.get('total_cases', 0)} | Số ca ĐỖ: {metrics.get('pass_count', 0)}")
+    print(f"-> Tỷ lệ Đỗ toàn diện (Overall Pass) : {metrics.get('overall_pass_rate', 0)}%")
+    print(f"-> Độ chính xác quyết định (Accuracy): {metrics.get('decision_accuracy', 0)}%")
+    print(f"-> Độ phủ trích dẫn TB (Recall)      : {metrics.get('citation_recall_avg', 0)}%")
+    print(f"-> Tuân thủ quy trình gọi tool (Trace): {metrics.get('trace_valid_rate', 0)}%")
+    print(f"-> Độ chuẩn xác con số (Math)        : {metrics.get('math_valid_rate', 0)}%")
+    print("=" * 90 + "\n")
+def export_results_csv(results: list[VerifyResult], output_path: Path = REPO_ROOT / "eval" / "out" / "agent_eval_results.csv") -> None:
+    """Xuất kết quả chi tiết ra file CSV phục vụ báo cáo bảo vệ đồ án."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "app_id", "is_overall_pass", "decision_correct", "actual_decision", "expected_decision",
+        "citation_recall", "citation_precision", "citation_valid",
+        "has_search_policy", "has_calc_dti", "read_after_write", "trace_valid",
+        "dti_correct", "actual_dti", "expected_dti", "rate_correct", "error_message"
+    ]
+    with open(output_path, mode="w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in results:
+            d = asdict(r)
+            writer.writerow({k: d[k] for k in fieldnames})
+    print(f"[Verifier] Đã xuất báo cáo đánh giá chi tiết ra: {output_path}")
