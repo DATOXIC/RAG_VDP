@@ -7,6 +7,7 @@ import sys
 from typing import Optional, Union
 
 from finco.types import Chunk, SearchHit
+from finco.filter import get_top_valid_indices
 import numpy as np
 
 # 1. Cố định mô hình embedding cho toàn hệ thống
@@ -89,17 +90,6 @@ class VectorStore:
         _log(f"Đã nhúng và lưu trữ {len(self.chunks)} chunks (shape: {self.vectors.shape}).")
 
 
-    def _valid_mask(self, as_of_date: str) -> np.ndarray:
-        """Tạo mảng Boolean: True nếu chunk còn hiệu lực tại as_of_date."""
-        return np.array(
-            [
-                c.effective_date <= as_of_date
-                and (c.expiry_date is None or as_of_date <= c.expiry_date)
-                for c in self.chunks
-            ],
-            dtype=bool,
-        )
-
     def search(self, query: str, top_k: int = 5, as_of_date: Optional[str] = None) -> list[SearchHit]:
         """Tìm top_k chunk gần nhất theo cosine.
         Args:
@@ -112,27 +102,17 @@ class VectorStore:
         """
         if self.vectors is None or not self.chunks:
             raise ValueError("VectorStore chưa có dữ liệu!")
-        if top_k <= 0 or not query.strip():
-            return []
 
         query_vector = embed([query])[0]
         scores = np.dot(self.vectors, query_vector)
-
-        if as_of_date is not None:
-            candidates = np.flatnonzero(self._valid_mask(as_of_date))
-        else:
-            candidates = np.arange(len(self.chunks))
-
-        if candidates.size == 0:
-            return []
-
-        order = candidates[np.argsort(scores[candidates])[::-1][:top_k]]
+        
+        order = get_top_valid_indices(scores, self.chunks, as_of_date, top_k)
 
         return [
             SearchHit(
-                chunk=self.chunks[i],
-                score=float(scores[i]),
-                dense_score=float(scores[i]),
+                self.chunks[i],
+                score = float(scores[i]),
+                dense_score= float(scores[i])
             )
             for i in order
         ]

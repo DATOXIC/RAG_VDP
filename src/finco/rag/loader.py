@@ -1,7 +1,6 @@
 """
 Nạp Policy thành các đối tượng Document
 """
-
 from pathlib import Path
 from typing import Union
 
@@ -17,8 +16,6 @@ REQUIRED_FRONT_MATTER_KEYS = (
 
 def load_document(file_path: Union[str, Path]) -> Document:
     """Đọc một file chính sách .md, tách front matter và trả về đối tượng Document.
-    Args:
-        file_path: Đường dẫn tới file markdown.
     Returns:
         Document: Đối tượng chứa metadata và nội dung thân văn bản.
     Raises:
@@ -26,7 +23,7 @@ def load_document(file_path: Union[str, Path]) -> Document:
         ValueError: Nếu định dạng front matter không hợp lệ hoặc thiếu khóa bắt buộc.
     """
     path = Path(file_path)
-    
+
     if not path.is_file():
         raise FileNotFoundError(f"Không tìm thấy file tài liệu: {path}")
 

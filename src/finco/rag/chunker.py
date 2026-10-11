@@ -21,98 +21,96 @@ def _split_sections(doc: Document) -> list[tuple[str, str]]:
     Returns:
         list[tuple[str, str]]: Danh sách các cặp (tên_section, nội_dung_body).
     """
-    lines = doc.body.splitlines()
-    sections: list[tuple[str, str]] = []
-    current_section = None
-    current_lines: list[str] = []
+    lines = doc.body.splitlines() # Tách thành list[str] khi gặp \n
 
-    for line in lines:
-        clean_line = line.strip()
-        if clean_line.startswith("## "):
-            if current_section is not None:
-                body_text = "\n".join(current_lines).strip()
-                if body_text:
-                    sections.append((current_section, body_text))
-            current_section = clean_line[3:].strip()
-            current_lines = []
+    header_section: str = None
+    body_section: list[str] = []
+    map: list[tuple[str,str]] = []
+    for l in lines:
+        line = l.strip() # Chuẩn hóa 2 đầu
+
+        if line.startswith("## "):
+            if header_section is not None:
+                body = "\n".join(body_section).strip()
+                if body:
+                    map.append((header_section,body))
+            header_section=line[3:].strip()
+            body_section = []
         else:
-            if current_section is not None:
-                current_lines.append(line)
+            if header_section is not None:
+                body_section.append(l)
 
-    if current_section is not None:
-        body_text = "\n".join(current_lines).strip()
-        if body_text:
-            sections.append((current_section, body_text))
+    if header_section is not None:
+        body = "\n".join(body_section).strip()
+        if body:
+            map.append((header_section,body))
 
-    return sections
+    return map
 
 
 def _split_blocks(body: str) -> list[str]:
-
+    """
+    Chia theo chỉ mục nhỏ VD(1.1 1.2 1.3) 
+    """
     lines = body.splitlines()
+    buffer: list[str] = []
     blocks: list[str] = []
-    current_block_lines: list[str] = []
+    for l in lines:
+        line = l.strip()
 
-    for line in lines:
-        clean_line = line.strip()
-        if CLAUSE_RE.match(clean_line):
-            if current_block_lines:
-                block_text = "\n".join(current_block_lines).strip()
-                if block_text:
-                    blocks.append(block_text)
-            current_block_lines = [line]
+        if CLAUSE_RE.match(line):
+            if buffer :
+                temp = "\n".join(buffer).strip()
+                if temp:
+                    blocks.append(temp)
+                    buffer =[]
+            buffer.append(l)
         else:
-            current_block_lines.append(line)
+            buffer.append(l)
 
-    if current_block_lines:
-        block_text = "\n".join(current_block_lines).strip()
-        if block_text:
-            blocks.append(block_text)
-
-    # Nếu văn bản không dùng đánh số điều khoản, coi toàn bộ body là 1 block
-    if not blocks and body.strip():
-        blocks.append(body.strip())
+    if buffer:
+        temp = "\n".join(buffer).strip()
+        if temp:
+            blocks.append(temp)
+            buffer =[]
 
     return blocks
 
 
+
 def _split_large_block(block: str, max_body_tokens: int, overlap_tokens: int = 40) -> list[str]:
-            
 
     lines = block.splitlines()
-    parts: list[str] = []
-    current_lines: list[str] = []
-    
+    buffer: list[str] = []
+    result: list[str] = []
     for line in lines:
-        test_text = "\n".join(current_lines + [line]).strip()
-
-        if count_tokens(test_text) <= max_body_tokens or not current_lines:
-            current_lines.append(line)
+        test = "\n".join(buffer + [line]).strip()
+        if count_tokens(test) <= max_body_tokens or not buffer:
+            buffer.append(line)
         else:
-            # Đóng phần hiện tại
-            part_str = "\n".join(current_lines).strip()
-            if part_str:
-                parts.append(part_str)
+            part_text = "\n".join(buffer).strip()
+            if part_text:
+                result.append(part_text)
 
-            # Overlap nội bộ: lấy vài dòng cuối của phần trước
-            overlap_lines: list[str] = []
-            overlap_count = 0
-            for prev_line in reversed(current_lines):
-                t_count = count_tokens(prev_line)
-                if overlap_count + t_count <= overlap_tokens:
-                    overlap_lines.insert(0, prev_line)
-                    overlap_count += t_count
+            # Lấy overlap
+            overlap: list[str] = []
+            count = 0
+            for i in reversed(buffer):
+                temp_count = count_tokens(i)
+                if count + temp_count <= overlap_tokens:
+                    count += temp_count
+                    overlap.insert(0,i)
                 else:
                     break
 
-            current_lines = overlap_lines + [line]
+            buffer = overlap + [line]
 
-    if current_lines:
-        part_str = "\n".join(current_lines).strip()
-        if not (parts and part_str == parts[-1]):
-            parts.append(part_str)
+    if buffer:
+        part_text = "\n".join(buffer).strip()
+        if part_text:
+            result.append(part_text)
 
-    return parts if parts else [block]
+    return result
 
 
 def _pack_blocks_clean(blocks: list[str], max_body_tokens: int) -> list[str]:
@@ -123,45 +121,33 @@ def _pack_blocks_clean(blocks: list[str], max_body_tokens: int) -> list[str]:
     if not blocks:
         return []
 
-    # 1. Nếu toàn bộ section vừa vặn trong ngân sách thân bài -> Giữ nguyên 1 phần
     full_text = "\n\n".join(blocks).strip()
     if count_tokens(full_text) <= max_body_tokens:
         return [full_text]
 
-    # 2. Gom tham lam sạch sẽ theo từng điều khoản
-    parts: list[str] = []
-    current_blocks: list[str] = []
+    buffer: list[str] = []
+    result: list[str] = []
 
     for block in blocks:
-        block_tokens = count_tokens(block)
-
-        # Trường hợp A: Bản thân block này vượt quá ngân sách thân bài
-        if block_tokens > max_body_tokens:
-            # Nếu đang có các block gom dở trước đó, đóng phần đó lại
-            if current_blocks:
-                parts.append("\n\n".join(current_blocks).strip())
-                current_blocks = []
-
-            # Chia nhỏ nội bộ chính block khổng lồ này
-            sub_parts = _split_large_block(block, max_body_tokens=max_body_tokens)
-            parts.extend(sub_parts)
+        if count_tokens(block) > max_body_tokens:
+            if buffer:
+                result.append("\n\n".join(buffer).strip())
+                buffer = []
+            result.extend(_split_large_block(block,max_body_tokens))
             continue
 
-        # Trường hợp B: Block bình thường -> Thử gom vào current_blocks
-        test_text = "\n\n".join(current_blocks + [block]).strip() if current_blocks else block
-        if count_tokens(test_text) <= max_body_tokens:
-            current_blocks.append(block)
+        test = "\n\n".join(buffer + [block]).strip()
+        if count_tokens(test) > max_body_tokens:
+            result.append("\n\n".join(buffer))
+            buffer = [block]
         else:
-            # Vượt ngưỡng: Đóng phần hiện tại
-            if current_blocks:
-                parts.append("\n\n".join(current_blocks).strip())
-            # Bắt đầu phần mới sạch sẽ từ block hiện tại (Overlap giữa các block = 0!)
-            current_blocks = [block]
+            buffer.append(block)
 
-    if current_blocks:
-        parts.append("\n\n".join(current_blocks).strip())
+    if buffer:
+        result.append("\n".join(buffer))
 
-    return parts
+    return result
+
 
 
 def _build_header(doc: Document, section: str, part: int, total: int) -> str:
@@ -179,19 +165,18 @@ def _build_header(doc: Document, section: str, part: int, total: int) -> str:
 
 def chunk_document(doc: Document) -> list[Chunk]:
     """Phân đoạn một tài liệu Document thành danh sách các Chunk chuẩn hóa."""
+
     sections = _split_sections(doc)
     chunks: list[Chunk] = []
     chunk_index = 0
 
     for section_title, section_body in sections:
-        # Ước lượng độ dài Header tối đa (kèm hậu tố phần x/y)
+        # Ước lượng độ dài Header tối đa 
         sample_header = _build_header(doc, section_title, part=9, total=9)
         header_tokens = count_tokens(sample_header)
 
-        # Ngân sách token dành riêng cho phần thân: trừ đi Header và 5 token dự phòng
         max_body_tokens = max(100, TOTAL_MAX_TOKENS - header_tokens - 5)
 
-        # Bóc tách điều khoản và gom các phần sạch sẽ
         blocks = _split_blocks(section_body)
         parts = _pack_blocks_clean(blocks, max_body_tokens=max_body_tokens)
         total_parts = len(parts)
@@ -207,14 +192,14 @@ def chunk_document(doc: Document) -> list[Chunk]:
                     doc_id=doc.doc_id,
                     version=doc.version,
                     effective_date=doc.effective_date,
-                    section=section_title,  # Giữ nguyên tên gốc để gom nhóm
+                    section=section_title,  
                     text=full_text,
                     expiry_date=doc.expiry_date,
                 )
             )
             chunk_index += 1
 
-    return chunks
+    # return chunks
 
 
 def chunk_all(docs: list[Document]) -> list[Chunk]:
