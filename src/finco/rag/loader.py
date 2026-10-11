@@ -1,6 +1,5 @@
 """
-Module đọc và phân tích các tài liệu chính sách Markdown (.md).
-Tách front matter dạng key: value và phần thân Markdown thành đối tượng Document.
+Nạp Policy thành các đối tượng Document
 """
 
 from pathlib import Path
@@ -27,6 +26,7 @@ def load_document(file_path: Union[str, Path]) -> Document:
         ValueError: Nếu định dạng front matter không hợp lệ hoặc thiếu khóa bắt buộc.
     """
     path = Path(file_path)
+    
     if not path.is_file():
         raise FileNotFoundError(f"Không tìm thấy file tài liệu: {path}")
 
@@ -60,6 +60,7 @@ def load_document(file_path: Union[str, Path]) -> Document:
             continue
 
         key_clean = key.strip()
+
         # Cắt bỏ comment inline nếu có (ví dụ: CP-01 v1 # tùy chọn)
         val_clean = val.split("#", 1)[0].strip()
 
