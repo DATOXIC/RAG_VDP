@@ -26,6 +26,7 @@ def load_document(file_path: Union[str, Path]) -> Document:
         ValueError: Nếu định dạng front matter không hợp lệ hoặc thiếu khóa bắt buộc.
     """
     path = Path(file_path)
+    
     if not path.is_file():
         raise FileNotFoundError(f"Không tìm thấy file tài liệu: {path}")
 

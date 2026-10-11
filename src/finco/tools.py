@@ -9,7 +9,7 @@ from finco.rag.dense import VectorStore
 from finco.rag.hybrid import HybridSearcher
 from finco.store import db
 from finco.types import Decision
-from finco.filter import _validate_date, _format_hits
+from finco.filter import validate_date, _format_hits
 from finco.rag.chunker import count_tokens
 from finco.rag.engine import get_searcher
 
@@ -29,7 +29,7 @@ def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) 
         query = query.strip()
 
         if as_of_date is not None:
-            if not _validate_date(as_of_date):
+            if not validate_date(as_of_date):
                 return f"Error: as_of_date:{as_of_date} không đúng định dạng"
             as_of_date = as_of_date.strip()
 
