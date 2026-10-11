@@ -1,7 +1,8 @@
 from typing import Optional
-from finco.types import Chunk
+from finco.types import Chunk, SearchHit
 import numpy as np
-import datetime
+from datetime import datetime
+from finco.rag.chunker import count_tokens
 
 def parse_time(date_time: Optional[str]):
     if not date_time or not isinstance(date_time,str):
@@ -72,3 +73,22 @@ def get_top_valid_indices(scores: np.ndarray, chunks: list[Chunk], as_of_date: s
     return candidates[sorted_local_indices]
 
     
+def _format_hits(hits: list[SearchHit], max_tokens: int = 1500) -> str:
+    """Gom các chunk thành chuỗi Markdown và kiểm soát ngân sách token."""
+    blocks: list[str] = []
+    used_tokens = 0
+
+    for hit in hits:
+        c = hit.chunk
+        header = f"[{c.doc_id} {c.version} · {c.effective_date}]"
+        text = f"{header} {c.section}\n{c.text}"
+        tokens = count_tokens(text)
+
+        # Nếu vượt quá ngân sách token thì dừng lại (nhưng luôn giữ ít nhất 1 chunk đầu)
+        if blocks and (used_tokens + tokens > max_tokens):
+            break
+
+        blocks.append(text)
+        used_tokens += tokens
+
+    return "\n\n---\n\n".join(blocks)

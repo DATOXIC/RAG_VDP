@@ -9,31 +9,11 @@ from finco.rag.dense import VectorStore
 from finco.rag.hybrid import HybridSearcher
 from finco.store import db
 from finco.types import Decision
-from finco.filter import _validate_date
+from finco.filter import _validate_date, _format_hits
 from finco.rag.chunker import count_tokens
+from finco.rag.engine import get_searcher
 
-PROJECT_ROOT = Path(__file__).parents[2]
-INDEX_DIR = PROJECT_ROOT / "data" / "index"
 MAX_CONTEXT_TOKENS = 1500
-
-_SEARCHER: Optional[HybridSearcher] = None
-_STORE: Optional[VectorStore] = None
-
-def _get_searcher():
-    """Khởi tạo một lần và tái sử dụng bộ tìm kiếm (Hybrid hoặc Dense)."""
-    global _SEARCHER, _STORE
-    if _STORE is None:
-        _STORE = VectorStore()
-        _STORE.load(INDEX_DIR)
-    
-    mode = os.environ.get("RETRIEVAL_MODE", "hybrid").lower()
-    if mode == "dense":
-        return _STORE
-    
-    if _SEARCHER is None:
-        bm25 = BM25Index(_STORE.chunks)
-        _SEARCHER = HybridSearcher(_STORE, bm25)
-    return _SEARCHER
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
     """
@@ -55,27 +35,14 @@ def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) 
 
         top_k = max(1,min(int(top_k),5))
 
-        searcher = _get_searcher()
+        searcher = get_searcher()
         hits = searcher.search(query,top_k,as_of_date) # List[Hits]
 
         if not hits:
-            return f"Không tìm thấy Policy nào phù hợp với Query và as_of_date:{as_of_date}"
-
-        output: list[str] = []
-        count = 0
-        for hit in hits:
-            chunk = hit.chunk
-            header = f"[{chunk.doc_id} {chunk.version}. {chunk.effective_date}]"
-            text = f"{header} {chunk.section}\n{chunk.text}"
-            token = count_tokens(text)
-
-            if output and (count + token > MAX_CONTEXT_TOKENS):
-                break
-
-            output.append(text)
-            count += token
-
-        return "\n\n---\n\n".join(output)
+            when = f"tại ngày {as_of_date}" if as_of_date else "hiện hành"
+            return f"Không tìm thấy chính sách nào phù hợp {when}."
+        
+        return _format_hits(hits, MAX_CONTEXT_TOKENS)
     
     except Exception as e:
         return f"Error: Đã xảy ra lỗi khi tìm kiếm chính sách: {e}"

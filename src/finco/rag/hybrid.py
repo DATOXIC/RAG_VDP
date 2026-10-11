@@ -46,9 +46,11 @@ class HybridSearcher:
     ):
         if store.vectors is None or not store.chunks:
             raise ValueError("VectorStore chưa có dữ liệu.")
-        # Hai chỉ mục phải cùng chunk và cùng thứ tự, nếu không điểm bị ghép sai.
+        
+        # KIểm tra tính nhất quán
         if [c.chunk_id for c in store.chunks] != [c.chunk_id for c in bm25.chunks]:
             raise ValueError("VectorStore và BM25Index không cùng danh sách chunk.")
+        
         self.store = store
         self.bm25 = bm25
         self.w_bm25 = w_bm25
@@ -79,7 +81,7 @@ class HybridSearcher:
         wb = self.w_bm25 if w_bm25 is None else w_bm25
         wd = self.w_dense if w_dense is None else w_dense
 
-        candidates = np.flatnonzero(bit_mask(as_of_date)) # Mảng 0 và 1
+        candidates = np.flatnonzero(bit_mask(self.store.chunks, as_of_date)) # Mảng 0 và 1
         if candidates.size == 0:
             return []
 
