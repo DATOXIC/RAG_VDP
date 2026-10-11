@@ -5,13 +5,20 @@
 4. Hiện tại dự án đang ở góc nhìn phục vụ cho chuyên viên trong công ty. Ta có thể làm dự án ở cả 2 góc nhìn: Khách hàng/ Nhân viên, nhưng phải hạn chế tools khi thiết kế.
 5. Trong giai đoạn đánh giá LLM, ta có thể sử dụng nhiều Model để thử nghiệm --> Đánh giá xem dự án có khả năng trống chịu lỗi tốt đến đâu + Dự án có khả năng phòng thủ với Model ít tham số hay không
 **Có thể lưu lại các thông số sau:
-Độ chính xác quyết định (Decision Accuracy):
+1. Độ chính xác quyết định (Decision Accuracy):
 Trong 21 hồ sơ, model duyệt đúng bao nhiêu hồ sơ so với đáp án chuẩn expected_decisions.json?
 (Ví dụ: GPT-4o đạt 21/21 (100%), Llama-3-8B đạt 17/21 (81%)).
-Tỷ lệ gọi Tool hợp lệ (Tool Error Rate):
+2. Tỷ lệ gọi Tool hợp lệ (Tool Error Rate):
 Model có bao nhiêu lần truyền sai tham số (ví dụ truyền ngày sai dạng YYYY-MM-DD)?
-Hiệu suất vòng lặp (Average Steps to Complete):
+3. Hiệu suất vòng lặp (Average Steps to Complete):
 Trung bình model mất bao nhiêu bước gọi tool để xong 1 hồ sơ? (Model xịn thường chỉ mất 3-4 bước dứt khoát; model yếu hay đi lòng vòng mất 6-8 bước).
-Chi phí và Thời gian (Cost & Latency):
+4. Chi phí và Thời gian (Cost & Latency):
 Model nhỏ chạy cục bộ (Ollama) có chi phí bằng 0 và tốc độ ra sao so với API đám mây?
+
 **Model nhỏ có khả năng bắt chước mẫu (Pattern Matching) cực kỳ xuất sắc. Thêm 1 ví dụ mẫu sẽ giúp độ chính xác của model 7B tăng vọt từ 60% lên trên 85%!
+
+
+======== VUONG =============
+
+
+======== PHI ================
