@@ -7,7 +7,7 @@ import sys
 from typing import Optional, Union
 
 from finco.types import Chunk, SearchHit
-from finco.filter import get_top_valid_indices
+from finco.rag.filter import get_top_valid_indices, valid_mask
 import numpy as np
 
 # 1. Cố định mô hình embedding cho toàn hệ thống
@@ -89,6 +89,9 @@ class VectorStore:
 
         _log(f"Đã nhúng và lưu trữ {len(self.chunks)} chunks (shape: {self.vectors.shape}).")
 
+    def _valid_mask(self, as_of_date: str) -> np.ndarray:
+        """Tạo mảng Boolean: True nếu chunk còn hiệu lực tại as_of_date."""
+        return valid_mask(self.chunks, as_of_date)
 
     def search(self, query: str, top_k: int = 5, as_of_date: Optional[str] = None) -> list[SearchHit]:
         """Tìm top_k chunk gần nhất theo cosine.
@@ -102,6 +105,8 @@ class VectorStore:
         """
         if self.vectors is None or not self.chunks:
             raise ValueError("VectorStore chưa có dữ liệu!")
+        if top_k <= 0 or not query.strip():
+            return []
 
         query_vector = embed([query])[0]
         scores = np.dot(self.vectors, query_vector)
