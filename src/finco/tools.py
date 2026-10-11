@@ -1,51 +1,22 @@
-from finco.types import Chunk
 from datetime import datetime
-import os
-from pathlib import Path
 from typing import Optional
-import tiktoken
-from finco.rag.bm25 import BM25Index
-from finco.rag.dense import VectorStore
-from finco.rag.hybrid import HybridSearcher
+
+from finco.rag.retriever import retrieve
 from finco.store import db
 from finco.types import Decision
-from finco.filter import validate_date, _format_hits
-from finco.rag.chunker import count_tokens
-from finco.rag.engine import get_searcher
 
-MAX_CONTEXT_TOKENS = 1500
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
+    """Tra cứu chính sách tín dụng FinCo Easy theo ngày nộp hồ sơ.
+
+    Args:
+        query: Câu hỏi hoặc từ khóa cần tra cứu.
+        as_of_date: Ngày nộp hồ sơ (YYYY-MM-DD), quyết định phiên bản chính sách.
+        top_k: Số lượng đoạn trích tối đa (1-5).
+    Returns:
+        Văn bản trích dẫn chính sách có nguồn, cắt theo ngân sách token.
     """
-    1. Kiểm tra Query
-    2. Kiểm tra as_of_date
-    3. Ép tra top_k
-    4. Tìm kiếm
-    5. Đóng gói kết quả và quản lý Token
-    """
-    try:
-        if not query or not query.strip():
-            return "Error: Query không được để trống"
-        query = query.strip()
-
-        if as_of_date is not None:
-            if not validate_date(as_of_date):
-                return f"Error: as_of_date:{as_of_date} không đúng định dạng"
-            as_of_date = as_of_date.strip()
-
-        top_k = max(1,min(int(top_k),5))
-
-        searcher = get_searcher()
-        hits = searcher.search(query,top_k,as_of_date) # List[Hits]
-
-        if not hits:
-            when = f"tại ngày {as_of_date}" if as_of_date else "hiện hành"
-            return f"Không tìm thấy chính sách nào phù hợp {when}."
-        
-        return _format_hits(hits, MAX_CONTEXT_TOKENS)
-    
-    except Exception as e:
-        return f"Error: Đã xảy ra lỗi khi tìm kiếm chính sách: {e}"
+    return retrieve(query=query, as_of_date=as_of_date, top_k=top_k)
 
 
 
