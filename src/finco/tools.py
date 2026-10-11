@@ -9,12 +9,13 @@ from finco.rag.dense import VectorStore
 from finco.rag.hybrid import HybridSearcher
 from finco.store import db
 from finco.types import Decision
+from finco.filter import _validate_date
+from finco.rag.chunker import count_tokens
 
 PROJECT_ROOT = Path(__file__).parents[2]
 INDEX_DIR = PROJECT_ROOT / "data" / "index"
 MAX_CONTEXT_TOKENS = 1500
 
-_ENC = tiktoken.get_encoding("cl100k_base")
 _SEARCHER: Optional[HybridSearcher] = None
 _STORE: Optional[VectorStore] = None
 
@@ -33,19 +34,6 @@ def _get_searcher():
         bm25 = BM25Index(_STORE.chunks)
         _SEARCHER = HybridSearcher(_STORE, bm25)
     return _SEARCHER
-    
-def _count_tokens(text: str) -> int:
-    """Đếm số token"""
-    return len(_ENC.encode(text))
-
-def _validate_date(date_str: str) -> bool:
-    """Kiểm tra chuỗi ngày có đúng định dạng YYYY-MM-DD hay không."""
-    try:
-        datetime.strptime(date_str.strip(), "%Y-%m-%d")
-        return True
-    except (ValueError, AttributeError):
-        return False
-
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
     """
@@ -79,7 +67,7 @@ def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) 
             chunk = hit.chunk
             header = f"[{chunk.doc_id} {chunk.version}. {chunk.effective_date}]"
             text = f"{header} {chunk.section}\n{chunk.text}"
-            token = _count_tokens(text)
+            token = count_tokens(text)
 
             if output and (count + token > MAX_CONTEXT_TOKENS):
                 break
