@@ -21,7 +21,6 @@ import numpy as np
 from rank_bm25 import BM25Okapi
 
 from finco.types import Chunk, SearchHit
-from finco.filter import get_top_valid_indices
 
 
 # Số (có thể thập phân, kèm %) hoặc một từ. Số đứng trước để "15,5%" không bị tách.
@@ -43,6 +42,16 @@ def tokenize(text: str) -> list[str]:
     return tokens
 
 
+def is_valid_at(chunk: Chunk, as_of_date: str) -> bool:
+    """Chunk còn hiệu lực tại as_of_date (so sánh chuỗi ISO YYYY-MM-DD).
+
+    Phải giữ cùng điều kiện với VectorStore._valid_mask trong dense.py.
+    """
+    return chunk.effective_date <= as_of_date and (
+        chunk.expiry_date is None or as_of_date <= chunk.expiry_date
+    )
+
+
 class BM25Index:
     """Chỉ mục BM25 in-memory trên danh sách chunk."""
 
@@ -62,6 +71,11 @@ class BM25Index:
             return np.zeros(len(self.chunks), dtype=np.float64)
         return np.asarray(self._bm25.get_scores(tokens), dtype=np.float64)
 
+    def valid_mask(self, as_of_date: Optional[str]) -> np.ndarray:
+        """Mặt nạ chunk còn hiệu lực. as_of_date=None nghĩa là không lọc."""
+        if as_of_date is None:
+            return np.ones(len(self.chunks), dtype=bool)
+        return np.array([is_valid_at(c, as_of_date) for c in self.chunks], dtype=bool)
 
     def search(
         self,
@@ -70,6 +84,7 @@ class BM25Index:
         as_of_date: Optional[str] = None,
     ) -> list[SearchHit]:
         """Tìm top_k chunk khớp từ khóa nhất.
+
         Args:
             query: Câu truy vấn.
             top_k: Số kết quả tối đa.
@@ -82,9 +97,11 @@ class BM25Index:
             return []
 
         scores = self.get_scores(query)
+        candidates = np.flatnonzero(self.valid_mask(as_of_date))
+        if candidates.size == 0:
+            return []
 
-        order = get_top_valid_indices(scores, self.chunks, as_of_date, top_k)
-
+        order = candidates[np.argsort(scores[candidates])[::-1][:top_k]]
         return [
             SearchHit(
                 chunk=self.chunks[i],

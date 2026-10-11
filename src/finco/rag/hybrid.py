@@ -13,7 +13,6 @@ import numpy as np
 from finco.rag.bm25 import BM25Index
 from finco.rag.dense import VectorStore, embed
 from finco.types import SearchHit
-from finco.filter import bit_mask
 
 
 W_BM25 = 0.3
@@ -81,7 +80,7 @@ class HybridSearcher:
         wb = self.w_bm25 if w_bm25 is None else w_bm25
         wd = self.w_dense if w_dense is None else w_dense
 
-        candidates = np.flatnonzero(bit_mask(self.store.chunks, as_of_date)) # Mảng 0 và 1
+        candidates = np.flatnonzero(self.bm25.valid_mask(as_of_date))
         if candidates.size == 0:
             return []
 
