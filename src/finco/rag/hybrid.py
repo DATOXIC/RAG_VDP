@@ -13,6 +13,8 @@ import numpy as np
 from finco.rag.bm25 import BM25Index
 from finco.rag.dense import VectorStore, embed
 from finco.types import SearchHit
+from finco.filter import bit_mask
+
 
 W_BM25 = 0.3
 W_DENSE = 0.7
@@ -77,15 +79,15 @@ class HybridSearcher:
         wb = self.w_bm25 if w_bm25 is None else w_bm25
         wd = self.w_dense if w_dense is None else w_dense
 
-        candidates = np.flatnonzero(self.bm25.valid_mask(as_of_date))
+        candidates = np.flatnonzero(bit_mask(as_of_date)) # Mảng 0 và 1
         if candidates.size == 0:
             return []
 
-        # Điểm thô trên toàn bộ chunk, rồi chỉ giữ ứng viên hợp lệ.
+        # Điểm thô 
         raw_bm25 = self.bm25.get_scores(query)[candidates]
         raw_dense = (self.store.vectors @ embed([query])[0])[candidates]
 
-        # Chuẩn hóa chỉ trên ứng viên hợp lệ (lọc trước, chuẩn hóa sau).
+        # Chuẩn hóa -> Fusion 
         fused = wb * min_max(raw_bm25) + wd * min_max(raw_dense)
 
         order = np.argsort(fused)[::-1][:top_k]

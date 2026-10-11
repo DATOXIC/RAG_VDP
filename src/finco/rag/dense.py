@@ -7,13 +7,13 @@ import sys
 from typing import Optional, Union
 
 from finco.types import Chunk, SearchHit
-from finco.filter import is_active_chunk
+from finco.filter import get_top_valid_indices
 import numpy as np
 
 # 1. Cố định mô hình embedding cho toàn hệ thống
 MODEL_NAME = "BAAI/bge-m3"
-
 # Biến toàn cục lưu trữ mô hình để không nạp lại nhiều lần
+
 _MODEL_INSTANCE = None  # SentenceTransformer, nạp lười để import module nhanh
 
 
@@ -106,21 +106,7 @@ class VectorStore:
         query_vector = embed([query])[0]
         scores = np.dot(self.vectors, query_vector)
         
-        if as_of_date is not None:
-            candidates = np.arange(len(self.chunks)) # Khởi tạo mảng 
-
-            binary_mask = is_active_chunk(self.chunks, as_of_date) # mảng Boolean 
-
-        if candidates.size == 0:
-            return []
-        
-        candidates = candidates[binary_mask] # Giữ lại các index [0,2,4]
-
-        candidate_scores = scores[candidates] # Đổi sang giá trị tương ứng với index [0.6 0.4 0.5]
-
-        sorted_index = np.argsort(candidate_scores)[::-1][:top_k] # Đổi sang index [0,2]
-
-        order = candidates[sorted_index] # index [0,4]
+        order = get_top_valid_indices(scores, self.chunks, as_of_date, top_k)
 
         return [
             SearchHit(
