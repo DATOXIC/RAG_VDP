@@ -234,5 +234,26 @@ class TestRenderPrompt(unittest.TestCase):
         self.assertIn("ReAct", llm.load_prompt("agent_system.txt"))
 
 
+class TestAgentPrompt(unittest.TestCase):
+    """Giữ prompt đúng thiết kế: công cụ điền động, không chứa con số chính sách."""
+
+    def test_tools_placeholder_filled(self):
+        out = llm.render_prompt("agent_system.txt", tools="- foo_tool: mô tả")
+        self.assertNotIn("${tools}", out)
+        self.assertIn("foo_tool", out)
+
+    def test_no_hardcoded_policy_numbers(self):
+        import re
+
+        text = llm.load_prompt("agent_system.txt")
+        self.assertIsNone(re.search(r"\d+\s*(%|triệu|tháng|tuổi)", text), "prompt chứa con số chính sách")
+
+    def test_action_format_is_json_in_brackets(self):
+        text = llm.load_prompt("agent_system.txt")
+        self.assertIn("Action: ", text)
+        self.assertIn("Answer:", text)
+        self.assertNotIn("Final Answer", text)
+
+
 if __name__ == "__main__":
     unittest.main()
