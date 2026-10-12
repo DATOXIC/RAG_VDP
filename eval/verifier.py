@@ -4,14 +4,24 @@
 2. Độ chuẩn xác trích dẫn
 3. Kiểm tra chuỗi gọi Tool
 4. Kiểm tra tính toán các con số
+
+--> Đánh giá vào những phần cố định của Decision
 """
 import csv
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
+import sys
 from typing import Optional
 import json
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from finco.types import Decision  # noqa: E402
+
 EXPECTED_PATH = REPO_ROOT / "tests" / "expected_decisions.json"
 
 @dataclass
@@ -21,34 +31,34 @@ class VerifyResult:
     # ----------------------------------------------------
     # TIÊU CHÍ 1: ĐỘ CHÍNH XÁC QUYẾT ĐỊNH (Decision Accuracy)
     # ----------------------------------------------------
-    decision_correct: bool          # Đúng quyết định duyệt/từ chối không
-    actual_decision: Optional[str]  # Quyết định AI đưa ra (approve/reject/...)
-    expected_decision: str         # Quyết định chuẩn của đáp án
+    decision_correct: bool = False          # Đúng quyết định duyệt/từ chối không
+    actual_decision: Optional[str] = None   # Quyết định AI đưa ra (approve/reject/...)
+    expected_decision: str = "N/A"          # Quyết định chuẩn của đáp án
     # ----------------------------------------------------
     # TIÊU CHÍ 2: ĐỘ CHUẨN XÁC TRÍCH DẪN (Citation Accuracy)
     # ----------------------------------------------------
-    citation_recall: float         # Có trích dẫn đủ luật bắt buộc không (0.0 -> 1.0)
-    citation_precision: float      # Có bị trích dẫn thừa tài liệu rác không (0.0 -> 1.0)
-    citation_valid: bool          # Đạt chuẩn trích dẫn hay không (Recall >= 0.8)
+    citation_recall: float = 0.0            # Có trích dẫn đủ luật bắt buộc không (0.0 -> 1.0)
+    citation_precision: float = 0.0         # Có bị trích dẫn thừa tài liệu rác không (0.0 -> 1.0)
+    citation_valid: bool = False            # Đạt chuẩn trích dẫn hay không (Recall >= 0.8)
     # ----------------------------------------------------
     # TIÊU CHÍ 3: KIỂM TRA CHUỖI GỌI TOOL (Tool Call Trace)
     # ----------------------------------------------------
-    has_search_policy: bool        # Có tra cứu chính sách trước khi quyết định không
-    has_calc_dti: bool             # Có gọi tool tính toán nợ không (không được tính mồm)
-    read_after_write: bool         # Có gọi get_decision sau khi submit_decision không
-    trace_valid: bool              # Quy trình gọi tool có tuân thủ 100% không
+    has_search_policy: bool = False         # Có tra cứu chính sách trước khi quyết định không
+    has_calc_dti: bool = False              # Có gọi tool tính toán nợ không (không được tính mồm)
+    read_after_write: bool = False          # Có gọi get_decision sau khi submit_decision không
+    trace_valid: bool = False               # Quy trình gọi tool có tuân thủ 100% không
     # ----------------------------------------------------
     # TIÊU CHÍ 4: KIỂM TRA TÍNH TOÁN CÁC CON SỐ (Numeric Math)
     # ----------------------------------------------------
-    rate_correct: bool             # Lãi suất tra cứu và dùng tính toán có đúng không
-    dti_correct: bool              # Con số DTI tính ra có khớp đáp án chuẩn không (sai số <= 0.5%)
-    actual_dti: Optional[float]    # Con số DTI mà AI tính được
-    expected_dti: float            # Con số DTI chuẩn trong đề thi
+    rate_correct: bool = False              # Lãi suất tra cứu và dùng tính toán có đúng không
+    dti_correct: bool = False               # Con số DTI tính ra có khớp đáp án chuẩn không (sai số <= 0.5%)
+    actual_dti: Optional[float] = None     # Con số DTI mà AI tính được
+    expected_dti: float = 0.0               # Con số DTI chuẩn trong đề thi
     # ----------------------------------------------------
     # TỔNG KẾT
     # ----------------------------------------------------
-    is_overall_pass: bool          # ĐỖ TOÀN DIỆN (Thỏa mãn cả 4 tiêu chí trên)
-    error_message: str = ""        # Liệt kê chi tiết tiêu chí nào bị trượt để debug
+    is_overall_pass: bool = False           # ĐỖ TOÀN DIỆN (Thỏa mãn cả 4 tiêu chí trên)
+    error_message: str = ""                 # Liệt kê chi tiết tiêu chí nào bị trượt để debug
 
 @dataclass
 class ExpectedDecision:
@@ -86,73 +96,86 @@ class AgentSubmission:
     app_id: str
     decision: str                                 # Quyết định AI đưa ra
     reason: str                                   # Lời giải thích của AI
-    cited_docs: list[str] = field(default_factory=list) # Danh sách luật trích dẫn
+    cited_docs:     list[str] = field(default_factory=list) # Danh sách luật trích dẫn
     tool_calls: list[str] = field(default_factory=list) # Thứ tự các tool đã gọi
     calculated_dti: Optional[float] = None        # DTI mà AI tính được (nếu có)
     used_rate: Optional[float] = None             # Lãi suất AI dùng trong calc_dti
+
+    @classmethod
+    def from_decision(
+        cls, 
+        decision: Decision, 
+        tool_calls: list[str], 
+        calculated_dti: Optional[float] = None, 
+        used_rate: Optional[float] = None
+    ) -> "AgentSubmission":
+        """Khởi tạo bài nộp trực tiếp từ đối tượng Decision + vết gọi tool."""
+        return cls(
+            app_id=decision.app_id,
+            decision=decision.decision,
+            reason=decision.reason,
+            cited_docs=decision.cited_docs,
+            tool_calls=tool_calls,
+            calculated_dti=calculated_dti,
+            used_rate=used_rate,
+        )
 
 def normalize_doc_id(doc_id: str) -> str:
     """Chuẩn hóa 'CP-01@v1' -> 'CP-01' để so sánh công bằng."""
     return doc_id.split("@")[0].strip().upper()
 
 
+def verify_decision(actual_dec: Optional[str], expected_dec: str) -> dict:
+    """TIÊU CHÍ 1: So khớp quyết định (approve / reject / escalate / need_info)."""
+    actual = actual_dec.strip().lower() if actual_dec else None
+    expected = expected_dec.strip().lower()
+    return {
+        "decision_correct": (actual == expected),
+        "actual_decision": actual,
+        "expected_decision": expected,
+    }
+
+
 def verify_citations(actual_cited: list[str], expected_cited: list[str], min_recall: float = 0.8) -> dict:
-    """
-    Logic:
-
-    """
-
+    """TIÊU CHÍ 2: Chấm điểm trích dẫn luật (Recall & Precision)."""
     actual_set = {normalize_doc_id(d) for d in actual_cited if d and d.strip()}
     expect_set = {normalize_doc_id(d) for d in expected_cited if d and d.strip()}
 
     if not expect_set:
         return {
-            "precision": 1.0, # Lấy chính xác bao nhiêu và nhầm bao nhiêu
-            "recall": 1.0,    # Lấy được bao nhiêu trong cái đúng
-            "missing": [],
-            "extra": list(actual_set),
-            "is_valid": True,
+            "citation_recall": 1.0,
+            "citation_precision": 1.0,
+            "citation_valid": True,
         }
 
     hits = actual_set.intersection(expect_set)
-
     precision = len(hits) / len(actual_set) if actual_set else 0.0
     recall = len(hits) / len(expect_set)
-    missing = list(expect_set - actual_set)
-    extra = list(actual_set - expect_set)
 
     return {
-        "precision": round(precision, 2),
-        "recall": round(recall, 2),
-        "missing": missing,
-        "extra": extra,
-        "is_valid": recall >= min_recall,
-    } 
+        "citation_recall": round(recall, 2),
+        "citation_precision": round(precision, 2),
+        "citation_valid": recall >= min_recall,
+    }
+
 
 def verify_tool_trace(tool_calls: list[str]) -> dict:
-    """
-    1. Kiểm tra có search_policy ?
-    2. Kiểm tra có calc_dti ?
-    3. Kiểm tra có get_decision sau khi submit_decision hay không
-    """
+    """TIÊU CHÍ 3: Kiểm tra chuỗi gọi tool (Quy trình Read-Your-Writes)."""
     has_search = "search_policy" in tool_calls
     has_calc = "calc_dti" in tool_calls
 
     read_after_write = False
     if "submit_decision" in tool_calls:
-        cur = tool_calls.index("submit_decision")
-
-        if "get_decision" in tool_calls[cur+1:]:
-            read_after_write = True
-
-    trace_valid = has_search and read_after_write
+        last_submit_idx = max(i for i, call in enumerate(tool_calls) if call == "submit_decision")
+        read_after_write = "get_decision" in tool_calls[last_submit_idx + 1:]
 
     return {
-        "has_search": has_search,
-        "has_dti": has_calc,
+        "has_search_policy": has_search,
+        "has_calc_dti": has_calc,
         "read_after_write": read_after_write,
-        "is_valid": trace_valid,
+        "trace_valid": has_search and read_after_write,
     }
+
 
 def verify_numeric_math(
     actual_dti: Optional[float], 
@@ -162,21 +185,20 @@ def verify_numeric_math(
     dti_tolerance: float = 0.005,
     rate_tolerance: float = 0.001
 ) -> dict:
-    """Kiểm tra độ chính xác của các phép tính toán tài chính."""
-    # Nếu hồ sơ không yêu cầu tính DTI (expected_dti <= 0, vd: reject do tuổi hoặc need_info do thiếu giấy tờ)
+    """TIÊU CHÍ 4: Kiểm tra độ chính xác của các phép tính toán tài chính (DTI & Lãi suất)."""
+    # Nếu hồ sơ không yêu cầu tính DTI (vd: loại do tuổi hoặc thiếu giấy tờ)
     if expected_dti <= 0:
         return {
             "dti_correct": True,
             "rate_correct": True,
-            "is_valid": True,
+            "actual_dti": actual_dti,
+            "expected_dti": expected_dti,
         }
 
-    # Kiểm tra DTI khi đề thi yêu cầu tính DTI
-    dti_correct = False
-    if actual_dti is not None:
-        dti_correct = abs(actual_dti - expected_dti) <= dti_tolerance
+    # Kiểm tra DTI
+    dti_correct = (actual_dti is not None and abs(actual_dti - expected_dti) <= dti_tolerance)
 
-    # Kiểm tra Lãi suất khi đề thi có lãi suất
+    # Kiểm tra Lãi suất
     rate_correct = True
     if expected_rate > 0:
         rate_correct = (used_rate is not None and abs(used_rate - expected_rate) <= rate_tolerance)
@@ -184,85 +206,71 @@ def verify_numeric_math(
     return {
         "dti_correct": dti_correct,
         "rate_correct": rate_correct,
-        "is_valid": dti_correct and rate_correct,  
+        "actual_dti": actual_dti,
+        "expected_dti": expected_dti,
     }
+
 
 def verify_decision_record(actual: AgentSubmission, expect: ExpectedDecision) -> VerifyResult:
     """
     Nhận vào một bài làm thực tế (actual) và một đáp án chuẩn (expect).
-    Chấm điểm cả 4 tiêu chí và trả về đối tượng VerifyResult.
+    Chấm điểm 4 khối tiêu chí độc lập và đóng gói kết quả bằng toán tử unpacking **.
     """
-    app_id = actual.app_id
-
-    # 1. TIÊU CHÍ 1: So khớp quyết định (approve / reject / escalate / need_info)
-    actual_decision = actual.decision.strip().lower() if actual.decision else None
-    expected_decision = expect.decision.strip().lower()
-    decision_correct = (actual_decision == expected_decision)
-
-    # 2. TIÊU CHÍ 2: Chấm điểm trích dẫn luật
-    citation_res = verify_citations(actual.cited_docs, expect.cited)
-
-    # 3. TIÊU CHÍ 3: Kiểm tra chuỗi gọi tool (Quy trình Read-Your-Writes)
-    trace_res = verify_tool_trace(actual.tool_calls)
-
-    # 4. TIÊU CHÍ 4: Kiểm tra tính toán con số (DTI & Lãi suất)
-    math_res = verify_numeric_math(
+    # 1. Chấm điểm 4 khối tiêu chí độc lập
+    c1 = verify_decision(actual.decision, expect.decision)
+    c2 = verify_citations(actual.cited_docs, expect.cited)
+    c3 = verify_tool_trace(actual.tool_calls)
+    c4 = verify_numeric_math(
         actual_dti=actual.calculated_dti,
         expected_dti=expect.dti,
         used_rate=actual.used_rate,
         expected_rate=expect.annual_rate,
     )
 
-    # ĐỖ TOÀN DIỆN khi thỏa mãn cả 4 tiêu chí:
+    # 2. Đỗ toàn diện khi thỏa mãn đồng thời cả 4 tiêu chí
     is_overall_pass = (
-        decision_correct
-        and citation_res["is_valid"]
-        and trace_res["is_valid"]
-        and math_res["is_valid"]
+        c1["decision_correct"]
+        and c2["citation_valid"]
+        and c3["trace_valid"]
+        and c4["dti_correct"]
+        and c4["rate_correct"]
     )
 
-    # Thu thập chi tiết lỗi cụ thể để ghi vào error_message (phục vụ debug)
+    # 3. Thu thập thông điệp lỗi chi tiết (phục vụ debug)
     errors: list[str] = []
-    if not decision_correct:
-        errors.append(f"Sai quyết định (AI: '{actual_decision}' != Chuẩn: '{expected_decision}')")
+    if not c1["decision_correct"]:
+        errors.append(f"Sai quyết định (AI: '{c1['actual_decision']}' != Chuẩn: '{c1['expected_decision']}')")
 
-    if not citation_res["is_valid"]:
-        missing_str = ", ".join(citation_res["missing"])
-        errors.append(f"Thiếu luật trích dẫn: [{missing_str}] (Recall: {citation_res['recall']})")
+    if not c2["citation_valid"]:
+        errors.append(f"Thiếu luật trích dẫn (Recall: {c2['citation_recall']:.2f} < 0.8)")
 
-    if not trace_res["is_valid"]:
+    if not c3["trace_valid"]:
         trace_reasons = []
-        if not trace_res["has_search"]:
+        if not c3["has_search_policy"]:
             trace_reasons.append("thiếu search_policy")
-        if not trace_res["read_after_write"]:
-            trace_reasons.append("vi phạm Read-Your-Writes (thiếu get_decision sau submit)")
+        if not c3["read_after_write"]:
+            if "submit_decision" not in actual.tool_calls:
+                trace_reasons.append("chưa gọi submit_decision")
+            else:
+                trace_reasons.append("vi phạm Read-Your-Writes (thiếu get_decision sau submit)")
         errors.append(f"Lỗi quy trình: {', '.join(trace_reasons)}")
 
-    if not math_res["dti_correct"]:
-        errors.append(f"Sai DTI (AI: {actual.calculated_dti} != Chuẩn: {expect.dti})")
-        
-    if not math_res["rate_correct"]:
+    if not c4["dti_correct"]:
+        errors.append(f"Sai DTI (AI: {c4['actual_dti']} != Chuẩn: {c4['expected_dti']})")
+
+    if not c4["rate_correct"]:
         if actual.used_rate is None:
             errors.append(f"Thiếu thông tin lãi suất sử dụng (Chuẩn: {expect.annual_rate})")
         else:
             errors.append(f"Dùng sai lãi suất (AI: {actual.used_rate} != Chuẩn: {expect.annual_rate})")
 
+    # 4. Trả về VerifyResult qua unpacking ** (gọn gàng, khớp 100% thuộc tính)
     return VerifyResult(
-        app_id=app_id,
-        decision_correct=decision_correct,
-        actual_decision=actual_decision,
-        expected_decision=expected_decision,
-        citation_recall=citation_res["recall"],
-        citation_precision=citation_res["precision"],
-        citation_valid=citation_res["is_valid"],
-        has_search_policy=trace_res["has_search"],
-        has_calc_dti=trace_res["has_dti"],
-        read_after_write=trace_res["read_after_write"],
-        trace_valid=trace_res["is_valid"],
-        rate_correct=math_res["rate_correct"],
-        dti_correct=math_res["dti_correct"],
-        actual_dti=actual.calculated_dti,
-        expected_dti=expect.dti,
+        app_id=actual.app_id,
+        **c1,
+        **c2,
+        **c3,
+        **c4,
         is_overall_pass=is_overall_pass,
         error_message="; ".join(errors),
     )
@@ -292,21 +300,8 @@ def verify_all_decisions(
             results.append(
                 VerifyResult(
                     app_id=app_id,
-                    decision_correct=False,
                     actual_decision=actual.decision,
-                    expected_decision="N/A",
-                    citation_recall=0.0,
-                    citation_precision=0.0,
-                    citation_valid=False,
-                    has_search_policy=False,
-                    has_calc_dti=False,
-                    read_after_write=False,
-                    trace_valid=False,
-                    rate_correct=False,
-                    dti_correct=False,
                     actual_dti=actual.calculated_dti,
-                    expected_dti=0.0,
-                    is_overall_pass=False,
                     error_message=f"Mã hồ sơ {app_id} không tồn tại trong bộ đề thi",
                 )
             )
@@ -330,6 +325,8 @@ def calculate_summary_metrics(results: list[VerifyResult]) -> dict[str, float]:
         "trace_valid_rate": round(sum(1 for r in results if r.trace_valid) / total * 100, 2),
         "math_valid_rate": round(sum(1 for r in results if (r.dti_correct and r.rate_correct)) / total * 100, 2),
     }
+
+
 def print_summary_table(results: list[VerifyResult]) -> None:
     """In bảng tổng kết kết quả chấm thi trực quan ra console."""
     metrics = calculate_summary_metrics(results)
@@ -370,3 +367,33 @@ def export_results_csv(results: list[VerifyResult], output_path: Path = REPO_ROO
             d = asdict(r)
             writer.writerow({k: d[k] for k in fieldnames})
     print(f"[Verifier] Đã xuất báo cáo đánh giá chi tiết ra: {output_path}")
+
+
+if __name__ == "__main__":
+    # Chạy thử nghiệm giả lập bộ trọng tài trên toàn bộ 21 đề thi
+    with open(EXPECTED_PATH, encoding="utf-8") as f:
+        ground_truth = json.load(f)
+
+    print(f"\n[FinCo Verifier] Chạy kiểm thử tự động trên 21 hồ sơ trong {EXPECTED_PATH.name}...")
+
+    # Giả lập thí sinh nộp bài chuẩn 100% (Mock Perfect Agent)
+    mock_submissions = [
+        AgentSubmission(
+            app_id=item["app_id"],
+            decision=item["decision"],
+            reason="Thẩm định đạt yêu cầu chính sách FinCo",
+            cited_docs=item.get("cited", []),
+            tool_calls=["search_policy", "calc_dti", "submit_decision", "get_decision"],
+            calculated_dti=item.get("dti"),
+            used_rate=item.get("annual_rate"),
+        )
+        for item in ground_truth
+    ]
+
+    # Cố tình tạo 1 hồ sơ bị lỗi (APP-003) để kiểm chứng bộ bắt lỗi
+    mock_submissions[2].decision = "approve"  # Chuẩn là reject (DTI vượt trần)
+    mock_submissions[2].tool_calls = ["search_policy", "calc_dti"]  # Thiếu submit & get_decision
+
+    results = verify_all_decisions(mock_submissions)
+    print_summary_table(results)
+    export_results_csv(results)
