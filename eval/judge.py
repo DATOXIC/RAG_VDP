@@ -5,7 +5,21 @@
 3. Đọc Reason trong đáp án để biết LLM có chỉ ra đúng điểm nghẽn
 """
 
+
+from dataclasses import dataclass
+
+
+@dataclass
+class JudgeResult:
+    app_id: str
+    is_factual: bool              # Số liệu có đúng không
+    identifies_root_cause: bool   # Có bắt đúng điểm nghẽn không
+    is_logically_sound: bool      # Logic có dẫn tới quyết định không
+    is_valid: bool                # Đạt toàn diện (True khi cả 3 đều True)
+    critique: str = ""            # Lời nhận xét của Giám khảo
 SYSTEM_PROMPT = """
+
+
 Bạn là Trưởng ban Kiểm soát Thẩm định Tín dụng của FinCo. 
 Nhiệm vụ của bạn là kiểm tra xem Lời giải thích (reason) của chuyên viên AI có hợp lệ, 
 trung thực và dẫn dắt đúng tới Quyết định (decision) hay không.
