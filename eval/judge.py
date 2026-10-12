@@ -2,13 +2,16 @@
 Module Giám khảo LLM (eval/judge.py) - Nhiệm vụ 3 của Luồng 3 (PLAN.md).
 Thẩm định định tính trường `reason` trong quyết định của Agent:
 1. is_factual: Số liệu và thông tin có trung thực, không bịa đặt không.
-2. identifies_root_cause: Có bắt đúng điểm nghẽn chính của đề thi không.
-3. is_logically_sound: Lập luận có dẫn dắt hợp lý tới quyết định không.
+2. is_logically_sound: Lập luận có dẫn dắt hợp lý tới quyết định không.
+
+Điểm nghẽn (root cause) KHÔNG do giám khảo LLM chấm: verifier so tập `reason_codes` của agent với
+`expect.reasons` bằng code (eval/verifier.py: verify_root_cause).
 """
 
 from dataclasses import dataclass
 from pathlib import Path
 import json
+import os
 
 from finco.store import db
 from finco.types import Application
@@ -26,7 +29,6 @@ Nhiệm vụ của bạn là thẩm định tính TRUNG THỰC, HỢP LÝ và Đ
 [DỮ LIỆU THAM CHIẾU CHUẨN CỦA ĐỀ THI]:
 - Hồ sơ khách hàng: {applicant_info}
 - Quyết định chuẩn của Ban giám khảo: {expected_decision}
-- Điểm nghẽn cốt lõi chuẩn: {expected_reasons}
 - Các chỉ số tài chính chuẩn: {expected_metrics}
 - Trích đoạn chính sách áp dụng: {policy_context}
 
@@ -39,23 +41,17 @@ Nhiệm vụ của bạn là thẩm định tính TRUNG THỰC, HỢP LÝ và Đ
    - Mọi số liệu (DTI, lãi suất, thu nhập, tuổi...) và thông tin nếu có nêu trong reason PHẢI KHỚP với hồ sơ và số liệu chuẩn.
    - Nếu thí sinh bịa ra thông tin không có thật (nợ xấu ngoài hệ thống, CIC, tài sản đảm bảo, hoặc nêu sai số) -> Đánh dấu FALSE.
 
-2. identifies_root_cause (Bắt đúng điểm nghẽn):
-   - Lời giải thích có chỉ ra đúng nguyên nhân gốc trong {expected_reasons} hay không?
-   - (Ví dụ: đề thi yêu cầu DTI_EXCEEDED thì reason phải nói về tỷ lệ nợ/thu nhập; đề thi yêu cầu AGE thì phải nói về độ tuổi; đề thi yêu cầu MISSING_DOCS thì phải chỉ rõ thiếu chứng từ gì).
-   - Nếu giải thích lan man, bắt sai nguyên nhân -> Đánh dấu FALSE.
-
-3. is_logically_sound (Nhất quán logic):
+2. is_logically_sound (Nhất quán logic):
    - Lời giải thích có thực sự hỗ trợ và dẫn dắt hợp lý tới quyết định {actual_decision} hay không?
    - Không được có mâu thuẫn nội tại (ví dụ: khen khách hàng đủ mọi điều kiện nhưng lại ra quyết định từ chối).
 
-4. is_valid:
-   - TRUE khi và chỉ khi cả 3 tiêu chí trên (is_factual, identifies_root_cause, is_logically_sound) ĐỀU LÀ TRUE.
+3. is_valid:
+   - TRUE khi và chỉ khi cả 2 tiêu chí trên (is_factual, is_logically_sound) ĐỀU LÀ TRUE.
 
 [ĐỊNH DẠNG ĐẦU RA]:
 Chỉ trả về một đối tượng JSON duy nhất (không bọc trong markdown hay viết thêm văn bản giải thích):
 {{
   "is_factual": true,
-  "identifies_root_cause": true,
   "is_logically_sound": true,
   "is_valid": true,
   "critique": "Nhận xét ngắn gọn 1-2 câu giải thích vì sao đạt hoặc chỉ rõ điểm sai sót"
@@ -69,11 +65,11 @@ Chỉ trả về một đối tượng JSON duy nhất (không bọc trong markd
 class JudgeResult:
     """Phiếu kết quả thẩm định định tính từ Giám khảo LLM."""
     app_id: str
+    is_valid: bool = False                # Đạt toàn diện (True khi cả 2 đều True)
     is_factual: bool = False              # Các số liệu/dữ kiện trong reason có đúng thật không
-    identifies_root_cause: bool = False   # Có bắt đúng nguyên nhân cốt lõi không
     is_logically_sound: bool = False      # Logic lý do -> quyết định có hợp lý không
-    is_valid: bool = False                # Đạt toàn diện (True khi cả 3 đều True)
     critique: str = ""                    # Nhận xét ngắn gọn của Giám khảo
+    judge_error: bool = False             # True = giám khảo lỗi (mạng, JSON hỏng...), KHÔNG phải agent sai
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +118,6 @@ def format_judge_inputs(
     return {
         "applicant_info": applicant_info,
         "expected_decision": expect.decision,
-        "expected_reasons": ", ".join(expect.reasons),
         "expected_metrics": expected_metrics,
         "policy_context": policy_context,
         "actual_decision": actual.decision,
@@ -143,19 +138,30 @@ def build_judge_prompt(
 
 
 def _extract_json_block(text: str) -> dict:
-    """Bóc tách chuỗi JSON an toàn từ phản hồi của LLM (chống markdown code fence)."""
-    cleaned = text.strip()
-    # Loại bỏ code block ```json ... ``` nếu có
-    if "```" in cleaned:
-        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
-        if match:
-            cleaned = match.group(1)
-        else:
-            # Tìm cặp ngoặc { ... } rộng nhất
-            match = re.search(r"(\{.*\})", cleaned, re.DOTALL)
-            if match:
-                cleaned = match.group(1)
-    return json.loads(cleaned)
+    """Bóc tách đối tượng JSON từ phản hồi của LLM: chịu được code fence và văn bản thừa quanh JSON."""
+    cleaned = (text or "").strip()
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
+    if fenced:
+        cleaned = fenced.group(1)
+    else:
+        start, end = cleaned.find("{"), cleaned.rfind("}")
+        if start != -1 and end > start:
+            cleaned = cleaned[start:end + 1]
+    data = json.loads(cleaned)
+    if not isinstance(data, dict):
+        raise ValueError("Giám khảo không trả về một đối tượng JSON")
+    return data
+
+
+def _require_bool(data: dict, key: str) -> bool:
+    """Lấy trường boolean. Chấp nhận true/false và chuỗi "true"/"false"; thiếu hoặc kiểu lạ thì lỗi.
+    Không dùng bool(): bool("false") là True và sẽ chấm sai âm thầm."""
+    value = data.get(key)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.strip().lower() in ("true", "false"):
+        return value.strip().lower() == "true"
+    raise ValueError(f"trường '{key}' không phải boolean: {value!r}")
 
 
 def judge_single_decision(
@@ -168,22 +174,22 @@ def judge_single_decision(
     prompt = build_judge_prompt(app, expect, actual, policy_context)
     
     try:
+        # JUDGE_MODEL: nên khác model của agent để giám khảo không tự chấm bài của chính mình.
         content, usage = call_llm(
             messages=[{"role": "user", "content": prompt}],
+            model=os.environ.get("JUDGE_MODEL") or None,
             temperature=0.0,
             max_tokens=500,
         )
         data = _extract_json_block(content)
-        
-        is_factual = bool(data.get("is_factual", False))
-        identifies_root_cause = bool(data.get("identifies_root_cause", False))
-        is_logically_sound = bool(data.get("is_logically_sound", False))
-        is_valid = is_factual and identifies_root_cause and is_logically_sound
-        
+
+        is_factual = _require_bool(data, "is_factual")
+        is_logically_sound = _require_bool(data, "is_logically_sound")
+        is_valid = is_factual and is_logically_sound
+
         return JudgeResult(
             app_id=actual.app_id,
             is_factual=is_factual,
-            identifies_root_cause=identifies_root_cause,
             is_logically_sound=is_logically_sound,
             is_valid=is_valid,
             critique=data.get("critique", ""),
@@ -192,10 +198,10 @@ def judge_single_decision(
         return JudgeResult(
             app_id=actual.app_id,
             is_factual=False,
-            identifies_root_cause=False,
             is_logically_sound=False,
             is_valid=False,
             critique=f"Lỗi Giám khảo LLM: {e}",
+            judge_error=True,
         )
 
 # if __name__ == "__main__":
@@ -233,7 +239,6 @@ def judge_single_decision(
 #     res_good = judge_single_decision(app_003, exp_003, sub_good)
 
 #     print(f"-> Đúng sự thật (is_factual)          : {res_good.is_factual}")
-#     print(f"-> Đúng nguyên nhân (identifies_root) : {res_good.identifies_root_cause}")
 #     print(f"-> Nhất quán logic (is_logically_sound): {res_good.is_logically_sound}")
 #     print(f"-> KẾT LUẬN TOÀN DIỆN (is_valid)       : {'PASS [V]' if res_good.is_valid else 'FAIL [X]'}")
 #     print(f"-> Nhận xét của Giám khảo              : {res_good.critique}\n")
@@ -252,7 +257,6 @@ def judge_single_decision(
 #     res_bad = judge_single_decision(app_003, exp_003, sub_bad)
 
 #     print(f"-> Đúng sự thật (is_factual)          : {res_bad.is_factual}")
-#     print(f"-> Đúng nguyên nhân (identifies_root) : {res_bad.identifies_root_cause}")
 #     print(f"-> Nhất quán logic (is_logically_sound): {res_bad.is_logically_sound}")
 #     print(f"-> KẾT LUẬN TOÀN DIỆN (is_valid)       : {'PASS [V]' if res_bad.is_valid else 'FAIL [X]'}")
 #     print(f"-> Nhận xét của Giám khảo              : {res_bad.critique}")

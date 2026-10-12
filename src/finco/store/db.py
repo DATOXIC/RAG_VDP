@@ -87,9 +87,14 @@ def init_db() -> None:
             decision TEXT NOT NULL CHECK (decision IN ('approve','reject','escalate','need_info')),
             reason TEXT NOT NULL,
             cited_docs TEXT NOT NULL,              -- danh sách, lưu dạng chuỗi JSON
-            decided_at TEXT NOT NULL
+            decided_at TEXT NOT NULL,
+            reason_codes TEXT NOT NULL DEFAULT '[]' -- danh sách mã lý do, lưu dạng chuỗi JSON
         );
         """)
+        # DB tạo từ phiên bản cũ chưa có cột reason_codes: CREATE TABLE IF NOT EXISTS không thêm cột.
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(decisions)")}
+        if "reason_codes" not in columns:
+            conn.execute("ALTER TABLE decisions ADD COLUMN reason_codes TEXT NOT NULL DEFAULT '[]'")
 
 
 # --------------------------------------------------------------------------- HỒ SƠ VAY
@@ -180,9 +185,11 @@ def insert_decision(decision: Decision) -> Decision:
             raise AppNotFound(decision.app_id)
         try:
             conn.execute(
-                "INSERT INTO decisions (app_id, decision, reason, cited_docs, decided_at) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO decisions (app_id, decision, reason, cited_docs, decided_at, reason_codes) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 (decision.app_id, decision.decision, decision.reason,
-                 json.dumps(decision.cited_docs), decision.decided_at),
+                 json.dumps(decision.cited_docs), decision.decided_at,
+                 json.dumps(decision.reason_codes)),
             )
         except sqlite3.IntegrityError:  # trùng khóa chính app_id
             raise DecisionExists(decision.app_id)
@@ -201,6 +208,7 @@ def get_decision(app_id: str) -> Decision:
         reason=row["reason"],
         decided_at=row["decided_at"],
         cited_docs=json.loads(row["cited_docs"]),
+        reason_codes=json.loads(row["reason_codes"]),
     )
 
 

@@ -1,42 +1,42 @@
+"""Kết quả một lượt chạy của agent.
+
+Nguyên tắc: LLM chỉ trả văn bản, nên KHÔNG tin vào đối tượng mà agent "kể lại". Nguồn sự thật duy
+nhất của một lượt chạy là `trace`: mỗi lời gọi tool một `LogLine` (tên tool, args đã parse, kết quả
+chuỗi). Bài nộp cho verifier được dựng từ trace bằng `submission_from_trace`, không gán tay.
+"""
 from dataclasses import dataclass, field
 from typing import Optional
-from finco.types import Decision, Usage
-from eval.verifier import AgentSubmission
+
+from finco.types import LogLine, Usage
+from eval.verifier import AgentSubmission, submission_from_trace
+
 
 @dataclass
 class AgentStep:
-    """Ghi nhận chi tiết 1 bước suy nghĩ và hành động của Agent."""
+    """Một bước ReAct để hiển thị/gỡ lỗi (Thought chỉ có ở đây, LogLine không lưu)."""
     step_number: int
     thought: str                     # Suy nghĩ của LLM
     tool_name: Optional[str] = None  # Tool được gọi (nếu có)
     tool_args: dict = field(default_factory=dict)
     observation: str = ""            # Kết quả tool trả về
 
+
 @dataclass
 class AgentRunResult:
-    """
-    HỘP ĐEN LƯỢT CHẠY CỦA AGENT:
-    Gói gọn 100% mọi thứ Agent đã làm trong một lần thẩm định hồ sơ!
-    """
+    """Hộp đen của một lượt chạy: câu trả lời cuối + trace + mức dùng LLM."""
     app_id: str
-    final_answer: str                         # Câu trả lời cuối cùng
-    decision: Optional[Decision] = None       # Quyết định chính thức (đã lưu DB)
-    steps: list[AgentStep] = field(default_factory=list) # Toàn bộ quá trình ReAct
-    tool_calls: list[str] = field(default_factory=list)  # Danh sách tên các tool đã gọi
-    calculated_dti: Optional[float] = None    # Con số DTI tính được
-    used_rate: Optional[float] = None         # Lãi suất đã dùng
-    usage: Optional[Usage] = None             # Số token và số lần gọi LLM
-    success: bool = True                      # Chạy trọn vẹn hay bị lỗi/timeout
+    final_answer: str                                    # Văn bản Answer cuối (chỉ để hiển thị)
+    trace: list[LogLine] = field(default_factory=list)   # Mỗi lời gọi tool một dòng (ghi cả lời gọi lỗi)
+    steps: list[AgentStep] = field(default_factory=list)
+    usage: Optional[Usage] = None
+    success: bool = True                                 # False nếu hết MAX_STEPS hoặc LLM lỗi
     error_message: Optional[str] = None
 
+    @property
+    def tool_calls(self) -> list[str]:
+        """Tên các tool đã gọi theo thứ tự (kể cả lời gọi lỗi), để thống kê."""
+        return [line.tool for line in self.trace]
+
     def to_submission(self) -> AgentSubmission:
-        """Tự động chuyển đổi thành bài thi nộp cho Verifier chỉ bằng 1 nốt nhạc!"""
-        return AgentSubmission(
-            app_id=self.app_id,
-            decision=self.decision.decision if self.decision else "NONE",
-            reason=self.decision.reason if self.decision else self.final_answer,
-            cited_docs=self.decision.cited_docs if self.decision else [],
-            tool_calls=self.tool_calls,
-            calculated_dti=self.calculated_dti,
-            used_rate=self.used_rate,
-        )
+        """Bài nộp cho verifier, dựng từ trace: quyết định, mã lý do, trích dẫn, DTI, lãi suất."""
+        return submission_from_trace(self.app_id, self.trace)

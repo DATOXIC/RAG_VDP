@@ -43,6 +43,17 @@ class Application:
     note: str = ""
 
 
+# Mã lý do có cấu trúc đi kèm mỗi quyết định: tập đóng, khớp tests/expected_decisions.json.
+# Dùng để eval so tập hợp với đáp án chuẩn mà không cần LLM đọc văn bản reason.
+REASON_CODES_BY_DECISION: dict[str, tuple[str, ...]] = {
+    "approve": ("APPROVED",),
+    "reject": ("AGE", "OVERDUE", "AMOUNT_RANGE", "TERM_RANGE", "DTI_EXCEEDED"),
+    "need_info": ("MISSING_DOCS", "MISSING_DEBT_DECLARATION"),
+    "escalate": ("ESCALATE_MANAGER", "ESCALATE_COUNCIL", "ESCALATE_EMPLOYEE"),
+}
+REASON_CODES: tuple[str, ...] = tuple(c for codes in REASON_CODES_BY_DECISION.values() for c in codes)
+
+
 @dataclass
 class Decision:
     """Quyết định thẩm định đã ghi cho một hồ sơ (bảng decisions; mỗi hồ sơ một quyết định).
@@ -52,12 +63,14 @@ class Decision:
         reason: Lý do, nêu rõ điều kiện làm căn cứ.
         decided_at: Thời điểm ghi quyết định.
         cited_docs: Tài liệu chính sách làm căn cứ (vd: ["CP-01 v2", "CP-05"]); không được rỗng.
+        reason_codes: Mã lý do có cấu trúc (vd: ["DTI_EXCEEDED"]), thuộc REASON_CODES và khớp trạng thái.
     """
     app_id: str
     decision: Literal["approve", "reject", "escalate", "need_info"]
     reason: str
     decided_at: str
     cited_docs: list[str] = field(default_factory=list)
+    reason_codes: list[str] = field(default_factory=list)
 
 
 @dataclass
