@@ -18,13 +18,13 @@ mcp = MCPServer("finco", description="Hệ thống công cụ thẩm định tí
 
 
 @mcp.tool()
-def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
+def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
     """Tra cứu chính sách tín dụng nội bộ FinCo (RAG hybrid BM25 + Dense).
 
     Args:
         query: Câu hỏi hoặc từ khóa cần tra cứu quy định chính sách.
         as_of_date: Ngày hiệu lực cần lọc chính sách (YYYY-MM-DD), thường là ngày nộp hồ sơ.
-        top_k: Số lượng đoạn trích tối đa cần lấy (mặc định 5).
+        top_k: Số lượng đoạn trích tối đa cần lấy (mặc định 3).
     """
     return tools.search_policy(query=query, as_of_date=as_of_date, top_k=top_k)
 
