@@ -44,7 +44,7 @@ load_dotenv(REPO_ROOT / ".env")
 PROMPTS_DIR = REPO_ROOT / "prompts"
 
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
-DEFAULT_MODEL = "openai/gpt-oss-120b"
+DEFAULT_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
 
 # Header Retry-After lớn hơn mức này thì chỉ chờ tối đa bằng mức này.
 MAX_RETRY_AFTER = 60.0

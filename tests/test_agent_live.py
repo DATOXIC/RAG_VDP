@@ -39,7 +39,7 @@ async def run_single_application(app_id: str = "APP-003"):
     with isolated_db_sandbox() as db_path:
         print(f"[Sandbox] Đang chạy với DB tạm: {db_path.name}")
         
-        agent = Agent(verbose=True)
+        agent = Agent(model="openai/gpt-oss-20b", verbose=True)
         res = await agent.run(app_id)
 
         print("\n" + "=" * 70)
