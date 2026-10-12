@@ -92,19 +92,6 @@ class Agent:
                 except Exception:
                     pass
             return {}, f"Error: Tham số gọi tool không phải JSON hợp lệ ({e})"
-
-    def _safe_parse_args(self, raw_args: str) -> tuple[dict, Optional[str]]:
-        """3. Phòng vệ W6: Bắt lỗi JSON hỏng, thiếu ngoặc không làm chết run."""
-        try:
-            return json.loads(raw_args or "{}"), None
-        except json.JSONDecodeError as e:
-            cleaned = (raw_args or "").strip()
-            if not cleaned.endswith("}"):
-                try:
-                    return json.loads(cleaned + "}"), None
-                except Exception:
-                    pass
-            return {}, f"Error: Tham số gọi tool không phải JSON hợp lệ ({e})"
         
     async def _execute_tool(
         self,
