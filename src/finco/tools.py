@@ -3,7 +3,7 @@ from typing import Optional
 
 from finco.rag.retriever import retrieve
 from finco.store import db
-from finco.types import Decision
+from finco.types import REASON_CODES, REASON_CODES_BY_DECISION, Decision
 
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
@@ -134,13 +134,24 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
         return f"Error: Đã xảy ra lỗi khi tính DTI: {e}"
 
 
-def submit_decision(app_id: str, decision: str, reason: str, cited_docs: list[str]) -> str:
+def submit_decision(
+    app_id: str,
+    decision: str,
+    reason: str,
+    cited_docs: list[str],
+    reason_codes: list[str],
+) -> str:
     """
     Args:
         app_id: Mã hồ sơ vay (ví dụ: 'APP-001').
         decision: Trạng thái: 'approve' | 'reject' | 'escalate' | 'need_info'.
         reason: Lý do chi tiết nêu rõ các căn cứ điều kiện.
         cited_docs: Danh sách tài liệu chính sách làm căn cứ (ví dụ: ['CP-01 v1', 'CP-03']).
+        reason_codes: Mã lý do có cấu trúc, phải khớp decision:
+            approve -> ['APPROVED'];
+            reject -> AGE | OVERDUE | AMOUNT_RANGE | TERM_RANGE | DTI_EXCEEDED;
+            need_info -> MISSING_DOCS | MISSING_DEBT_DECLARATION;
+            escalate -> ESCALATE_MANAGER | ESCALATE_COUNCIL | ESCALATE_EMPLOYEE.
 
     1. Kiểm tra app_id
     2. Kiểm tra decision có hợp lệ
@@ -178,12 +189,35 @@ def submit_decision(app_id: str, decision: str, reason: str, cited_docs: list[st
         if not clean_cited:
             return "Error: cited_docs không chứa mã tài liệu hợp lệ nào."
         
-        # 3. Tạo đối tượng Decision và gọi DB để ghi
+        # 3. Kiểm tra reason_codes: tập đóng, và phải khớp với decision
+        if isinstance(reason_codes, str):
+            reason_codes = [reason_codes]
+        if not isinstance(reason_codes, list):
+            return "Error: reason_codes phải là một danh sách mã lý do."
+        clean_codes = list(dict.fromkeys(str(c).strip().upper() for c in reason_codes if str(c).strip()))
+        if not clean_codes:
+            return (
+                "Error: reason_codes không được rỗng. Với decision "
+                f"'{clean_decision}' chọn trong: {', '.join(REASON_CODES_BY_DECISION[clean_decision])}."
+            )
+        unknown = [c for c in clean_codes if c not in REASON_CODES]
+        if unknown:
+            return f"Error: reason_codes không hợp lệ: {', '.join(unknown)}. Các mã hợp lệ: {', '.join(REASON_CODES)}."
+        allowed = REASON_CODES_BY_DECISION[clean_decision]
+        mismatched = [c for c in clean_codes if c not in allowed]
+        if mismatched:
+            return (
+                f"Error: reason_codes {', '.join(mismatched)} không khớp decision '{clean_decision}'. "
+                f"Với '{clean_decision}' chỉ được dùng: {', '.join(allowed)}."
+            )
+
+        # 4. Tạo đối tượng Decision và gọi DB để ghi
         dec = Decision(
             app_id=clean_app_id,
             decision=clean_decision,
             reason=reason.strip(),
             cited_docs=clean_cited,
+            reason_codes=clean_codes,
             decided_at=datetime.now().isoformat(timespec="seconds"),
         )
 
@@ -229,6 +263,7 @@ def get_decision(app_id: str) -> str:
             f"=== QUYẾT ĐỊNH ĐANG LƯU CHO HỒ SƠ {dec.app_id} ===",
             f"- Trạng thái quyết định: {dec.decision.upper()}",
             f"- Căn cứ chính sách (cited_docs): {', '.join(dec.cited_docs)}",
+            f"- Mã lý do (reason_codes): {', '.join(dec.reason_codes) if dec.reason_codes else 'Không có'}",
             f"- Thời điểm ghi nhận: {dec.decided_at}",
             f"- Lý do chi tiết: {dec.reason}",
         ]
