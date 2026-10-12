@@ -195,6 +195,7 @@ def submit_decision(app_id: str, decision: str, reason: str, cited_docs: list[st
             f" BƯỚC TIẾP THEO BẮT BUỘC: Bạn phải gọi get_decision('{clean_app_id}') "
             f"để xác nhận quyết định đã được lưu an toàn trước khi đưa ra Final Answer."
         )
+    
     except db.AppNotFound:
         return f"Error: Không tìm thấy hồ sơ với mã '{app_id}'."
     except db.DecisionExists:
