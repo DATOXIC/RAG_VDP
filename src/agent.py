@@ -4,12 +4,14 @@ Nguyên tắc: LLM chỉ trả văn bản, nên KHÔNG tin vào đối tượng 
 nhất của một lượt chạy là `trace`: mỗi lời gọi tool một `LogLine` (tên tool, args đã parse, kết quả
 chuỗi). Bài nộp cho verifier được dựng từ trace bằng `submission_from_trace`, không gán tay.
 """
+from datetime import datetime
 import json
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 from finco.llm import get_client, load_prompt, DEFAULT_MODEL
 from finco.types import LogLine, Usage
+from finco.mcp_client import Client, get_default_server_params, to_openai_tools
 from eval.verifier import AgentSubmission, submission_from_trace
 
 
@@ -51,7 +53,32 @@ class Agent:
         self.verbose = verbose
         self.system_prompt = load_prompt("agent_system.txt")
         self.client_llm = get_client()
-        
+
+    def _init_messages(self, query: str) -> list[dict[str, str]]:
+        """1. Chuẩn bị ngữ cảnh hội thoại ban đầu."""
+        return [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": query},
+        ]
+
+    def _call_llm_step(self, messages: list[dict], tools: list[dict], usage: Usage) -> Any:
+        """2. Gọi LLM và tích lũy số lượng token tiêu thụ."""
+        response = self.client_llm.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+            temperature=0.0,
+        )
+
+        if response.usage:
+            usage.calls += 1
+            usage.prompt_tokens += response.usage.prompt_tokens
+            usage.completion_tokens += response.usage.completion_tokens
+            usage.max_prompt = max(usage.max_prompt, response.usage.prompt_tokens)
+
+        return response.choices[0].message
+    
     def _safe_parse_args(self, raw_args: str) -> tuple[dict, Optional[str]]:
         """Phòng vệ W6: Bắt lỗi cú pháp JSON, thiếu ngoặc không làm chết run."""
         try:
@@ -65,3 +92,171 @@ class Agent:
                 except Exception:
                     pass
             return {}, f"Error: Tham số gọi tool không phải JSON hợp lệ ({e})"
+
+    def _safe_parse_args(self, raw_args: str) -> tuple[dict, Optional[str]]:
+        """3. Phòng vệ W6: Bắt lỗi JSON hỏng, thiếu ngoặc không làm chết run."""
+        try:
+            return json.loads(raw_args or "{}"), None
+        except json.JSONDecodeError as e:
+            cleaned = (raw_args or "").strip()
+            if not cleaned.endswith("}"):
+                try:
+                    return json.loads(cleaned + "}"), None
+                except Exception:
+                    pass
+            return {}, f"Error: Tham số gọi tool không phải JSON hợp lệ ({e})"
+    async def _execute_tool(
+        self,
+        mcp_client: Client,
+        tool_call: Any,
+        step: int,
+        run_id: str,
+        app_id: str,
+        usage: Usage,
+    ) -> tuple[AgentStep, LogLine, dict]:
+        """4. Bóc tách suy nghĩ 'thought', gọi tool qua MCP và đóng gói log."""
+        tool_name = tool_call.function.name
+        raw_args = tool_call.function.arguments
+        args, parse_err = self._safe_parse_args(raw_args)
+        if parse_err:
+            tool_output = parse_err
+            thought = "Lỗi cú pháp khi tạo tham số JSON"
+        else:
+            # Bóc tách suy nghĩ ReAct ra khỏi tham số
+            thought = args.pop("thought", "Không có suy nghĩ")
+            if self.verbose:
+                print(f"\n[Bước {step}]")
+                print(f"🤔 Thought: {thought}")
+                print(f"⚡ Action : {tool_name}({args})")
+            # Gọi thực thi qua MCP Server
+            mcp_res = await mcp_client.call_tool(tool_name, args)
+            tool_output = mcp_res.content[0].text if mcp_res.content else ""
+            if self.verbose:
+                print(f"👁️ Observation: {tool_output[:120]}...")
+        # Tạo đối tượng bước hiển thị (cho người)
+        step_obj = AgentStep(
+            step_number=step,
+            thought=thought,
+            tool_name=tool_name,
+            tool_args=args,
+            observation=tool_output,
+        )
+        # Tạo dòng kiểm toán (cho máy & Verifier)
+        log_obj = LogLine(
+            ts=datetime.now().isoformat(timespec="seconds"),
+            run_id=run_id,
+            question_id=app_id,
+            step=step,
+            tool=tool_name,
+            args=args,
+            result=tool_output,
+            usage=usage,
+        )
+        # Tin nhắn phản hồi trả về cho LLM
+        tool_msg = {
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "content": tool_output,
+        }
+        return step_obj, log_obj, tool_msg
+
+    async def run(self, app_id: str, question: Optional[str] = None) -> AgentRunResult:
+        run_id = f"run_{app_id}"
+        query = question or f"Hãy thẩm định hồ sơ {app_id} theo quy trình chính sách FinCo và ghi nhận quyết định vào hệ thống."
+        result_obj = AgentRunResult(app_id=app_id, final_answer="")
+        trace: list[LogLine] = []
+        steps: list[AgentStep] = []
+        accumulated_usage = Usage(calls=0, prompt_tokens=0, completion_tokens=0, max_prompt=0)
+        # 1. Mở kết nối MCP Server
+        server_params = get_default_server_params()
+        async with Client(server_params) as mcp_client:
+            # Lấy danh sách tools động và tiêm trường 'thought' vào schema
+            mcp_tools = (await mcp_client.list_tools()).tools
+            tools_for_llm = to_openai_tools(mcp_tools)
+            # Khởi tạo ngữ cảnh hội thoại
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": query},
+            ]
+            step_count = 0
+            # 2. VÒNG LẶP AGENT TỰ VIẾT (Mục 2.2 & 2.6 của Thầy)
+            while step_count < self.max_steps:
+                step_count += 1
+                # Gọi LLM với bộ Tools của MCP
+                response = self.client_llm.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools_for_llm,
+                    tool_choice="auto",
+                    temperature=0.0,
+                )
+                # Đo đếm token tiêu thụ
+                if response.usage:
+                    accumulated_usage.calls += 1
+                    accumulated_usage.prompt_tokens += response.usage.prompt_tokens
+                    accumulated_usage.completion_tokens += response.usage.completion_tokens
+                    accumulated_usage.max_prompt = max(accumulated_usage.max_prompt, response.usage.prompt_tokens)
+                msg = response.choices[0].message
+                # --- TRƯỜNG HỢP 1: LLM ĐÃ CÓ KẾT LUẬN CUỐI CÙNG ---
+                if not msg.tool_calls:
+                    result_obj.final_answer = msg.content or ""
+                    if self.verbose:
+                        print(f"\n[AI Answer]:\n{result_obj.final_answer}\n")
+                    break
+                # --- TRƯỜNG HỢP 2: LLM YÊU CẦU GỌI TOOL ---
+                messages.append(msg)
+                for tool_call in msg.tool_calls:
+                    tool_name = tool_call.function.name
+                    raw_args = tool_call.function.arguments
+                    # Parse tham số an toàn (Chống crash)
+                    args, parse_err = self._safe_parse_args(raw_args)
+                    if parse_err:
+                        tool_output = parse_err
+                        thought = "Lỗi cú pháp khi tạo tham số JSON"
+                    else:
+                        # Bóc trường thought ra để in lên màn hình
+                        thought = args.pop("thought", "Không có suy nghĩ")
+                        if self.verbose:
+                            print(f"\n[Bước {step_count}]")
+                            print(f"🤔 Thought: {thought}")
+                            print(f"⚡ Action : {tool_name}({args})")
+                        # Gọi tool qua MCP Server
+                        mcp_res = await mcp_client.call_tool(tool_name, args)
+                        tool_output = mcp_res.content[0].text if mcp_res.content else ""
+                        if self.verbose:
+                            print(f"👁️ Observation: {tool_output[:120]}...")
+                    # Ghi nhận bước nhận thức (cho con người)
+                    steps.append(AgentStep(
+                        step_number=step_count,
+                        thought=thought,
+                        tool_name=tool_name,
+                        tool_args=args,
+                        observation=tool_output,
+                    ))
+                    # Ghi nhận vết kiểm toán (cho máy & Verifier)
+                    trace.append(LogLine(
+                        ts=datetime.now().isoformat(timespec="seconds"),
+                        run_id=run_id,
+                        question_id=app_id,
+                        step=step_count,
+                        tool=tool_name,
+                        args=args,
+                        result=tool_output,
+                        usage=accumulated_usage,
+                    ))
+                    # Trả kết quả về cho LLM
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": tool_output,
+                    })
+            # Kiểm tra nếu hết vòng lặp mà chưa có kết luận
+            if step_count >= self.max_steps and not result_obj.final_answer:
+                result_obj.success = False
+                result_obj.error_message = f"Vượt quá MAX_STEPS ({self.max_steps})"
+        # 3. Đóng gói kết quả cuối cùng
+        result_obj.trace = trace
+        result_obj.steps = steps
+        result_obj.usage = accumulated_usage
+        return result_obj
+        ...
