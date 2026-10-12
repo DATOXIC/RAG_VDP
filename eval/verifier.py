@@ -9,19 +9,13 @@
 """
 import csv
 from dataclasses import dataclass, asdict, field
-from pathlib import Path
-import sys
-from typing import Optional
 import json
+from pathlib import Path
+from typing import Optional
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+from finco.types import Decision
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT / "src"))
-
-from finco.types import Decision  # noqa: E402
-
 EXPECTED_PATH = REPO_ROOT / "tests" / "expected_decisions.json"
 
 @dataclass
@@ -369,31 +363,35 @@ def export_results_csv(results: list[VerifyResult], output_path: Path = REPO_ROO
     print(f"[Verifier] Đã xuất báo cáo đánh giá chi tiết ra: {output_path}")
 
 
-if __name__ == "__main__":
-    # Chạy thử nghiệm giả lập bộ trọng tài trên toàn bộ 21 đề thi
-    with open(EXPECTED_PATH, encoding="utf-8") as f:
-        ground_truth = json.load(f)
+# if __name__ == "__main__":
+#     import sys
+#     if hasattr(sys.stdout, "reconfigure"):
+#         sys.stdout.reconfigure(encoding="utf-8")
 
-    print(f"\n[FinCo Verifier] Chạy kiểm thử tự động trên 21 hồ sơ trong {EXPECTED_PATH.name}...")
+#     # Chạy thử nghiệm giả lập bộ trọng tài trên toàn bộ 21 đề thi
+#     with open(EXPECTED_PATH, encoding="utf-8") as f:
+#         ground_truth = json.load(f)
 
-    # Giả lập thí sinh nộp bài chuẩn 100% (Mock Perfect Agent)
-    mock_submissions = [
-        AgentSubmission(
-            app_id=item["app_id"],
-            decision=item["decision"],
-            reason="Thẩm định đạt yêu cầu chính sách FinCo",
-            cited_docs=item.get("cited", []),
-            tool_calls=["search_policy", "calc_dti", "submit_decision", "get_decision"],
-            calculated_dti=item.get("dti"),
-            used_rate=item.get("annual_rate"),
-        )
-        for item in ground_truth
-    ]
+#     print(f"\n[FinCo Verifier] Chạy kiểm thử tự động trên 21 hồ sơ trong {EXPECTED_PATH.name}...")
 
-    # Cố tình tạo 1 hồ sơ bị lỗi (APP-003) để kiểm chứng bộ bắt lỗi
-    mock_submissions[2].decision = "approve"  # Chuẩn là reject (DTI vượt trần)
-    mock_submissions[2].tool_calls = ["search_policy", "calc_dti"]  # Thiếu submit & get_decision
+#     # Giả lập thí sinh nộp bài chuẩn 100% (Mock Perfect Agent)
+#     mock_submissions = [
+#         AgentSubmission(
+#             app_id=item["app_id"],
+#             decision=item["decision"],
+#             reason="Thẩm định đạt yêu cầu chính sách FinCo",
+#             cited_docs=item.get("cited", []),
+#             tool_calls=["search_policy", "calc_dti", "submit_decision", "get_decision"],
+#             calculated_dti=item.get("dti"),
+#             used_rate=item.get("annual_rate"),
+#         )
+#         for item in ground_truth
+#     ]
 
-    results = verify_all_decisions(mock_submissions)
-    print_summary_table(results)
-    export_results_csv(results)
+#     # Cố tình tạo 1 hồ sơ bị lỗi (APP-003) để kiểm chứng bộ bắt lỗi
+#     mock_submissions[2].decision = "approve"  # Chuẩn là reject (DTI vượt trần)
+#     mock_submissions[2].tool_calls = ["search_policy", "calc_dti"]  # Thiếu submit & get_decision
+
+#     results = verify_all_decisions(mock_submissions)
+#     print_summary_table(results)
+#     export_results_csv(results)
