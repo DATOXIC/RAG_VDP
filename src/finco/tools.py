@@ -6,9 +6,9 @@ from finco.store import db
 from finco.types import REASON_CODES, REASON_CODES_BY_DECISION, Decision
 
 
-def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 5) -> str:
-
-    return retrieve(query=query, as_of_date=as_of_date, top_k=top_k)
+def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
+    actual_k = max(1, min(int(top_k or 3), 5))
+    return retrieve(query=query, as_of_date=as_of_date, top_k=actual_k)
 
 
 
@@ -84,11 +84,12 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
                 "cần chuyển sang quyết định need_info."
             )
 
-        rate = float(annual_rate)
+        rate_cleaned = str(annual_rate).strip().rstrip("%").strip()
+        rate = float(rate_cleaned)
         if rate <= 0:
             return f"Error: annual_rate phải lớn hơn 0, nhận được {rate}."
         if rate > 1.0:
-            rate = rate / 100.0  # Ví dụ: 15.5 -> 0.155
+            rate = rate / 100.0  # Ví dụ: 15.5 -> 0.155 hoặc '17.0%' -> 0.17
 
         if app.income_type == "salary": # Làm công
             qualified_income = round(app.monthly_income + 0.7 * app.supplementary_income)
