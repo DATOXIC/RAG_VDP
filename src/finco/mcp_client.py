@@ -36,7 +36,7 @@ def to_openai_tools(mcp_tools: list[Any]) -> list[dict[str, Any]]:
             "function": {
                 "name": tool.name,
                 "description": tool.description,
-                "parameters": getattr(tool, "input_schema", getattr(tool, "inputSchema", {})),
+                "parameters": tool.input_schema,
             },
         }
         for tool in mcp_tools
