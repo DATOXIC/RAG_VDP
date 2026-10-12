@@ -47,7 +47,7 @@ class AgentRunResult:
 
 class Agent:
 
-    def __init__(self, model: Optional[str] = None, max_steps: int = 8, verbose: bool = True):
+    def __init__(self, model: Optional[str] = None, max_steps: int = 10, verbose: bool = True):
         self.model = model or DEFAULT_MODEL
         self.max_steps = max_steps
         self.verbose = verbose
@@ -61,23 +61,54 @@ class Agent:
             {"role": "user", "content": query},
         ]
 
-    def _call_llm_step(self, messages: list[dict], tools: list[dict], usage: Usage) -> Any:
-        """2. Gọi LLM và tích lũy số lượng token tiêu thụ."""
-        response = self.client_llm.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-            temperature=0.0,
-        )
+    def _call_llm_step(self, messages: list[dict], tools: list[dict], usage: Usage, max_retries: int = 5) -> Any:
+        """2. Gọi LLM có bọc Retry chuẩn W2: tự động chờ khi gặp 429 RateLimit."""
+        import time
+        from openai import RateLimitError, APITimeoutError, APIConnectionError, InternalServerError
+        
+        delay = 2.0
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.client_llm.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice="auto",
+                    temperature=0.0,
+                )
 
-        if response.usage:
-            usage.calls += 1
-            usage.prompt_tokens += response.usage.prompt_tokens
-            usage.completion_tokens += response.usage.completion_tokens
-            usage.max_prompt = max(usage.max_prompt, response.usage.prompt_tokens)
+                if response.usage:
+                    usage.calls += 1
+                    usage.prompt_tokens += response.usage.prompt_tokens
+                    usage.completion_tokens += response.usage.completion_tokens
+                    usage.max_prompt = max(usage.max_prompt, response.usage.prompt_tokens)
 
-        return response.choices[0].message
+                return response.choices[0].message
+
+            except (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError) as e:
+                if attempt == max_retries:
+                    raise
+                # Đọc Retry-After từ header hoặc thông điệp lỗi của Groq
+                headers = getattr(getattr(e, "response", None), "headers", {})
+                retry_after = headers.get("retry-after") if headers else None
+                try:
+                    wait = float(retry_after) if retry_after else delay
+                except (TypeError, ValueError):
+                    wait = delay
+
+                # Trích xuất số giây nếu Groq báo trong error message
+                err_str = str(e)
+                if "try again in" in err_str:
+                    import re
+                    m = re.search(r"try again in ([0-9.]+)s", err_str)
+                    if m:
+                        wait = max(wait, float(m.group(1)) + 1.0)
+
+                wait = min(max(wait, 1.0), 60.0)
+                if self.verbose:
+                    print(f"⏳ [RateLimit 429] Chờ {wait:.1f}s trước khi thử lại bước gọi LLM...")
+                time.sleep(wait)
+                delay = min(delay * 2, 30.0)
     
     def _safe_parse_args(self, raw_args: str) -> tuple[dict, Optional[str]]:
         """Phòng vệ W6: Bắt lỗi cú pháp JSON, thiếu ngoặc không làm chết run."""
