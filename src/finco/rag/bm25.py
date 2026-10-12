@@ -20,6 +20,7 @@ from typing import Optional
 import numpy as np
 from rank_bm25 import BM25Okapi
 
+from finco.rag.filter import is_valid_at, valid_mask
 from finco.types import Chunk, SearchHit
 
 
@@ -40,16 +41,6 @@ def tokenize(text: str) -> list[str]:
         if tok.endswith("%") and len(tok) > 1:
             tokens.append(tok[:-1])
     return tokens
-
-
-def is_valid_at(chunk: Chunk, as_of_date: str) -> bool:
-    """Chunk còn hiệu lực tại as_of_date (so sánh chuỗi ISO YYYY-MM-DD).
-
-    Phải giữ cùng điều kiện với VectorStore._valid_mask trong dense.py.
-    """
-    return chunk.effective_date <= as_of_date and (
-        chunk.expiry_date is None or as_of_date <= chunk.expiry_date
-    )
 
 
 class BM25Index:
@@ -73,9 +64,7 @@ class BM25Index:
 
     def valid_mask(self, as_of_date: Optional[str]) -> np.ndarray:
         """Mặt nạ chunk còn hiệu lực. as_of_date=None nghĩa là không lọc."""
-        if as_of_date is None:
-            return np.ones(len(self.chunks), dtype=bool)
-        return np.array([is_valid_at(c, as_of_date) for c in self.chunks], dtype=bool)
+        return valid_mask(self.chunks, as_of_date)
 
     def search(
         self,
