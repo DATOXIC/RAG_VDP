@@ -27,7 +27,7 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 | `make demo` | thẩm định APP-014 và APP-015 (cùng số liệu, khác ngày nộp → v1 duyệt, v2 từ chối) + một câu hỏi ngoài tài liệu; in bảng chấm. Đổi hồ sơ: `make demo APPS="APP-003 APP-018"` |
 | `make run` | REPL tương tác: `list`, `APP-xxx`, `ask <câu hỏi>`, `history`, `audit <mã>` |
 | `make eval` | chạy `tests/testset.jsonl` (16 câu, 4 `no_answer`), ghi `logs/eval_*.jsonl` và `eval/out/*` |
-| `make eval-apps` | thẩm định cả 21 hồ sơ, so với `tests/expected_decisions.json` |
+| `make eval ARGS="--apps"` | thêm cả 21 hồ sơ, so với `tests/expected_decisions.json` |
 | `make eval-score LOG=logs/eval_X.jsonl` | chấm lại một log đã có, **không gọi LLM** |
 | `make retrieval-eval` | đo riêng tầng truy xuất (recall@k, MRR), không cần khóa API |
 | `make test` | toàn bộ test offline (agent giả, chấm điểm, MCP, truy xuất): không tốn lượt gọi LLM |
@@ -85,7 +85,7 @@ data/policies/*.md        tài liệu chính sách (có front matter, 2 phiên b
 data/applications.json    21 hồ sơ vay giả lập      data/index/  vector đã tính sẵn (commit)
 prompts/agent_system.txt  prompt hệ thống (tách khỏi code)
 src/finco/                llm, agent, mcp_server, mcp_client, tools, chat, audit, store/, rag/
-eval/                     run_eval.py, verifier.py, judge.py, sandbox_db.py, retrieval_eval.py
+eval/                     run_eval.py (chạy), scoring.py (chấm), verifier.py, judge.py, sandbox_db.py, retrieval_eval.py
 tests/                    testset.jsonl, expected_decisions.json (chỉ cho eval), test_*.py
 logs/  report/            log chạy thật, báo cáo
 ```
@@ -93,6 +93,6 @@ logs/  report/            log chạy thật, báo cáo
 ## Giới hạn đã biết
 
 - Mô hình nhỏ có thể gọi tool sai hoặc dừng sớm; agent chỉ nhắc 2 lần rồi đánh dấu thất bại thay vì tự sửa tiếp.
-- Faithfulness theo luật chỉ kiểm tra tài liệu được trích có thật trong kết quả tool, chưa kiểm từng khẳng định (giám khảo LLM `--judge` bù một phần, và chính nó là LLM nên cũng có thể sai).
-- Tầng truy xuất còn nhạy với cách đặt truy vấn: truy vấn kiểu "CP-01 ..." có thể trả bản diễn giải (CP-15/16) trước chính sách gốc, nên prompt dùng truy vấn bám tên tài liệu (có test giữ ràng buộc này: `tests/test_prompt_queries.py`).
+- Faithfulness theo luật chỉ kiểm tra tài liệu được trích có thật trong kết quả tool, chưa kiểm từng khẳng định (`eval/judge.py` là giám khảo LLM tùy chọn, chạy riêng, và chính nó là LLM nên cũng có thể sai).
+- Tầng truy xuất còn nhạy với cách đặt truy vấn: truy vấn kiểu "CP-01 ..." có thể trả bản diễn giải (CP-15/16) trước chính sách gốc, nên prompt dùng truy vấn bám tên tài liệu (có test giữ ràng buộc này: `tests/test_prompt.py`).
 - Quyết định `need_info` chưa thay được bằng quyết định mới khi hồ sơ bổ sung đủ (CP-07 mục 3.3).

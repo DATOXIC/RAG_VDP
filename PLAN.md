@@ -107,7 +107,7 @@ Quy tắc kiến trúc:
 ```
 RAG_VDP/
 ├── PLAN.md                  # file này
-├── Makefile                 # setup | demo | run | eval | eval-score | eval-apps | retrieval-eval | test
+├── Makefile                 # setup | demo | run | eval | eval-score | retrieval-eval | test
 ├── run.py                   # điểm vào: setup | demo | chat | eval (dùng khi máy không có make)
 ├── README.md                # CHỈ lệnh chạy + cách tái lập
 ├── ai-usage.md              # khai báo dùng AI (bắt buộc)
@@ -132,7 +132,7 @@ RAG_VDP/
 │   ├── chat.py              # REPL (rich)
 │   └── audit.py             # nhật ký phiên FINCO-xxxx
 ├── examples/client2.py      # bonus #3: host MCP thứ hai
-├── eval/                    # run_eval.py, verifier.py, judge.py, sandbox_db.py, retrieval_eval.py, out/ (CSV, hình)
+├── eval/                    # run_eval.py (chạy), scoring.py (chấm), verifier.py, judge.py, sandbox_db.py, retrieval_eval.py, out/ (CSV, hình)
 ├── tests/                   # testset.jsonl + expected_decisions.json (chỉ cho eval)
 ├── scratch/                 # test cá nhân của từng người – .gitignore, không nộp
 ├── logs/                    # >= 3 file .jsonl chạy thật
