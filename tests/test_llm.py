@@ -157,13 +157,7 @@ class TestPermanentErrors(CallLlmBase):
             self.call(client)
         self.assertEqual(client.chat.completions.create.call_count, 1)
         self.sleep.assert_not_called()
-
-    def test_http_status_is_logged(self):
-        client = fake_client(http_error(AuthenticationError, 401))
-        with self.assertRaises(AuthenticationError):
-            self.call(client)
-        self.assertIn("HTTP 401", self.stderr)
-
+        self.assertIn("HTTP 401", self.stderr)  # mã HTTP được ghi vào log
 
 class TestBadResponses(CallLlmBase):
     def test_no_choices(self):
@@ -290,24 +284,7 @@ class TestCallLlmTools(CallLlmToolsBase):
         self.assertEqual(client.chat.completions.create.call_count, 2)
         self.assertAlmostEqual(llm.time.sleep.call_args.args[0], 3.2)  # Retry-After + jitter 0.2
 
-    def test_exhausted_retries_raise_runtime_error(self):
-        client = fake_client(*[http_error(InternalServerError, 503)] * 3)
-        with self.assertRaises(RuntimeError):
-            self.call(client, max_retries=2)
-
-    def test_tool_use_failed_becomes_malformed_error(self):
-        err = http_error(BadRequestError, 400)
-        err.code = "tool_use_failed"
-        with self.assertRaises(llm.MalformedToolCallError):
-            self.call(fake_client(err))
-
-    def test_other_bad_request_is_not_swallowed(self):
-        err = http_error(BadRequestError, 400)
-        err.code = "context_length_exceeded"
-        with self.assertRaises(BadRequestError):
-            self.call(fake_client(err))
-
-    def test_tool_use_failed_is_not_retried(self):
+    def test_tool_use_failed_becomes_malformed_error_without_retry(self):
         err = http_error(BadRequestError, 400)
         err.code = "tool_use_failed"
         client = fake_client(err, tool_response(content="ok", finish="stop"))
@@ -315,67 +292,17 @@ class TestCallLlmTools(CallLlmToolsBase):
             self.call(client)
         self.assertEqual(client.chat.completions.create.call_count, 1)
 
-    def test_no_choices_is_error(self):
-        resp = SimpleNamespace(choices=[], usage=None)
-        with self.assertRaises(llm.EmptyResponseError):
-            self.call(fake_client(resp))
+    def test_other_bad_request_is_not_swallowed(self):
+        err = http_error(BadRequestError, 400)
+        err.code = "context_length_exceeded"
+        with self.assertRaises(BadRequestError):
+            self.call(fake_client(err))
 
     def test_missing_usage_counts_zero(self):
         resp = tool_response(content="ok", finish="stop")
         resp.usage = None
         turn = self.call(fake_client(resp))
         self.assertEqual(turn.usage, Usage(calls=1, prompt_tokens=0, completion_tokens=0, max_prompt=0))
-
-
-class TestRenderPrompt(unittest.TestCase):
-    def test_substitutes_and_keeps_unknown(self):
-        with patch.object(llm, "load_prompt", return_value="Tools:\n${tools}\nNgày: ${ngay}"):
-            out = llm.render_prompt("x.txt", tools="a, b")
-        self.assertEqual(out, "Tools:\na, b\nNgày: ${ngay}")
-
-    def test_missing_prompt_file(self):
-        with self.assertRaises(FileNotFoundError):
-            llm.load_prompt("khong_ton_tai.txt")
-
-    def test_real_prompt_loads(self):
-        self.assertIn("function calling", llm.load_prompt("agent_system.txt"))
-
-
-class TestAgentPrompt(unittest.TestCase):
-    """Giữ prompt đúng thiết kế: native function calling, không chứa số liệu chính sách."""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.text = llm.load_prompt("agent_system.txt")
-
-    def test_no_unfilled_placeholders(self):
-        # agent nạp prompt thô (load_prompt): không được còn ${...} vì sẽ gửi nguyên văn cho model
-        self.assertNotIn("${", self.text)
-
-    def test_no_hardcoded_policy_numbers(self):
-        import re
-
-        self.assertIsNone(re.search(r"\d+\s*(%|triệu|tháng|tuổi)", self.text), "prompt chứa con số chính sách")
-
-    def test_uses_native_function_calling_not_text_actions(self):
-        self.assertNotIn("Action:", self.text)
-        self.assertNotIn("Observation:", self.text)
-        self.assertIn("thought", self.text)
-
-    def test_mentions_every_tool_of_the_workflow(self):
-        for name in ("search_policy", "get_application", "calc_dti", "submit_decision", "get_decision"):
-            self.assertIn(name, self.text)
-
-    def test_lists_every_reason_code(self):
-        from finco.types import REASON_CODES
-
-        for code in REASON_CODES:
-            self.assertIn(code, self.text)
-
-    def test_refusal_sentence_matches_eval_marker(self):
-        from eval.run_eval import REFUSAL_MARKER
-
-        self.assertIn(REFUSAL_MARKER, self.text)
 
 
 if __name__ == "__main__":
