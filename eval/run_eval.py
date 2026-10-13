@@ -118,13 +118,11 @@ def run_case(agent: Any, case: TestCase) -> tuple[RunRecord, Any]:
     """Chạy một câu trên DB sandbox sạch. Trả (RunRecord, AgentRunResult)."""
     from eval.sandbox_db import isolated_db_sandbox
 
-    needs_decision = bool(case.expected_decision)
     with isolated_db_sandbox():
         result = agent.run_sync(
             app_id=case.target_app_id or "Q",
             question=None if case.type == "hồ sơ" else case.question,
             question_id=case.id,
-            require_decision=needs_decision,
         )
     return record_from_result(case.id, result), result
 

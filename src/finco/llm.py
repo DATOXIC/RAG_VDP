@@ -51,13 +51,6 @@ class EmptyResponseError(RuntimeError):
     """LLM trả về phản hồi không dùng được (không có choices, hoặc nội dung rỗng)."""
 
 
-class MalformedToolCallError(RuntimeError):
-    """Model sinh lời gọi tool sai định dạng và server từ chối (Groq: 400 "tool_use_failed").
-
-    Khác lỗi 400 thường: nhắc model thử lại thường sửa được, nên agent bắt riêng.
-    """
-
-
 @dataclass
 class ToolCall:
     """Một lời gọi tool do model yêu cầu. arguments là chuỗi JSON thô, CHƯA parse."""
@@ -221,20 +214,14 @@ def call_llm_tools(
 
     messages có thể chứa role "tool" và assistant kèm tool_calls (dict thuần, định dạng OpenAI).
     Nội dung rỗng KHÔNG phải lỗi khi có tool_calls.
-    Raises: MalformedToolCallError khi server từ chối lời gọi tool sai định dạng; còn lại như call_llm.
+    Raises: như call_llm.
     """
     request: dict[str, Any] = {
         "model": model or os.getenv("LLM_MODEL") or DEFAULT_MODEL,
         "messages": messages, "tools": tools, "tool_choice": "auto",
         "temperature": temperature, "max_tokens": max_tokens, "timeout": timeout,
     }
-    try:
-        response = _create_with_retry(request, max_retries, initial_delay, max_delay)
-    except BadRequestError as e:
-        if getattr(e, "code", None) == "tool_use_failed" or "tool_use_failed" in str(e):
-            raise MalformedToolCallError(f"Model gọi tool sai định dạng: {e}") from e
-        raise
-
+    response = _create_with_retry(request, max_retries, initial_delay, max_delay)
     choice = _first_choice(response)
     message = choice.message
     tool_calls = [

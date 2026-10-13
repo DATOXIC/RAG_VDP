@@ -46,7 +46,7 @@ async def run_single_application(app_id: str = "APP-003"):
         print(" KẾT QUẢ LƯỢT CHẠY CỦA AGENT")
         print("=" * 70)
         print(f"Trạng thái: {'THÀNH CÔNG' if res.success else 'THẤT BẠI'}")
-        print(f"Số bước đã đi: {len(res.steps)}")
+        print(f"Số bước đã đi: {len(res.trace)}")
         print(f"Số tool đã gọi: {len(res.trace)} ({' -> '.join(res.tool_calls)})")
         if res.usage:
             total = res.usage.prompt_tokens + res.usage.completion_tokens
