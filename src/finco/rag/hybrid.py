@@ -18,6 +18,11 @@ from finco.types import SearchHit
 W_BM25 = 0.3
 W_DENSE = 0.7
 
+# Tài liệu diễn giải (sổ tay CP-15, hỏi đáp CP-16) chỉ lặp lại số liệu của chính sách gốc.
+# Khi điểm sát nhau, ưu tiên bản gốc để trích dẫn đúng CP-01..CP-07.
+DERIVED_DOCS = frozenset({"CP-15", "CP-16"})
+DERIVED_PENALTY = 0.15
+
 
 def min_max(scores: np.ndarray) -> np.ndarray:
     """Chuẩn hóa về [0, 1]. Mọi điểm bằng nhau: toàn 1 nếu dương, toàn 0 nếu bằng 0.
@@ -42,6 +47,7 @@ class HybridSearcher:
         bm25: BM25Index,
         w_bm25: float = W_BM25,
         w_dense: float = W_DENSE,
+        derived_penalty: float = DERIVED_PENALTY,
     ):
         if store.vectors is None or not store.chunks:
             raise ValueError("VectorStore chưa có dữ liệu.")
@@ -54,6 +60,7 @@ class HybridSearcher:
         self.bm25 = bm25
         self.w_bm25 = w_bm25
         self.w_dense = w_dense
+        self.derived_penalty = derived_penalty
 
     def search(
         self,
@@ -90,6 +97,11 @@ class HybridSearcher:
 
         # Chuẩn hóa -> Fusion 
         fused = wb * min_max(raw_bm25) + wd * min_max(raw_dense)
+        if self.derived_penalty:
+            derived = np.array(
+                [self.store.chunks[i].doc_id in DERIVED_DOCS for i in candidates]
+            )
+            fused = fused - self.derived_penalty * derived
 
         order = np.argsort(fused)[::-1][:top_k]
         return [
