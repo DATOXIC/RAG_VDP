@@ -1,0 +1,17 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,judge_valid,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+T01,tra cứu,,True,True,,,,,True,True,False,False,True,False,,1,0,2,6909,339,3909,,
+T02,tra cứu,,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: 2%; trích dẫn chưa đủ: có không có, cần ['CP-03']"
+S01,tổng hợp,,True,True,,,,,True,True,False,False,True,False,,2,0,3,10613,851,4042,,
+S02,tổng hợp,,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: Hội đồng tín dụng; trích dẫn chưa đủ: có không có, cần ['CP-06', 'CP-04']"
+V01,phiên bản,,True,True,,,,,True,True,False,False,True,False,,1,0,2,6742,404,3738,,
+V02,phiên bản,,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: 45%; trích dẫn chưa đủ: có không có, cần ['CP-01@v2']"
+C01,tính toán,APP-001,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: 24,6; trích dẫn chưa đủ: có không có, cần ['CP-03', 'CP-05']"
+C02,tính toán,APP-014,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: 6417491; trích dẫn chưa đủ: có không có, cần ['CP-03', 'CP-05']"
+M01,thiếu dữ liệu,APP-021,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: khai báo; trích dẫn chưa đủ: có không có, cần ['CP-02']"
+M02,thiếu dữ liệu,APP-004,False,False,,,,,False,False,False,False,True,False,,0,0,0,0,0,0,không có trong log,"thiếu ý: SK_LUONG_3T; trích dẫn chưa đủ: có không có, cần ['CP-02']"
+N01,no_answer,,False,False,,,,,,,True,False,True,False,,0,0,0,0,0,0,không có trong log,không từ chối dù tài liệu không có thông tin
+N02,no_answer,,False,False,,,,,,,True,False,True,False,,0,0,0,0,0,0,không có trong log,không từ chối dù tài liệu không có thông tin
+N03,no_answer,,False,False,,,,,,,True,False,True,False,,0,0,0,0,0,0,không có trong log,không từ chối dù tài liệu không có thông tin
+N04,no_answer,,False,False,,,,,,,True,False,True,False,,0,0,0,0,0,0,không có trong log,không từ chối dù tài liệu không có thông tin
+A01,hành động,APP-015,False,False,False,False,False,False,False,,False,False,True,False,,0,0,0,0,0,0,không có trong log,"Sai quyết định (AI: 'none' != Chuẩn: 'reject'); Sai mã lý do (AI: không có != Chuẩn: ['DTI_EXCEEDED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: thiếu search_policy, chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.4709); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.17)"
+A02,hành động,APP-018,False,False,False,False,False,False,False,,False,False,True,False,,0,0,0,0,0,0,không có trong log,"Sai quyết định (AI: 'none' != Chuẩn: 'escalate'); Sai mã lý do (AI: không có != Chuẩn: ['ESCALATE_EMPLOYEE']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: thiếu search_policy, chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.1633); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.155)"

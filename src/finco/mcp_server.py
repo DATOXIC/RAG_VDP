@@ -11,6 +11,7 @@ Dùng MCPServer bọc đúng 5 công cụ nghiệp vụ trong finco.tools:
 from typing import Optional
 from mcp.server.mcpserver import MCPServer
 import logging
+import os
 import sys
 from finco import tools
 
@@ -24,6 +25,8 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("finco")
+# Client đặt WARNING mặc định để màn hình demo sạch; đặt FINCO_LOG_LEVEL=INFO để xem từng lời gọi tool.
+logger.setLevel(os.getenv("FINCO_LOG_LEVEL", "INFO").upper())
 
 @mcp.tool()
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
@@ -81,7 +84,7 @@ def submit_decision(
             - need_info -> MISSING_DOCS, MISSING_DEBT_DECLARATION
             - escalate  -> ESCALATE_MANAGER, ESCALATE_COUNCIL, ESCALATE_EMPLOYEE
     """
-    logger.warning(f"Ghi nhận quyết định [{decision.upper}] cho hồ sơ {app_id} với reason_codes: {reason_codes}")
+    logger.warning(f"Ghi nhận quyết định [{str(decision).upper()}] cho hồ sơ {app_id} với reason_codes: {reason_codes}")
     return tools.submit_decision(
         app_id=app_id,
         decision=decision,
@@ -103,5 +106,7 @@ def get_decision(app_id: str) -> str:
 
 
 if __name__ == "__main__":
+    from finco.store import db
+    db.init_db()
     logger.info("MCP Server FinCo đang khởi động qua stdio transport...")
     mcp.run(transport="stdio")
