@@ -9,7 +9,7 @@ else
   PY := $(VENV)/bin/python
 endif
 
-.PHONY: setup demo run eval eval-score eval-apps test retrieval-eval clean
+.PHONY: setup demo run eval eval-score test retrieval-eval clean
 
 # Tạo venv, cài thư viện, tạo DB hồ sơ, tải mô hình embedding (lần đầu ~2 GB), kiểm tra khóa API
 setup:
@@ -28,17 +28,13 @@ run:
 	$(PY) run.py
 
 # Chạy 16 câu trong tests/testset.jsonl. Ghi logs/eval_<thời gian>.jsonl và eval/out/*.
-# Thêm tham số:  make eval ARGS="--apps --pace 8"
+# Thêm tham số:  make eval ARGS="--apps --pace 8"   hoặc chỉ vài hồ sơ:  ARGS="--ids APP-001 APP-003"
 eval:
 	$(PY) eval/run_eval.py $(ARGS)
 
 # Chấm lại một log đã có, KHÔNG gọi LLM:  make eval-score LOG=logs/eval_XXXX.jsonl
 eval-score:
 	$(PY) eval/run_eval.py --score-only $(LOG)
-
-# Thẩm định cả 21 hồ sơ (không chạy testset)
-eval-apps:
-	$(PY) eval/run_eval.py --only-apps $(ARGS)
 
 # Đo riêng tầng truy xuất (không cần khóa API)
 retrieval-eval:
