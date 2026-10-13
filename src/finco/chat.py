@@ -31,15 +31,19 @@ if str(REPO_ROOT) not in sys.path:
 # 2. CÁC THƯ VIỆN CẦN DÙNG
 # =========================================================================
 import json
-from dataclasses import asdict
+import re
+from typing import Optional
 
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
+from rich.text import Text
 from rich.tree import Tree
 
+from finco.store.db import init_db, list_applications
+from finco.llm import get_client
 from finco.agent import Agent
 from finco.audit import (
     generate_audit_id,
@@ -47,9 +51,11 @@ from finco.audit import (
     load_audit_session,
     save_audit_session,
 )
-from finco.store.db import list_applications
 
 console = Console()
+
+# Mã hồ sơ hợp lệ: APP-001... (chỉ khớp cả chuỗi, tránh nhầm câu hỏi bắt đầu bằng "APP-")
+_APP_CMD = re.compile(r"APP-\d+", re.IGNORECASE)
 
 
 # =========================================================================
@@ -71,7 +77,7 @@ def show_banner():
 # =========================================================================
 # 4. BẢNG HIỂN THỊ HỒ SƠ VAY (RICH TABLE)
 # =========================================================================
-def show_applications_table(limit: int | None = 15):
+def show_applications_table(limit: int | None = None):
     """Hiển thị danh sách hồ sơ vay trong database dạng bảng trực quan."""
     apps = list_applications(limit=limit)
     if not apps:
@@ -213,7 +219,12 @@ def show_help():
 # 6. VÒNG LẶP CHÍNH (INTERACTIVE REPL)
 # =========================================================================
 def main():
+    init_db()
     show_banner()
+    try:
+        get_client()
+    except ValueError as e:  # thiếu API key: vẫn xem được 'list', 'history', 'audit'
+        print(f"[yellow]⚠ {e}[/yellow]\n[dim]Thẩm định và hỏi đáp cần API key; các lệnh còn lại vẫn dùng được.[/dim]\n")
     agent = Agent(verbose=True)
 
     while True:
@@ -257,17 +268,18 @@ def main():
         # 2. Xử lý yêu cầu chạy Agent (Thẩm định hoặc Hỏi đáp)
         audit_id = generate_audit_id()
         app_id_target = "Q"
-        actual_question = query
+        actual_question: Optional[str] = query
+        is_assessment = False  # True: yêu cầu thẩm định -> bắt buộc ghi + đọc lại quyết định
 
         # Phân loại lệnh eval / APP-xxx
-        if query.upper().startswith("APP-"):
+        if _APP_CMD.fullmatch(query):
             app_id_target = query.upper()
-            actual_question = f"Hãy thẩm định hồ sơ {app_id_target} theo quy trình chính sách FinCo và ghi nhận quyết định vào hệ thống."
+            actual_question, is_assessment = None, True  # None = dùng câu thẩm định mặc định của agent
         elif cmd_lower.startswith("eval"):
             parts = query.split(maxsplit=1)
-            if len(parts) > 1 and parts[1].strip().upper().startswith("APP-"):
+            if len(parts) > 1 and _APP_CMD.fullmatch(parts[1].strip()):
                 app_id_target = parts[1].strip().upper()
-                actual_question = f"Hãy thẩm định hồ sơ {app_id_target} theo quy trình chính sách FinCo và ghi nhận quyết định vào hệ thống."
+                actual_question, is_assessment = None, True
             else:
                 print("[yellow]Cú pháp: eval <MÃ_HỒ_SƠ>, ví dụ: eval APP-003[/yellow]")
                 continue
@@ -277,28 +289,45 @@ def main():
 
         console.print(f"\n[cyan]⚙ Đang thực thi phiên kiểm toán [bold]{audit_id}[/bold]...[/cyan]\n")
 
-        # Chạy Agent
-        result = agent.run_sync(app_id=app_id_target, question=actual_question)
+        # Chạy Agent. Không raise: lỗi nằm trong result.success / result.error_message.
+        result = agent.run_sync(
+            app_id=app_id_target,
+            question=actual_question,
+            question_id=audit_id,
+            require_decision=is_assessment,
+        )
 
-
-        result.save_log() # eval/verifier.py, eval/run_eval.py
+        log_file = result.save_log()  # logs/run_<run_id>.jsonl: đầu vào của verifier / run_eval
 
         _, log_path = save_audit_session(result, query=query, audit_id=audit_id) # Người dùng
 
-        # In kết quả cuối cùng
-        console.print(
-            Panel(
-                result.final_answer,
-                title="[bold green]=== KẾT QUẢ THẨM ĐỊNH TỪ AI ===[/bold green]",
-                border_style="green",
+        # In kết quả cuối cùng (hoặc lý do thất bại)
+        if result.success:
+            console.print(
+                Panel(
+                    Text(result.final_answer),  # Text: không diễn giải [..] trong câu trả lời như markup
+                    title="[bold green]=== KẾT QUẢ THẨM ĐỊNH TỪ AI ===[/bold green]",
+                    border_style="green",
+                )
             )
-        )
+        else:
+            console.print(
+                Panel(
+                    Text(
+                        f"{result.error_message}\n\nCâu trả lời dở dang (nếu có): "
+                        f"{result.final_answer or '(không có)'}"
+                    ),
+                    title="[bold red]=== LƯỢT CHẠY KHÔNG HOÀN TẤT ===[/bold red]",
+                    border_style="red",
+                )
+            )
 
         # In thông tin kiểm toán và mã tra cứu
         audit_box = (
             f"[bold green]✓ Đã hoàn tất và lưu nhật ký kiểm toán:[/bold green]\n"
             f"  • Mã tra cứu : [bold cyan]{audit_id}[/bold cyan]\n"
             f"  • File lưu   : [dim]{log_path}[/dim]\n"
+            f"  • Log máy    : [dim]{log_file}[/dim]\n"
             f"  • Token Dùng : {result.usage.calls} lượt gọi | {result.usage.prompt_tokens} in / {result.usage.completion_tokens} out\n"
             f"[italic yellow]Bạn có thể gõ '[bold cyan]audit {audit_id}[/bold cyan]' bất kỳ lúc nào để xem lại cây suy nghĩ và tool call![/italic yellow]"
         )

@@ -57,6 +57,7 @@ def save_audit_session(
         "audit_id": audit_id,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "app_id": result.app_id,
+        "run_id": result.run_id,  # khóa sang logs/run_<run_id>.jsonl
         "query": query,
         "status": "SUCCESS" if result.success else "FAILED",
         "error_message": result.error_message,
