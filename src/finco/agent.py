@@ -13,19 +13,35 @@ Quy ước:
 - Tool lỗi trả chuỗi "Error: ..." cho model tự sửa, không làm chết lượt chạy.
 - Chưa submit_decision rồi get_decision thành công thì chưa tính là xong (đề mục 2.7).
 """
-
 from __future__ import annotations
 
 import asyncio
-import json
-import re
-import uuid
-from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
-from eval.verifier import AgentSubmission, submission_from_trace
+from finco.agent_helpers import (
+    ANSWER_TOOL,
+    LOGS_DIR,
+    MAX_NUDGES,
+    MAX_SEARCHES,
+    MAX_STEPS,
+    SEARCH_TOOL,
+    VERIFY_TOOL,
+    WRITE_TOOL,
+    AgentRunResult,
+    AgentStep,
+    LlmFn,
+    _APP_ID,
+    _TEXT_ACTION,
+    _assistant_message,
+    _is_error,
+    _repeat_search_error,
+    _result_text,
+    _safe_parse_args,
+    decision_status,
+    new_run_id,
+    save_trace_to_jsonl,
+)
 from finco.llm import (
     DEFAULT_MODEL,
     ChatTurn,
@@ -36,167 +52,22 @@ from finco.llm import (
     merge_usage,
 )
 from finco.mcp_client import Client, get_default_server_params, to_openai_tools
-from finco.types import LogLine, Usage
+from finco.types import LogLine
 
-# --------------------------------------------------------------------------- 1. Hằng số
-LOGS_DIR = Path(__file__).resolve().parents[2] / "logs"
-
-MAX_STEPS = 12     # số lần gọi LLM tối đa mỗi lượt (quy trình dài nhất cần khoảng 9)
-MAX_NUDGES = 2     # số lần nhắc model sửa một lượt kết thúc chưa hợp lệ
-MAX_SEARCHES = 5   # số lần tra cứu chính sách tối đa mỗi lượt (chống xoay vòng truy vấn)
-
-SEARCH_TOOL = "search_policy"
-WRITE_TOOL = "submit_decision"
-VERIFY_TOOL = "get_decision"
-ANSWER_TOOL = "__answer__"  # dòng log cuối mỗi câu: câu trả lời + usage (kể cả câu không gọi tool)
-
-_APP_ID = re.compile(r"APP-\d+", re.IGNORECASE)
-_TEXT_ACTION = re.compile(r"^\s*(Action|Action Input)\s*:", re.IGNORECASE | re.MULTILINE)
-
-LlmFn = Callable[[list[dict[str, Any]], list[dict[str, Any]], str], ChatTurn]
+# Tái xuất khẩu (re-export) để đảm bảo 100% tương thích ngược với code và unit tests cũ
+__all__ = [
+    "Agent",
+    "AgentStep",
+    "AgentRunResult",
+    "save_trace_to_jsonl",
+    "ANSWER_TOOL",
+    "MAX_NUDGES",
+    "MAX_STEPS",
+    "MAX_SEARCHES",
+    "_safe_parse_args",
+]
 
 
-# --------------------------------------------------------------------------- 2. Kết quả một lượt
-@dataclass
-class AgentStep:
-    """Một bước để người đọc (Thought chỉ có ở đây, LogLine không lưu)."""
-    step_number: int
-    thought: str
-    tool_name: str
-    tool_args: dict = field(default_factory=dict)
-    observation: str = ""
-    is_error: bool = False
-
-
-@dataclass
-class AgentRunResult:
-    """Hộp đen của một lượt: câu trả lời cuối + trace + mức dùng LLM."""
-    app_id: str
-    run_id: str = ""
-    question_id: str = ""
-    question: str = ""
-    final_answer: str = ""
-    success: bool = True
-    error_message: Optional[str] = None
-    trace: list[LogLine] = field(default_factory=list)     # mỗi lời gọi tool một dòng
-    steps: list[AgentStep] = field(default_factory=list)
-    usage: Usage = field(default_factory=lambda: Usage(0, 0, 0, 0))
-    answer_log: Optional[LogLine] = None
-
-    @property
-    def tool_calls(self) -> list[str]:
-        return [line.tool for line in self.trace]
-
-    @property
-    def decision_written(self) -> bool:
-        return decision_status(self.trace, self.app_id)[0]
-
-    @property
-    def decision_verified(self) -> bool:
-        return decision_status(self.trace, self.app_id)[1]
-
-    def to_submission(self) -> AgentSubmission:
-        """Bài nộp cho verifier, dựng từ trace."""
-        return submission_from_trace(self.app_id, self.trace)
-
-    def save_log(self, filepath: Optional[str | Path] = None) -> Path:
-        """Ghi trace + dòng __answer__ ra .jsonl. Mặc định logs/run_<run_id>.jsonl; truyền cùng
-        một filepath cho nhiều lượt để gộp vào một file."""
-        path = Path(filepath) if filepath else LOGS_DIR / f"run_{self.run_id}.jsonl"
-        return save_trace_to_jsonl(self.trace + ([self.answer_log] if self.answer_log else []), path)
-
-
-# --------------------------------------------------------------------------- 3. Hàm phụ nhỏ
-def new_run_id() -> str:
-    return f"{datetime.now():%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:6]}"
-
-
-def save_trace_to_jsonl(trace: list[LogLine], log_file: Path | str) -> Path:
-    """Nối các dòng log vào file .jsonl (tạo thư mục nếu chưa có)."""
-    path = Path(log_file)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "a", encoding="utf-8") as f:
-        for line in trace:
-            f.write(json.dumps(asdict(line), ensure_ascii=False) + "\n")
-    return path
-
-
-def _is_error(text: str) -> bool:
-    return text.lstrip().startswith("Error:")
-
-
-def decision_status(trace: list[LogLine], app_id: str) -> tuple[bool, bool, bool]:
-    """(đã ghi, đã đọc lại sau khi ghi, hồ sơ không tồn tại), chỉ tính lời gọi THÀNH CÔNG đúng hồ sơ."""
-    target = app_id.strip().upper()
-    written = verified = looked_up = lookup_failed = False
-    for line in trace:
-        if str(line.args.get("app_id", "")).strip().upper() != target:
-            continue
-        ok = not _is_error(line.result)
-        if line.tool == "get_application":
-            looked_up, lookup_failed = looked_up or ok, lookup_failed or not ok
-        elif line.tool == WRITE_TOOL and ok:
-            written, verified = True, False  # ghi lại thì phải đọc lại lần nữa
-        elif line.tool == VERIFY_TOOL and ok and written:
-            verified = True
-    return written, verified, lookup_failed and not looked_up
-
-
-def _safe_parse_args(raw: str) -> tuple[dict, Optional[str]]:
-    """Parse JSON tham số tool, không bao giờ raise: trả (dict, None) hoặc ({}, thông báo lỗi)."""
-    raw = (raw or "").strip() or "{}"
-    value: Any = None
-    try:
-        value = json.loads(raw)
-    except json.JSONDecodeError as e:
-        for patched in (raw + "}", raw + '"}'):  # model nhỏ hay thiếu ngoặc/nháy đóng: vá một lần
-            try:
-                value = json.loads(patched)
-                break
-            except json.JSONDecodeError:
-                continue
-        else:
-            return {}, f"Error: Tham số gọi tool không phải JSON hợp lệ ({e})."
-    if not isinstance(value, dict):
-        return {}, ('Error: Tham số gọi tool phải là một đối tượng JSON dạng {"tên": giá_trị}, '
-                    f"nhận được {type(value).__name__}.")
-    return value, None
-
-
-def _assistant_message(turn: ChatTurn) -> dict[str, Any]:
-    """Tin nhắn assistant đưa lại vào lịch sử; tham số luôn là JSON hợp lệ (rác làm server từ chối)."""
-    msg: dict[str, Any] = {"role": "assistant", "content": turn.content or None}
-    if turn.tool_calls:
-        msg["tool_calls"] = [
-            {"id": tc.id, "type": "function",
-             "function": {"name": tc.name,
-                          "arguments": json.dumps(_safe_parse_args(tc.arguments)[0], ensure_ascii=False)}}
-            for tc in turn.tool_calls
-        ]
-    return msg
-
-
-def _result_text(result: Any) -> str:
-    """Văn bản từ kết quả call_tool của MCP; lỗi phía server luôn bắt đầu bằng "Error:"."""
-    text = "\n".join(c.text for c in (result.content or []) if isinstance(getattr(c, "text", None), str)).strip()
-    if getattr(result, "is_error", False) and not _is_error(text):
-        text = f"Error: {text or 'công cụ báo lỗi không kèm nội dung.'}"
-    return text or "(Công cụ không trả về nội dung: không có kết quả phù hợp.)"
-
-
-def _repeat_search_error(args: dict, prior_queries: list[str]) -> str:
-    """"Error: ..." nếu truy vấn đã chạy hoặc đã hết MAX_SEARCHES, ngược lại chuỗi rỗng."""
-    query = " ".join(str(args.get("query", "")).lower().split())
-    if query in prior_queries:
-        return ("Error: Truy vấn này đã được tra cứu ở bước trước và kết quả không đổi. Hãy dựa vào các kết quả "
-                "đã có để trả lời; nếu chúng không chứa thông tin cần thiết thì trả lời bằng câu từ chối.")
-    if len(prior_queries) >= MAX_SEARCHES:
-        return (f"Error: Đã tra cứu {len(prior_queries)} lần, đủ giới hạn. Không tra cứu thêm: hãy trả lời "
-                "từ các kết quả đã có, hoặc từ chối nếu không có thông tin.")
-    return ""
-
-
-# --------------------------------------------------------------------------- 4. Agent
 class Agent:
     """Agent thẩm định hồ sơ vay / hỏi đáp chính sách, dùng các tool của FinCo MCP server."""
 
@@ -241,7 +112,7 @@ class Agent:
             ts=datetime.now().isoformat(timespec="seconds"), run_id=result.run_id,
             question_id=result.question_id, step=result.steps[-1].step_number if result.steps else 0,
             tool=ANSWER_TOOL, args={"success": result.success, "error": result.error_message},
-            result=result.final_answer or result.error_message or "", usage=replace(result.usage),
+            result=result.final_answer or result.error_message or "", usage=result.usage,
         )
         return result
 
@@ -346,7 +217,7 @@ class Agent:
         result.trace.append(LogLine(
             ts=datetime.now().isoformat(timespec="seconds"), run_id=result.run_id,
             question_id=result.question_id, step=step, tool=tc.name, args=args, result=output,
-            usage=replace(result.usage),  # bản chụp tại bước này
+            usage=result.usage,  # bản chụp tại bước này
         ))
         return {"role": "tool", "tool_call_id": tc.id, "content": output}
 

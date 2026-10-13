@@ -506,6 +506,7 @@ def print_summary_table(results: list[VerifyResult]) -> None:
     print(f"-> Tuân thủ quy trình gọi tool (Trace): {metrics.get('trace_valid_rate', 0)}%")
     print(f"-> Độ chuẩn xác con số (Math)        : {metrics.get('math_valid_rate', 0)}%")
     print("=" * 90 + "\n")
+    
 def export_results_csv(results: list[VerifyResult], output_path: Path = REPO_ROOT / "eval" / "out" / "agent_eval_results.csv") -> None:
     """Xuất kết quả chi tiết ra file CSV phục vụ báo cáo bảo vệ đồ án."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -528,35 +529,3 @@ def export_results_csv(results: list[VerifyResult], output_path: Path = REPO_ROO
     print(f"[Verifier] Đã xuất báo cáo đánh giá chi tiết ra: {output_path}")
 
 
-# if __name__ == "__main__":
-#     import sys
-#     if hasattr(sys.stdout, "reconfigure"):
-#         sys.stdout.reconfigure(encoding="utf-8")
-
-#     # Chạy thử nghiệm giả lập bộ trọng tài trên toàn bộ 21 đề thi
-#     with open(EXPECTED_PATH, encoding="utf-8") as f:
-#         ground_truth = json.load(f)
-
-#     print(f"\n[FinCo Verifier] Chạy kiểm thử tự động trên 21 hồ sơ trong {EXPECTED_PATH.name}...")
-
-#     # Giả lập thí sinh nộp bài chuẩn 100% (Mock Perfect Agent)
-#     mock_submissions = [
-#         AgentSubmission(
-#             app_id=item["app_id"],
-#             decision=item["decision"],
-#             reason="Thẩm định đạt yêu cầu chính sách FinCo",
-#             cited_docs=item.get("cited", []),
-#             tool_calls=["search_policy", "calc_dti", "submit_decision", "get_decision"],
-#             calculated_dti=item.get("dti"),
-#             used_rate=item.get("annual_rate"),
-#         )
-#         for item in ground_truth
-#     ]
-
-#     # Cố tình tạo 1 hồ sơ bị lỗi (APP-003) để kiểm chứng bộ bắt lỗi
-#     mock_submissions[2].decision = "approve"  # Chuẩn là reject (DTI vượt trần)
-#     mock_submissions[2].tool_calls = ["search_policy", "calc_dti"]  # Thiếu submit & get_decision
-
-#     results = verify_all_decisions(mock_submissions)
-#     print_summary_table(results)
-#     export_results_csv(results)
