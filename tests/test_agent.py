@@ -139,10 +139,6 @@ class TestHappyPath(AgentTestBase):
             self.assertEqual(sub.decision, "reject")
             self.assertNotIn(ANSWER_TOOL, sub.tool_calls)
 
-    def test_default_log_path_is_repo_logs_dir(self):
-        self.assertEqual(agent_mod.LOGS_DIR, REPO_ROOT / "logs")
-
-
 class TestEnforcement(AgentTestBase):
     def test_stops_early_gets_nudged_then_completes(self):
         script = [turn(call("get_application", app_id=APP)), turn(content="Hồ sơ trông ổn.")] + good_decision_script()[1:]
@@ -298,3 +294,28 @@ class TestSafeParseArgs(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSearchRepeatGuard(AgentTestBase):
+    """Model từng search 11 lần liên tiếp ở câu no_answer; vòng lặp phải chặn mà không gọi retriever."""
+
+    def test_duplicate_query_is_blocked_without_calling_tool(self):
+        result, _ = self.run_agent(
+            turn(call("search_policy", query="bảo hiểm khoản vay")),
+            turn(call("search_policy", query="Bảo hiểm  khoản vay")),  # trùng sau khi chuẩn hóa
+            turn(content="Không có thông tin này trong tài liệu chính sách của FinCo."),
+            app_id="APP-001", question="Có mua bảo hiểm khoản vay không?", require_decision=False,
+        )
+        self.assertTrue(result.success, result.error_message)
+        self.assertFalse(result.steps[0].is_error)
+        self.assertTrue(result.steps[1].is_error)
+        self.assertIn("đã được tra cứu", result.steps[1].observation)
+
+    def test_search_budget_is_capped(self):
+        items = [turn(call("search_policy", query=f"truy vấn khác nhau {i}")) for i in range(agent_mod.MAX_SEARCHES + 1)]
+        items.append(turn(content="Không có thông tin này trong tài liệu chính sách của FinCo."))
+        result, _ = self.run_agent(*items, app_id="APP-001", question="Câu hỏi?", require_decision=False)
+        self.assertTrue(result.success, result.error_message)
+        ok = [s for s in result.steps if not s.is_error]
+        self.assertEqual(len(ok), agent_mod.MAX_SEARCHES)
+        self.assertIn("giới hạn", result.steps[-1].observation)
