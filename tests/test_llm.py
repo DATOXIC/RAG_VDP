@@ -19,12 +19,14 @@ from openai import (
     APIConnectionError,
     APITimeoutError,
     AuthenticationError,
+    BadRequestError,
     InternalServerError,
     RateLimitError,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
+sys.path.insert(0, str(REPO_ROOT))
 
 from finco import llm  # noqa: E402
 from finco.types import Usage  # noqa: E402
@@ -220,6 +222,111 @@ class TestMergeUsage(unittest.TestCase):
         self.assertEqual(llm.merge_usage(), Usage(0, 0, 0, 0))
 
 
+def tool_response(calls=(), content=None, prompt=50, completion=5, finish="tool_calls"):
+    """Phản hồi giả có tool_calls; calls là danh sách (tên, chuỗi_arguments)."""
+    tcs = [
+        SimpleNamespace(id=f"c{i}", function=SimpleNamespace(name=name, arguments=args))
+        for i, (name, args) in enumerate(calls)
+    ]
+    message = SimpleNamespace(content=content, tool_calls=tcs or None)
+    return SimpleNamespace(
+        choices=[SimpleNamespace(message=message, finish_reason=finish)],
+        usage=SimpleNamespace(prompt_tokens=prompt, completion_tokens=completion),
+    )
+
+
+TOOLS = [{"type": "function", "function": {"name": "t", "parameters": {"type": "object", "properties": {}}}}]
+
+
+class CallLlmToolsBase(unittest.TestCase):
+    def setUp(self):
+        for target, kw in (("finco.llm.time.sleep", {}), ("finco.llm.random.uniform", {"return_value": 0.2})):
+            p = patch(target, **kw)
+            p.start()
+            self.addCleanup(p.stop)
+
+    def call(self, client, **kw):
+        with patch("finco.llm.get_client", return_value=client):
+            with redirect_stderr(io.StringIO()):
+                return llm.call_llm_tools(MSGS, TOOLS, **kw)
+
+
+class TestCallLlmTools(CallLlmToolsBase):
+    def test_returns_tool_calls_and_usage(self):
+        client = fake_client(tool_response([("get_application", '{"app_id": "APP-001"}')], prompt=80, completion=12))
+        turn = self.call(client)
+        self.assertEqual(turn.content, "")
+        self.assertEqual(
+            turn.tool_calls,
+            [llm.ToolCall(id="c0", name="get_application", arguments='{"app_id": "APP-001"}')],
+        )
+        self.assertEqual(turn.usage, Usage(calls=1, prompt_tokens=80, completion_tokens=12, max_prompt=80))
+
+    def test_text_only_answer(self):
+        turn = self.call(fake_client(tool_response(content=" Xong. ", finish="stop")))
+        self.assertEqual(turn.content, "Xong.")
+        self.assertEqual(turn.tool_calls, [])
+
+    def test_parallel_calls_keep_order(self):
+        turn = self.call(fake_client(tool_response([("a", "{}"), ("b", "{}")])))
+        self.assertEqual([tc.name for tc in turn.tool_calls], ["a", "b"])
+
+    def test_request_carries_tools_timeout_and_choice(self):
+        client = fake_client(tool_response(content="ok", finish="stop"))
+        self.call(client, model="m-test", timeout=7.0)
+        kwargs = client.chat.completions.create.call_args.kwargs
+        self.assertEqual(kwargs["tools"], TOOLS)
+        self.assertEqual(kwargs["tool_choice"], "auto")
+        self.assertEqual(kwargs["timeout"], 7.0)
+        self.assertEqual(kwargs["model"], "m-test")
+
+    def test_shares_retry_policy_with_call_llm(self):
+        client = fake_client(
+            http_error(RateLimitError, 429, {"retry-after": "3"}),
+            tool_response(content="ok", finish="stop"),
+        )
+        turn = self.call(client)
+        self.assertEqual(turn.content, "ok")
+        self.assertEqual(client.chat.completions.create.call_count, 2)
+        self.assertAlmostEqual(llm.time.sleep.call_args.args[0], 3.2)  # Retry-After + jitter 0.2
+
+    def test_exhausted_retries_raise_runtime_error(self):
+        client = fake_client(*[http_error(InternalServerError, 503)] * 3)
+        with self.assertRaises(RuntimeError):
+            self.call(client, max_retries=2)
+
+    def test_tool_use_failed_becomes_malformed_error(self):
+        err = http_error(BadRequestError, 400)
+        err.code = "tool_use_failed"
+        with self.assertRaises(llm.MalformedToolCallError):
+            self.call(fake_client(err))
+
+    def test_other_bad_request_is_not_swallowed(self):
+        err = http_error(BadRequestError, 400)
+        err.code = "context_length_exceeded"
+        with self.assertRaises(BadRequestError):
+            self.call(fake_client(err))
+
+    def test_tool_use_failed_is_not_retried(self):
+        err = http_error(BadRequestError, 400)
+        err.code = "tool_use_failed"
+        client = fake_client(err, tool_response(content="ok", finish="stop"))
+        with self.assertRaises(llm.MalformedToolCallError):
+            self.call(client)
+        self.assertEqual(client.chat.completions.create.call_count, 1)
+
+    def test_no_choices_is_error(self):
+        resp = SimpleNamespace(choices=[], usage=None)
+        with self.assertRaises(llm.EmptyResponseError):
+            self.call(fake_client(resp))
+
+    def test_missing_usage_counts_zero(self):
+        resp = tool_response(content="ok", finish="stop")
+        resp.usage = None
+        turn = self.call(fake_client(resp))
+        self.assertEqual(turn.usage, Usage(calls=1, prompt_tokens=0, completion_tokens=0, max_prompt=0))
+
+
 class TestRenderPrompt(unittest.TestCase):
     def test_substitutes_and_keeps_unknown(self):
         with patch.object(llm, "load_prompt", return_value="Tools:\n${tools}\nNgày: ${ngay}"):
@@ -231,28 +338,44 @@ class TestRenderPrompt(unittest.TestCase):
             llm.load_prompt("khong_ton_tai.txt")
 
     def test_real_prompt_loads(self):
-        self.assertIn("ReAct", llm.load_prompt("agent_system.txt"))
+        self.assertIn("function calling", llm.load_prompt("agent_system.txt"))
 
 
 class TestAgentPrompt(unittest.TestCase):
-    """Giữ prompt đúng thiết kế: công cụ điền động, không chứa con số chính sách."""
+    """Giữ prompt đúng thiết kế: native function calling, không chứa số liệu chính sách."""
 
-    def test_tools_placeholder_filled(self):
-        out = llm.render_prompt("agent_system.txt", tools="- foo_tool: mô tả")
-        self.assertNotIn("${tools}", out)
-        self.assertIn("foo_tool", out)
+    @classmethod
+    def setUpClass(cls):
+        cls.text = llm.load_prompt("agent_system.txt")
+
+    def test_no_unfilled_placeholders(self):
+        # agent nạp prompt thô (load_prompt): không được còn ${...} vì sẽ gửi nguyên văn cho model
+        self.assertNotIn("${", self.text)
 
     def test_no_hardcoded_policy_numbers(self):
         import re
 
-        text = llm.load_prompt("agent_system.txt")
-        self.assertIsNone(re.search(r"\d+\s*(%|triệu|tháng|tuổi)", text), "prompt chứa con số chính sách")
+        self.assertIsNone(re.search(r"\d+\s*(%|triệu|tháng|tuổi)", self.text), "prompt chứa con số chính sách")
 
-    def test_action_format_is_json_in_brackets(self):
-        text = llm.load_prompt("agent_system.txt")
-        self.assertIn("Action: ", text)
-        self.assertIn("Answer:", text)
-        self.assertNotIn("Final Answer", text)
+    def test_uses_native_function_calling_not_text_actions(self):
+        self.assertNotIn("Action:", self.text)
+        self.assertNotIn("Observation:", self.text)
+        self.assertIn("thought", self.text)
+
+    def test_mentions_every_tool_of_the_workflow(self):
+        for name in ("search_policy", "get_application", "calc_dti", "submit_decision", "get_decision"):
+            self.assertIn(name, self.text)
+
+    def test_lists_every_reason_code(self):
+        from finco.types import REASON_CODES
+
+        for code in REASON_CODES:
+            self.assertIn(code, self.text)
+
+    def test_refusal_sentence_matches_eval_marker(self):
+        from eval.run_eval import REFUSAL_MARKER
+
+        self.assertIn(REFUSAL_MARKER, self.text)
 
 
 if __name__ == "__main__":

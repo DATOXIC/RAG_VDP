@@ -177,7 +177,8 @@ def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmi
 
     for step in steps:
         tool, args, result = _step_fields(step)
-        if not tool or result.lstrip().startswith("Error:"):
+        # "__answer__" là dòng ghi câu trả lời + usage cuối mỗi câu (không phải lời gọi tool).
+        if not tool or tool.startswith("__") or result.lstrip().startswith("Error:"):
             continue
         if tool in ("submit_decision", "get_decision", "calc_dti"):
             if str(args.get("app_id", "")).strip().upper() != target:

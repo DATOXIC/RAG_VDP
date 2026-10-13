@@ -94,7 +94,7 @@ Quy tắc kiến trúc:
 | W3 | `Document`/`DocumentChunk`, `VectorStore`, cosine bằng `numpy`, chunk + overlap | Store in-memory tự viết, **bỏ Chroma**; chunk theo mục Markdown |
 | W4 | grounding contract, pipeline 5 bước, hybrid BM25 + vector (chuẩn hóa), pre-filter metadata, ngân sách token | `search_policy` + prompt agent "chỉ dựa vào ngữ cảnh; không đủ thì nói không đủ" |
 | W5 | faithfulness / relevance / precision, tự viết LLM-judge, chẩn đoán theo mẫu, đổi một biến mỗi lần | `eval/`, xem mục 11 |
-| W6 | function calling vs ReAct; `max_iterations`; không `eval()`; cửa sổ trượt | ReAct văn bản + parse an toàn, xem mục 9 |
+| W6 | function calling vs ReAct; `max_iterations`; không `eval()`; cửa sổ trượt | Function calling gốc + trường `thought` tiêm vào mỗi tool (ReAct lai); `MAX_STEPS`; parse tham số an toàn, xem mục 9 |
 | W7 | MCP host/client/server; `list_tools`/`call_tool`; thiết kế tool như API công khai; stdout là giao thức; probe thô; agent không có registry viết tay | Xem mục 6.4 và 10 |
 | W8 | 4 mẫu đa agent (pipeline, orchestrator–worker, router, critic); handoff contract | **Không bắt buộc**, xem bên dưới |
 
@@ -107,7 +107,8 @@ Quy tắc kiến trúc:
 ```
 RAG_VDP/
 ├── PLAN.md                  # file này
-├── Makefile                 # setup | demo | eval | eval-compare | interop | test
+├── Makefile                 # setup | demo | run | eval | eval-score | eval-apps | retrieval-eval | test
+├── run.py                   # điểm vào: setup | demo | chat | eval (dùng khi máy không có make)
 ├── README.md                # CHỈ lệnh chạy + cách tái lập
 ├── ai-usage.md              # khai báo dùng AI (bắt buộc)
 ├── .env.example             # không bao giờ commit .env
@@ -128,10 +129,10 @@ RAG_VDP/
 │   ├── mcp_server.py
 │   ├── mcp_client.py
 │   ├── agent.py
-│   ├── verifier.py
-│   └── cli.py
+│   ├── chat.py              # REPL (rich)
+│   └── audit.py             # nhật ký phiên FINCO-xxxx
 ├── examples/client2.py      # bonus #3: host MCP thứ hai
-├── eval/                    # run_eval.py, judge.py, out/ (CSV, hình)
+├── eval/                    # run_eval.py, verifier.py, judge.py, sandbox_db.py, retrieval_eval.py, out/ (CSV, hình)
 ├── tests/                   # testset.jsonl + expected_decisions.json (chỉ cho eval)
 ├── scratch/                 # test cá nhân của từng người – .gitignore, không nộp
 ├── logs/                    # >= 3 file .jsonl chạy thật
@@ -251,7 +252,7 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 ## 8. RAG (A)
 
 - **Chunking:** theo mục `##` của Markdown; thêm dòng đầu chunk gồm tiêu đề tài liệu + version. *Viết 3–5 dòng giải thích lý do vào report.*
-- **Embedding = họ Jina, chạy local mặc định:** đặt sau một hàm `embed(texts)`. Backend mặc định là **mô hình Jina mã nguồn mở chạy local** qua `sentence-transformers` (không cần key); `make setup` tải mô hình về cache một lần. Backend `JINA_API_KEY` chỉ là tùy chọn khi có key. **Tài liệu và truy vấn phải dùng cùng một mô hình**: file vector `.npy` lưu kèm `model_id`, lúc chạy so khớp, lệch thì báo lỗi rõ ràng (không âm thầm trộn hai không gian vector). Vector tài liệu tính sẵn và commit. Cần kiểm tra: mô hình Jina bạn chọn hỗ trợ tiếng Việt không, giấy phép (một số bản là phi thương mại, ổn cho bài tập), và có cần `trust_remote_code` không (ghim `revision` cụ thể).
+- **Embedding chạy local (thực tế dùng `BAAI/bge-m3`, đa ngôn ngữ, ~2 GB; bản kế hoạch ban đầu ghi họ Jina):** đặt sau một hàm `embed(texts)`. Backend mặc định là **mô hình Jina mã nguồn mở chạy local** qua `sentence-transformers` (không cần key); `make setup` tải mô hình về cache một lần. Backend `JINA_API_KEY` chỉ là tùy chọn khi có key. **Tài liệu và truy vấn phải dùng cùng một mô hình**: file vector `.npy` lưu kèm `model_id`, lúc chạy so khớp, lệch thì báo lỗi rõ ràng (không âm thầm trộn hai không gian vector). Vector tài liệu tính sẵn và commit. Cần kiểm tra: mô hình Jina bạn chọn hỗ trợ tiếng Việt không, giấy phép (một số bản là phi thương mại, ổn cho bài tập), và có cần `trust_remote_code` không (ghim `revision` cụ thể).
 - **Không dùng vector DB** (giáo trình W3 dạy `VectorStore` tự viết, cosine bằng `numpy`; Chroma không nằm trong giáo trình): vài chục chunk, `numpy` là đủ.
 - **Hybrid theo W4:** điểm BM25 và điểm cosine **phải chuẩn hóa min–max trước khi trộn** (trộn điểm thô là lỗi kinh điển); trọng số khởi điểm 0.3 BM25 + 0.7 vector, chỉnh bằng thí nghiệm.
 - **Lọc metadata trước khi chấm điểm** (pre-filter theo `effective_date`, như W4), không lọc sau.
@@ -264,12 +265,12 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 
 ## 9. Agent (B)
 
-- **Dùng ReAct dạng văn bản** (Thought → Action → Observation → … → Answer, W6), không dùng function calling: yêu cầu 2.6 của đề nói về parse action an toàn (thiếu ngoặc không làm chết run) và buổi bảo vệ có bài C2/C3 về chính việc này. Định dạng đề xuất: `Action: tool_name[{"arg": ...}]` (JSON trong ngoặc), `Answer: ...`.
-- Vòng lặp: gọi LLM → có `Action` thì chạy tool và đưa `Observation` lại → có `Answer` thì dừng; hết `MAX_STEPS` (đề xuất 8) thì trả kết quả dừng gọn kèm trạng thái, không treo.
-- **Parse an toàn:** regex lỗi / thiếu ngoặc / tên tool lạ / JSON hỏng → KHÔNG raise; trả `Observation: Error: ...` kèm nhắc đúng định dạng, cho LLM thử lại tối đa 1–2 lần rồi dừng gọn. Viết test riêng cho từng kiểu hỏng (bài Break-and-Fix W6, ví dụ regex khớp `Action:` nhưng không khớp `Action Input:`).
+- **Dùng function calling gốc của API (đã đổi so với bản đầu của kế hoạch, theo cách `src/finco/agent.py` được triển khai; cần nhóm xác nhận).** Đề (mục 2.2, 2.6) chỉ yêu cầu vòng lặp tự viết và parse action an toàn, không bắt ReAct văn bản. Để vẫn có "Thought" cho audit, `mcp_client.to_openai_tools` tiêm thêm tham số bắt buộc `thought` vào schema mỗi tool; agent tách `thought` ra khỏi tham số trước khi gọi tool. "Parse an toàn" nay nằm ở biên tool: JSON tham số hỏng/không phải đối tượng, tên tool lạ, tool ném lỗi → trả `Error: ...` cho model, không raise.
+- Vòng lặp: gọi LLM → có `tool_calls` thì chạy từng tool qua MCP và đưa kết quả lại (role `tool`) → không còn `tool_calls` thì dừng; hết `MAX_STEPS` (mặc định 12: quy trình dài nhất cần ~9 lần gọi) thì trả kết quả dừng gọn kèm `success=False`, không treo. Lượt thẩm định chưa ghi + đọc lại thành công bị nhắc tối đa 2 lần (`MAX_NUDGES`) rồi đánh dấu thất bại.
+- **Parse an toàn:** JSON hỏng (vá một lần thiếu `}`) / không phải đối tượng / tên tool lạ / tool hoặc MCP ném lỗi / model viết `Action:` thành văn bản / server từ chối `tool_use_failed` → KHÔNG raise; trả `Error: ...` hoặc nhắc model, tối đa `MAX_NUDGES` lần rồi dừng gọn. Mỗi kiểu hỏng có test riêng trong `tests/test_agent.py` (LLM giả, không tốn API).
 - **Không bao giờ `eval()`** đầu vào hay đầu ra của tool (W6); phép tính dùng hàm có kiểu hoặc bảng tra.
 - **Bộ nhớ hội thoại:** cửa sổ trượt nhưng **luôn giữ câu hỏi/nhiệm vụ gốc** (lỗi kinh điển: cửa sổ quá nhỏ làm agent quên nhiệm vụ).
-- **Agent không có `TOOL_REGISTRY` nào viết tay** (W7): mô tả tool đưa vào prompt ReAct được sinh từ `list_tools()`. Kiểm tra bằng `grep`: trong `agent.py` không có tên tool nào là chuỗi cố định.
+- **Agent không có `TOOL_REGISTRY` hay schema viết tay** (W7): danh sách và schema tool sinh từ `list_tools()`. Ngoại lệ có chủ đích: `agent.py` biết tên cặp ghi + kiểm chứng (`WRITE_TOOL`, `VERIFY_TOOL`) để ép mục 2.7 của đề; hai hằng số này nằm ở đầu file.
 - Prompt nằm trong `prompts/*.txt`, không nhúng trong code.
 - Sau `submit_decision` **bắt buộc** gọi `get_decision`; verifier kiểm tra điều này trong trace.
 - **Verifier (bằng code):** `doc_id` trích có nằm trong tập chunk đã truy xuất? Con số trong câu trả lời khớp kết quả tool? Có cặp ghi → đọc lại?

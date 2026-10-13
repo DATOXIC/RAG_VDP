@@ -21,6 +21,10 @@ def get_default_server_params() -> StdioServerParameters:
     """Tham số kết nối tới FinCo MCP Server."""
     env = dict(os.environ)
     env["PYTHONPATH"] = f"{REPO_ROOT / 'src'}{os.pathsep}{REPO_ROOT}"
+    # Windows: stderr của server mặc định là cp1252 nên log tiếng Việt thành "đ...".
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    env.setdefault("FINCO_LOG_LEVEL", "WARNING")
     return StdioServerParameters(
         command=sys.executable,
         args=["-m", "finco.mcp_server"],
