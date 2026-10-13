@@ -1,0 +1,66 @@
+{
+  "questions": 37,
+  "passed": 8,
+  "pass_rate": 21.6,
+  "run_success_rate": 81.1,
+  "decision_accuracy": 43.5,
+  "root_cause_accuracy": 43.5,
+  "read_after_write_rate": 69.6,
+  "numbers_accuracy": 60.9,
+  "correct_refusal_rate": 25.0,
+  "false_refusal_rate": 0.0,
+  "faithfulness_rule_rate": 100.0,
+  "tool_error_rate": 18.9,
+  "avg_tool_calls": 6.16,
+  "avg_llm_calls": 6.7,
+  "total_prompt_tokens": 929024,
+  "total_completion_tokens": 34501,
+  "max_prompt_tokens": 5862,
+  "by_type": {
+    "tra cứu": {
+      "n": 2,
+      "passed": 1
+    },
+    "tổng hợp": {
+      "n": 2,
+      "passed": 0
+    },
+    "phiên bản": {
+      "n": 2,
+      "passed": 1
+    },
+    "tính toán": {
+      "n": 2,
+      "passed": 0
+    },
+    "thiếu dữ liệu": {
+      "n": 2,
+      "passed": 1
+    },
+    "no_answer": {
+      "n": 4,
+      "passed": 1
+    },
+    "hành động": {
+      "n": 2,
+      "passed": 0
+    },
+    "hồ sơ": {
+      "n": 21,
+      "passed": 4
+    }
+  },
+  "log_file": "logs\\eval_qwen2.5-14b_full.jsonl",
+  "model": null,
+  "generated_at": "2026-10-13T21:31:11",
+  "verifier": {
+    "total_cases": 23,
+    "pass_count": 4,
+    "overall_pass_rate": 17.39,
+    "decision_accuracy": 43.48,
+    "root_cause_accuracy": 43.48,
+    "citation_recall_avg": 55.78,
+    "trace_valid_rate": 69.57,
+    "math_valid_rate": 60.87
+  }
+}
