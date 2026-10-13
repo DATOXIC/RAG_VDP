@@ -20,7 +20,7 @@ Mô hình LLM chạy trong sản phẩm (không phải công cụ viết code): 
 | `eval/verifier.py`: `submission_from_trace`, `verify_root_cause`, so khớp trích dẫn theo phiên bản | viết mới | `tests/test_verifier.py`, chạy trên trace giả lập |
 | `eval/judge.py`: `_require_bool`, `judge_error`, bỏ `identifies_root_cause` | sửa | đọc diff; test `bool("false")` |
 | `src/finco/types.py`, `store/db.py`, `tools.py`: `reason_codes` (tập đóng, khớp quyết định, migration DB) | viết | `tests/test_submit_decision.py`, migration chạy trên bản sao `finco.db` |
-| `src/finco/llm.py`: `_create_with_retry` dùng chung, `call_llm_tools`, `MalformedToolCallError`, timeout mặc định | sửa | `tests/test_llm.py` (43 test, client giả) |
+| `src/finco/llm.py`: `_create_with_retry` dùng chung, `call_llm_tools`, timeout mặc định | sửa | `tests/test_llm.py` (43 test, client giả) |
 | `src/finco/agent.py`: bọc lỗi, ép ghi + đọc lại, log theo bước, `run_id` duy nhất | viết lại | `tests/test_agent.py` (LLM giả, MCP server thật, DB sandbox) |
 | `prompts/agent_system.txt` | viết lại cho function calling, thứ tự CP-04, hỏi đáp/từ chối | `tests/test_prompt.py` |
 | `eval/run_eval.py`, `eval/scoring.py`, `tests/testset.jsonl` | viết mới | `tests/test_run_eval.py` |

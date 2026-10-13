@@ -284,14 +284,6 @@ class TestCallLlmTools(CallLlmToolsBase):
         self.assertEqual(client.chat.completions.create.call_count, 2)
         self.assertAlmostEqual(llm.time.sleep.call_args.args[0], 3.2)  # Retry-After + jitter 0.2
 
-    def test_tool_use_failed_becomes_malformed_error_without_retry(self):
-        err = http_error(BadRequestError, 400)
-        err.code = "tool_use_failed"
-        client = fake_client(err, tool_response(content="ok", finish="stop"))
-        with self.assertRaises(llm.MalformedToolCallError):
-            self.call(client)
-        self.assertEqual(client.chat.completions.create.call_count, 1)
-
     def test_other_bad_request_is_not_swallowed(self):
         err = http_error(BadRequestError, 400)
         err.code = "context_length_exceeded"

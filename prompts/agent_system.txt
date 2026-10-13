@@ -31,8 +31,8 @@ THẨM ĐỊNH MỘT HỒ SƠ (mã APP-xxx). Làm đúng thứ tự, DỪNG ở 
    - decision: approve | reject | escalate | need_info. reason: 1-3 câu, căn cứ và số liệu lấy từ công cụ.
    - cited_docs: CHỈ tài liệu đã tra và thực sự dùng, kèm phiên bản, ví dụ ["CP-01 v1", "CP-02"].
    - reason_codes theo decision: approve -> APPROVED; reject -> AGE, AMOUNT_RANGE, TERM_RANGE, OVERDUE, DTI_EXCEEDED; need_info -> MISSING_DOCS, MISSING_DEBT_DECLARATION; escalate -> ESCALATE_MANAGER, ESCALATE_COUNCIL, ESCALATE_EMPLOYEE.
-7. BẮT BUỘC ngay sau đó gọi get_decision(app_id) để kiểm chứng đã lưu đúng.
-8. Chỉ sau khi có kết quả get_decision mới trả lời: quyết định, lý do chính kèm số liệu, căn cứ dạng [CP-01 v2].
+7. Ghi thành công thì hệ thống tự đọc lại bằng get_decision và đính kèm kết quả vào phản hồi của submit_decision: đối chiếu với điều bạn đã ghi (lệch hoặc có "Error:" thì ghi lại).
+8. Chỉ sau khi đối chiếu mới trả lời: quyết định, lý do chính kèm số liệu, căn cứ dạng [CP-01 v2].
 
 HỎI ĐÁP CHÍNH SÁCH (không yêu cầu thẩm định hồ sơ)
 - search_policy với truy vấn bám sát câu hỏi; câu hỏi nêu thời điểm thì truyền as_of_date. Câu hỏi về một hồ sơ cụ thể thì get_application, và calc_dti khi cần DTI.

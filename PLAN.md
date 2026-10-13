@@ -266,13 +266,13 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 ## 9. Agent (B)
 
 - **Dùng function calling gốc của API (đã đổi so với bản đầu của kế hoạch, theo cách `src/finco/agent.py` được triển khai; cần nhóm xác nhận).** Đề (mục 2.2, 2.6) chỉ yêu cầu vòng lặp tự viết và parse action an toàn, không bắt ReAct văn bản. Để vẫn có "Thought" cho audit, `mcp_client.to_openai_tools` tiêm thêm tham số bắt buộc `thought` vào schema mỗi tool; agent tách `thought` ra khỏi tham số trước khi gọi tool. "Parse an toàn" nay nằm ở biên tool: JSON tham số hỏng/không phải đối tượng, tên tool lạ, tool ném lỗi → trả `Error: ...` cho model, không raise.
-- Vòng lặp: gọi LLM → có `tool_calls` thì chạy từng tool qua MCP và đưa kết quả lại (role `tool`) → không còn `tool_calls` thì dừng; hết `MAX_STEPS` (mặc định 12: quy trình dài nhất cần ~9 lần gọi) thì trả kết quả dừng gọn kèm `success=False`, không treo. Lượt thẩm định chưa ghi + đọc lại thành công bị nhắc tối đa 2 lần (`MAX_NUDGES`) rồi đánh dấu thất bại.
-- **Parse an toàn:** JSON hỏng (vá một lần thiếu `}`) / không phải đối tượng / tên tool lạ / tool hoặc MCP ném lỗi / model viết `Action:` thành văn bản / server từ chối `tool_use_failed` → KHÔNG raise; trả `Error: ...` hoặc nhắc model, tối đa `MAX_NUDGES` lần rồi dừng gọn. Mỗi kiểu hỏng có test riêng trong `tests/test_agent.py` (LLM giả, không tốn API).
+- Vòng lặp: gọi LLM → có `tool_calls` thì chạy từng tool qua MCP và đưa kết quả lại (role `tool`) → không còn `tool_calls` thì dừng; hết `MAX_STEPS` (mặc định 12: quy trình dài nhất cần ~9 lần gọi) thì trả kết quả dừng gọn kèm `success=False`, không treo. Không có cơ chế nhắc/ép model: model quên ghi quyết định thì verifier chấm trượt (số liệu trung thực thay vì được code vá).
+- **Parse an toàn:** JSON hỏng / không phải đối tượng / tên tool lạ / tool hoặc MCP ném lỗi → KHÔNG raise; trả `Error: ...` cho model tự sửa. LLM lỗi hoặc trả rỗng thì lượt thất bại gọn (`success=False`, trace và USAGE vẫn được ghi). Mỗi kiểu có test trong `tests/test_agent.py` (LLM giả, không tốn API).
 - **Không bao giờ `eval()`** đầu vào hay đầu ra của tool (W6); phép tính dùng hàm có kiểu hoặc bảng tra.
 - **Bộ nhớ hội thoại:** cửa sổ trượt nhưng **luôn giữ câu hỏi/nhiệm vụ gốc** (lỗi kinh điển: cửa sổ quá nhỏ làm agent quên nhiệm vụ).
 - **Agent không có `TOOL_REGISTRY` hay schema viết tay** (W7): danh sách và schema tool sinh từ `list_tools()`. Ngoại lệ có chủ đích: `agent.py` biết tên cặp ghi + kiểm chứng (`WRITE_TOOL`, `VERIFY_TOOL`) để ép mục 2.7 của đề; hai hằng số này nằm ở đầu file.
 - Prompt nằm trong `prompts/*.txt`, không nhúng trong code.
-- Sau `submit_decision` **bắt buộc** gọi `get_decision`; verifier kiểm tra điều này trong trace.
+- Sau `submit_decision` thành công, **code tự gọi** `get_decision` (cùng bước, ghi một dòng log riêng) và đính kèm kết quả vào phản hồi của `submit_decision`; verifier kiểm tra cặp này trong trace.
 - **Verifier (bằng code):** `doc_id` trích có nằm trong tập chunk đã truy xuất? Con số trong câu trả lời khớp kết quả tool? Có cặp ghi → đọc lại?
 - **Calibration:** không tìm thấy căn cứ → nói rõ "không có trong tài liệu"; thiếu dữ liệu để tính → `need_info`, không đoán.
 

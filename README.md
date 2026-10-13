@@ -54,7 +54,7 @@ Quyết định thiết kế chính:
 
 - **Native function calling + `thought`.** Schema tool lấy từ `list_tools()` của MCP server rồi đổi sang định dạng OpenAI; mỗi tool được tiêm thêm tham số `thought` bắt model nói lý do trước khi gọi (giữ được "Thought" để audit mà không phải parse văn bản). Agent không có registry tool viết tay.
 - **Không raise ra ngoài.** Lỗi tool, lỗi MCP, tham số JSON hỏng, tên tool lạ, hết retry LLM đều thành `Error: ...` hoặc kết thúc gọn với `success=False`; trace và usage vẫn được giữ.
-- **Ép quy trình ghi + đọc lại.** Lượt thẩm định chưa `submit_decision` rồi `get_decision` thành công thì chưa hoàn tất: agent nhắc model (tối đa 2 lần) rồi đánh dấu thất bại.
+- **Ghi xong tự đọc lại.** `submit_decision` thành công thì code tự gọi `get_decision` và đính kèm kết quả vào phản hồi cho model; verifier kiểm tra cặp ghi + đọc lại trong trace.
 - **Đo bằng trace, không bằng văn bản tự do.** Verifier dựng bài nộp từ chính các lời gọi tool (`submission_from_trace`), nên không phụ thuộc cách model diễn đạt.
 - **Thứ tự xử lý theo CP-04** (loại trừ → chứng từ → DTI → thẩm quyền, dừng ở bước đầu tiên không đạt): agent chỉ tra cứu những gì bước hiện tại cần, tiết kiệm lượt gọi LLM.
 

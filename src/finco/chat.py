@@ -135,7 +135,7 @@ def show_audit_view(audit_id: str):
     )
     console.print(Panel(summary_text, title=f"TÓM TẮT PHIÊN {data['audit_id']}", border_style="blue"))
 
-    # Cây diễn giải từng bước ReAct (Thought -> Action -> Observation)
+    # Cây diễn giải từng lời gọi tool (Action -> Observation)
     steps = data.get("steps_detail", [])
     if steps:
         tree = Tree(f"[bold magenta]Hành trình thẩm định ({len(steps)} bước)[/bold magenta]")
@@ -143,11 +143,6 @@ def show_audit_view(audit_id: str):
             step_no = s.get("step_number", 1)
             tool = s.get("tool_name", "Không có tool")
             step_node = tree.add(f"[bold yellow]Bước {step_no}: Gọi {tool}[/bold yellow]")
-            
-            # Thought
-            thought = s.get("thought", "").strip()
-            if thought:
-                step_node.add(f"[italic cyan]Suy nghĩ (Thought):[/italic cyan] {thought}")
             
             # Action args
             args = s.get("tool_args", {})
@@ -269,17 +264,16 @@ def main():
         audit_id = generate_audit_id()
         app_id_target = "Q"
         actual_question: Optional[str] = query
-        is_assessment = False  # True: yêu cầu thẩm định -> bắt buộc ghi + đọc lại quyết định
 
         # Phân loại lệnh eval / APP-xxx
         if _APP_CMD.fullmatch(query):
             app_id_target = query.upper()
-            actual_question, is_assessment = None, True  # None = dùng câu thẩm định mặc định của agent
+            actual_question = None  # None = dùng câu thẩm định mặc định của agent
         elif cmd_lower.startswith("eval"):
             parts = query.split(maxsplit=1)
             if len(parts) > 1 and _APP_CMD.fullmatch(parts[1].strip()):
                 app_id_target = parts[1].strip().upper()
-                actual_question, is_assessment = None, True
+                actual_question = None
             else:
                 print("[yellow]Cú pháp: eval <MÃ_HỒ_SƠ>, ví dụ: eval APP-003[/yellow]")
                 continue
@@ -294,7 +288,6 @@ def main():
             app_id=app_id_target,
             question=actual_question,
             question_id=audit_id,
-            require_decision=is_assessment,
         )
 
         log_file = result.save_log()  # logs/run_<run_id>.jsonl: đầu vào của verifier / run_eval
