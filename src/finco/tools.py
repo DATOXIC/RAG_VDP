@@ -59,6 +59,9 @@ def get_application(app_id: str) -> str:
         return f"Error: Đã xảy ra lỗi khi lấy hồ sơ: {e}"
 
 
+_DTI_DONE: set[str] = set()  # hồ sơ đã calc_dti thành công trong tiến trình MCP server này
+
+
 def calc_dti(app_id: str, annual_rate: str) -> str:
     """ Tính DTI để biết người ngày dành bao nhiêu % thu nhập để trả nợ
 
@@ -127,6 +130,7 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
             f"- Tỷ lệ nợ trên thu nhập (DTI): {dti} ({dti_percent}%)",
             f"- Diễn giải công thức: {formula}",
         ]
+        _DTI_DONE.add(app_id)
         return "\n".join(result_text)
     
     except db.AppNotFound:
@@ -193,9 +197,11 @@ def submit_decision(
         # 3. Kiểm tra reason_codes: tập đóng, và phải khớp với decision
         if isinstance(reason_codes, str):
             reason_codes = [reason_codes]
+            
         if not isinstance(reason_codes, list):
             return "Error: reason_codes phải là một danh sách mã lý do."
         clean_codes = list(dict.fromkeys(str(c).strip().upper() for c in reason_codes if str(c).strip()))
+        
         if not clean_codes:
             return (
                 "Error: reason_codes không được rỗng. Với decision "
@@ -210,6 +216,13 @@ def submit_decision(
             return (
                 f"Error: reason_codes {', '.join(mismatched)} không khớp decision '{clean_decision}'. "
                 f"Với '{clean_decision}' chỉ được dùng: {', '.join(allowed)}."
+            )
+
+        # Quyết định dựa trên DTI (approve, escalate, reject vì DTI) chỉ được ghi sau khi đã tính DTI.
+        if (clean_decision in ("approve", "escalate") or "DTI_EXCEEDED" in clean_codes) and clean_app_id not in _DTI_DONE:
+            return (
+                f"Error: Chưa tính DTI cho hồ sơ {clean_app_id}. Hãy tra biểu lãi suất CP-03 lấy lãi suất theo kỳ hạn, "
+                f"gọi calc_dti, rồi mới ghi quyết định '{clean_decision}'."
             )
 
         # 4. Tạo đối tượng Decision và gọi DB để ghi

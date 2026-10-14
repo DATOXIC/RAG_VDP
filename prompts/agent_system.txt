@@ -29,7 +29,7 @@ THẨM ĐỊNH MỘT HỒ SƠ (mã APP-xxx). Làm đúng thứ tự, DỪNG ở 
    - Trong thẩm quyền chuyên viên, đạt mọi điều kiện: approve, APPROVED.
 6. submit_decision(app_id, decision, reason, cited_docs, reason_codes).
    - decision: approve | reject | escalate | need_info. reason: 1-3 câu, căn cứ và số liệu lấy từ công cụ.
-   - cited_docs: CHỈ tài liệu đã tra và thực sự dùng, kèm phiên bản, ví dụ ["CP-01 v1", "CP-02"].
+   - cited_docs: mọi tài liệu chính sách đã tra và đối chiếu ở các bước đã đi qua, kể cả bước hồ sơ đạt, kèm phiên bản, ví dụ ["CP-01 v1", "CP-02"]. Đã dùng calc_dti thì thêm CP-05 (công thức thu nhập). Không trích tài liệu chưa tra.
    - reason_codes theo decision: approve -> APPROVED; reject -> AGE, AMOUNT_RANGE, TERM_RANGE, OVERDUE, DTI_EXCEEDED; need_info -> MISSING_DOCS, MISSING_DEBT_DECLARATION; escalate -> ESCALATE_MANAGER, ESCALATE_COUNCIL, ESCALATE_EMPLOYEE.
 7. Ghi thành công thì hệ thống tự đọc lại bằng get_decision và đính kèm kết quả vào phản hồi của submit_decision: đối chiếu với điều bạn đã ghi (lệch hoặc có "Error:" thì ghi lại).
 8. Chỉ sau khi đối chiếu mới trả lời: quyết định, lý do chính kèm số liệu, căn cứ dạng [CP-01 v2].
