@@ -87,6 +87,13 @@ class SubmissionFromTrace(unittest.TestCase):
         trace[2]["args"]["annual_rate"] = "17"
         self.assertAlmostEqual(submission_from_trace("APP-015", trace).used_rate, 0.17)
 
+    def test_rate_with_percent_sign(self):
+        """Tool calc_dti chấp nhận "17.0%"; verifier phải đọc được cùng định dạng, không tính là thiếu lãi suất."""
+        for raw in ("17.0%", " 17 % ", "17,0%"):
+            trace = good_trace()
+            trace[2]["args"]["annual_rate"] = raw
+            self.assertAlmostEqual(submission_from_trace("APP-015", trace).used_rate, 0.17, msg=raw)
+
     def test_garbage_steps_do_not_crash(self):
         sub = submission_from_trace("APP-015", [{}, {"tool": None}, {"tool": "calc_dti", "args": "x", "result": None}])
         self.assertEqual(sub.decision, "NONE")

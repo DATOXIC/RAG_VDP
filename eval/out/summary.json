@@ -1,62 +1,38 @@
 {
-  "questions": 16,
-  "passed": 11,
-  "pass_rate": 68.8,
-  "run_success_rate": 93.8,
-  "decision_accuracy": 50.0,
-  "root_cause_accuracy": 50.0,
-  "read_after_write_rate": 50.0,
-  "numbers_accuracy": 0.0,
-  "correct_refusal_rate": 100.0,
-  "false_refusal_rate": 0.0,
+  "questions": 3,
+  "passed": 0,
+  "pass_rate": 0.0,
+  "run_success_rate": 100.0,
+  "decision_accuracy": 100.0,
+  "root_cause_accuracy": 100.0,
+  "read_after_write_rate": 100.0,
+  "numbers_accuracy": 100.0,
+  "correct_refusal_rate": null,
+  "false_refusal_rate": null,
   "faithfulness_rule_rate": 100.0,
-  "tool_error_rate": 5.1,
-  "avg_tool_calls": 2.44,
-  "avg_llm_calls": 3.38,
-  "total_prompt_tokens": 192140,
-  "total_completion_tokens": 10909,
-  "max_prompt_tokens": 5766,
+  "tool_error_rate": 0.0,
+  "avg_tool_calls": 5.67,
+  "avg_llm_calls": 5.67,
+  "total_prompt_tokens": 52442,
+  "total_completion_tokens": 3569,
+  "max_prompt_tokens": 4460,
   "by_type": {
-    "tra cứu": {
-      "n": 2,
-      "passed": 2
-    },
-    "tổng hợp": {
-      "n": 2,
-      "passed": 1
-    },
-    "phiên bản": {
-      "n": 2,
-      "passed": 2
-    },
-    "tính toán": {
-      "n": 2,
-      "passed": 0
-    },
-    "thiếu dữ liệu": {
-      "n": 2,
-      "passed": 2
-    },
-    "no_answer": {
-      "n": 4,
-      "passed": 4
-    },
-    "hành động": {
-      "n": 2,
+    "hồ sơ": {
+      "n": 3,
       "passed": 0
     }
   },
-  "log_file": "logs\\eval_20261013_102004.jsonl",
+  "log_file": "logs\\eval_20261014_131515.jsonl",
   "model": "openai/gpt-oss-20b",
-  "generated_at": "2026-10-13T19:35:59",
+  "generated_at": "2026-10-14T13:33:39",
   "verifier": {
-    "total_cases": 2,
+    "total_cases": 3,
     "pass_count": 0,
     "overall_pass_rate": 0.0,
-    "decision_accuracy": 50.0,
-    "root_cause_accuracy": 50.0,
-    "citation_recall_avg": 25.0,
-    "trace_valid_rate": 50.0,
-    "math_valid_rate": 0.0
+    "decision_accuracy": 100.0,
+    "root_cause_accuracy": 100.0,
+    "citation_recall_avg": 58.33,
+    "trace_valid_rate": 100.0,
+    "math_valid_rate": 100.0
   }
 }
