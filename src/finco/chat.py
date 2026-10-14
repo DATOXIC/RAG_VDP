@@ -219,7 +219,7 @@ def main():
     try:
         get_client()
     except ValueError as e:  # thiếu API key: vẫn xem được 'list', 'history', 'audit'
-        print(f"[yellow]⚠ {e}[/yellow]\n[dim]Thẩm định và hỏi đáp cần API key; các lệnh còn lại vẫn dùng được.[/dim]\n")
+        print(f"[yellow] {e}[/yellow]\n[dim]Thẩm định và hỏi đáp cần API key; các lệnh còn lại vẫn dùng được.[/dim]\n")
     agent = Agent(verbose=True)
 
     while True:
