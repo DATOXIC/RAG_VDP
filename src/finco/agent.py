@@ -79,10 +79,50 @@ def save_trace_to_jsonl(trace: list[LogLine], log_file: Path | str) -> Path:
       - Ghi LogLine vào result.trace (để tí nữa chấm điểm)
       - Nếu là 'submit_decision' -> Tự đọc lại bằng 'get_decision'
    7. Đưa kết quả tool vào message: messages.append({"role": "tool", ...})
-   -> Quay lại Bước 4
-------------------------------------------------------
 8. Chuyển trace thành AgentSubmission để chấm điểm (result.to_submission())
 """
+
+
+import re
+from typing import Optional
+
+def is_underwrite_intent(app_id: Optional[str], question: Optional[str]) -> bool:
+    """Xác định lượt chạy có phải là thẩm định hồ sơ cần ghi nhận quyết định hay không."""
+    
+    # Chuẩn hóa chuỗi câu hỏi
+    q = (question or "").strip().lower()
+    
+    # Kiểm tra xem có mã hồ sơ (APP-xxx) ở tham số app_id hoặc nằm trong câu hỏi không
+    has_app_id = bool(app_id and app_id.strip()) or bool(re.search(r"\bapp-\d+\b", q))
+    
+    # 0. Nếu hoàn toàn không có mã hồ sơ nào -> Chắc chắn 100% là hỏi đáp chính sách (QA)
+    if not has_app_id:
+        return False
+
+    # 1. Có app_id nhưng không truyền câu hỏi riêng (None hoặc chuỗi rỗng) -> Mặc định thẩm định
+    if not q:
+        return True
+
+    # 2. Các câu hỏi có ý định loại trừ (ví dụ C01, C02: chỉ tính toán/kiểm tra, không ghi quyết định)
+    neg_patterns = [
+        "chỉ cần", "chỉ tính", "chỉ kiểm tra", "chỉ tra cứu", "chỉ hỏi",
+        "chưa cần ghi", "không cần ghi", "không ghi", "chưa ghi",
+        "không thẩm định", "chưa thẩm định", "không gọi submit"
+    ]
+    if any(neg in q for neg in neg_patterns):
+        return False
+
+    # 3. Các câu hỏi yêu cầu thẩm định rõ ràng (ví dụ A01, A02)
+    pos_patterns = [
+        "thẩm định", "ghi nhận quyết định", "xét duyệt", 
+        "phê duyệt hồ sơ", "duyệt hồ sơ", "ra quyết định", "ghi quyết định"
+    ]
+    if any(k in q for k in pos_patterns):
+        return True
+
+    # 4. Các câu hỏi còn lại (dù có mã APP-xxx nhưng chỉ hỏi thông tin lẻ, hoặc tra cứu T01, S01, V01, N01): Đều là QA
+    return False
+
 
 class Agent:
     def __init__(
@@ -96,7 +136,9 @@ class Agent:
         self.model = model or DEFAULT_MODEL
         self.max_steps = max_steps
         self.verbose = verbose
-        self.system_prompt = load_prompt("agent_system.txt")
+        self.underwrite_prompt = load_prompt("agent_underwrite.txt")
+        self.qa_prompt = load_prompt("agent_qa.txt")
+        self.system_prompt = self.underwrite_prompt
         
         if llm is not None:
             self._llm = llm
@@ -169,6 +211,7 @@ class Agent:
     ) -> AgentRunResult:
         """Trái tim suy luận: mở MCP Server -> Vòng lặp ReAct -> Trả kết quả."""
         app_id = app_id.strip()
+        is_underwrite = is_underwrite_intent(app_id, question)
         query = question or f"Hãy thẩm định hồ sơ {app_id} theo quy trình chính sách FinCo và ghi nhận quyết định vào hệ thống."
         
         result = AgentRunResult(
@@ -180,10 +223,19 @@ class Agent:
         try:
             # 1. Kết nối MCP Server & Discovery tools
             async with Client(get_default_server_params()) as mcp:
-                tools = to_openai_tools((await mcp.list_tools()).tools)
+                all_tools = to_openai_tools((await mcp.list_tools()).tools)
+                
+                if is_underwrite:
+                    tools = all_tools
+                else:
+                    tools = [
+                        t for t in all_tools
+                        if (t.get("function", {}).get("name") or t.get("name")) not in (WRITE_TOOL, VERIFY_TOOL)
+                    ]
 
+                active_prompt = self.underwrite_prompt if is_underwrite else self.qa_prompt
                 messages: list[dict[str, Any]] = [
-                    {"role": "system", "content": self.system_prompt},
+                    {"role": "system", "content": active_prompt},
                     {"role": "user", "content": query},
                 ]
                 # 2. Vòng lặp ReAct
@@ -204,7 +256,7 @@ class Agent:
                             line.tool == WRITE_TOOL and not line.result.startswith("Error:") 
                             for line in result.trace
                         )
-                        if result.app_id.startswith("APP-") and not has_submitted and step < self.max_steps:
+                        if is_underwrite and not has_submitted and step < self.max_steps:
                             messages.append({
                                 "role": "user", 
                                 "content": f"Chưa hoàn tất: Hồ sơ {result.app_id} chưa được ghi nhận quyết định thành công. Hãy gọi {WRITE_TOOL} trước khi trả lời."

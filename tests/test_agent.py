@@ -47,9 +47,11 @@ class Script:
     def __init__(self, *items):
         self.items = list(items)
         self.seen: list[list[dict]] = []  # bản chụp messages ở từng lần gọi
+        self.seen_tools: list[list[dict]] = []  # bản chụp tools ở từng lần gọi
 
     def __call__(self, messages, tools, model):
         self.seen.append(json.loads(json.dumps(messages, default=str)))
+        self.seen_tools.append(tools)
         if not self.items:
             raise AssertionError("Kịch bản hết nhưng agent vẫn gọi LLM")
         item = self.items.pop(0)
@@ -237,5 +239,72 @@ class TestRobustness(AgentTestBase):
         json.loads(assistant["tool_calls"][0]["function"]["arguments"])  # phải là JSON hợp lệ
 
 
+
+class TestIntentRoutingAndToolMasking(AgentTestBase):
+    """Kiểm tra Mắt xích 1 & 2: Phân loại ý định và Ẩn tool theo ngữ cảnh."""
+
+    def test_intent_detection(self):
+        from finco.agent import is_underwrite_intent
+        # 1. Mặc định không truyền question -> Thẩm định
+        self.assertTrue(is_underwrite_intent("APP-003", None))
+
+        # 2. Câu hỏi thẩm định rõ ràng -> Thẩm định
+        self.assertTrue(is_underwrite_intent("APP-015", "Hãy thẩm định hồ sơ APP-015 và ghi nhận quyết định vào hệ thống."))
+        self.assertTrue(is_underwrite_intent("APP-018", "Xét duyệt hồ sơ APP-018"))
+
+        # 3. Câu hỏi chỉ tính toán / chưa cần ghi -> QA (False)
+        self.assertFalse(is_underwrite_intent("APP-001", "Hồ sơ APP-001 có tỷ lệ DTI là bao nhiêu phần trăm? Chỉ cần tính, chưa cần ghi quyết định."))
+        self.assertFalse(is_underwrite_intent("APP-014", "Khoản trả hàng tháng là bao nhiêu? Không cần ghi quyết định."))
+
+        # 4. Câu hỏi tra cứu thông thường -> QA (False)
+        self.assertFalse(is_underwrite_intent("Q", "Chứng từ bắt buộc của người vay hưởng lương gồm những gì?"))
+        self.assertFalse(is_underwrite_intent("Q", "Lãi suất vay thế chấp mua nhà là bao nhiêu?"))
+
+    def test_qa_masks_submit_and_verify_tools(self):
+        # Khi là câu hỏi QA, LLM không được nhìn thấy submit_decision và get_decision
+        result, llm = self.run_agent(
+            turn(content="Chứng từ gồm CCCD và HĐLĐ."),
+            app_id="Q",
+            question="Chứng từ bắt buộc là gì?"
+        )
+        self.assertTrue(result.success)
+        sent_tools = llm.seen_tools[0]
+        tool_names = [t.get("function", {}).get("name") or t.get("name") for t in sent_tools]
+
+        self.assertNotIn("submit_decision", tool_names)
+        self.assertNotIn("get_decision", tool_names)
+        self.assertIn("search_policy", tool_names)
+        self.assertIn("get_application", tool_names)
+        self.assertIn("calc_dti", tool_names)
+        # Kiểm tra đúng prompt QA được nạp vào system message
+        self.assertIn("HỎI ĐÁP CHÍNH SÁCH VÀ TÍNH TOÁN", llm.seen[0][0]["content"])
+        self.assertNotIn("submit_decision(app_id", llm.seen[0][0]["content"])
+
+    def test_qa_with_app_id_is_not_nudged_to_submit(self):
+        # Câu C01: app_id="APP-001" nhưng là câu tính toán -> không bị ép submit_decision
+        result, _ = self.run_agent(
+            turn(call("calc_dti", app_id="APP-001", annual_rate="0.155")),
+            turn(content="DTI khoảng 24.6%."),
+            app_id="APP-001",
+            question="Hồ sơ APP-001 có tỷ lệ DTI là bao nhiêu phần trăm? Chỉ cần tính, chưa cần ghi quyết định."
+        )
+        self.assertTrue(result.success)
+        self.assertEqual(result.final_answer, "DTI khoảng 24.6%.")
+        self.assertEqual(result.tool_calls, ["calc_dti"])
+        self.assertNotIn("submit_decision", result.tool_calls)
+
+    def test_underwrite_provides_all_tools(self):
+        # Khi thẩm định hồ sơ, cung cấp đầy đủ cả 5 tools và dùng underwrite_prompt
+        result, llm = self.run_agent(*good_decision_script(), app_id=APP, question=None)
+        self.assertTrue(result.success)
+        sent_tools = llm.seen_tools[0]
+        tool_names = [t.get("function", {}).get("name") or t.get("name") for t in sent_tools]
+
+        self.assertIn("submit_decision", tool_names)
+        self.assertIn("get_decision", tool_names)
+        self.assertIn("QUY TRÌNH THẨM ĐỊNH HỒ SƠ", llm.seen[0][0]["content"])
+
+
 if __name__ == "__main__":
     unittest.main()
+
