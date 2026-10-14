@@ -77,9 +77,42 @@ class DtiRequiredBeforeDecision(unittest.TestCase):
     def test_decisions_before_dti_step_need_no_calc_dti(self):
         with isolated_db_sandbox():
             self.assertTrue(self.submit("APP-003", "reject", ["OVERDUE"]).startswith("Thành công"))
+
+class TestSmartTools(unittest.TestCase):
+    """Kiểm tra các tiện ích thông minh trong tools.py: tự động gán ngày nộp và căn cứ CP-05."""
+
+    def setUp(self):
+        tools._DTI_DONE.clear()
+        tools._CURRENT_APP_DATE.clear()
+        tools._ACTIVE_APP_ID = None
+        self.addCleanup(tools._DTI_DONE.clear)
+        self.addCleanup(tools._CURRENT_APP_DATE.clear)
+
+    def test_calc_dti_includes_cp05_reference(self):
         with isolated_db_sandbox():
-            self.assertTrue(self.submit("APP-004", "need_info", ["MISSING_DOCS"]).startswith("Thành công"))
+            res = tools.calc_dti("APP-003", "0.17")
+            self.assertIn("CP-05 v1", res)
+
+    def test_search_policy_auto_injects_submission_date(self):
+        with isolated_db_sandbox():
+            # Chưa get_application -> search_policy không auto-fill
+            self.assertIsNone(tools._ACTIVE_APP_ID)
+
+            # Đọc hồ sơ APP-001 (ngày nộp: 2025-02-10)
+            tools.get_application("APP-001")
+            self.assertEqual(tools._ACTIVE_APP_ID, "APP-001")
+            self.assertEqual(tools._CURRENT_APP_DATE.get("APP-001"), "2025-02-10")
+
+            # search_policy không truyền as_of_date -> tự động dùng ngày của APP-001 (2025-02-10, thuộc CP-01 v1)
+            out = tools.search_policy("điều kiện cho vay", as_of_date=None)
+            self.assertIn("CP-01 v1", out)
+            self.assertIn("50%", out)  # CP-01 v1 quy định DTI tối đa 50%
+
+            # Truyền "None" dạng chuỗi -> cũng được xử lý tự động điền ngày (trả về CP-01 v1)
+            out_str_none = tools.search_policy("điều kiện cho vay", as_of_date="None")
+            self.assertIn("CP-01 v1", out_str_none)
 
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -6,9 +6,16 @@ from finco.store import db
 from finco.types import REASON_CODES, REASON_CODES_BY_DECISION, Decision
 
 
+_CURRENT_APP_DATE: dict[str, str] = {}  # {app_id: submitted_date}
+_ACTIVE_APP_ID: Optional[str] = None
+
+
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
     actual_k = max(1, min(int(top_k or 3), 5))
-    return retrieve(query=query, as_of_date=as_of_date, top_k=actual_k)
+    clean_date = str(as_of_date).strip() if as_of_date is not None else ""
+    if clean_date.lower() in ("none", "null", "undefined", ""):
+        clean_date = _CURRENT_APP_DATE.get(_ACTIVE_APP_ID or "", "")
+    return retrieve(query=query, as_of_date=clean_date or None, top_k=actual_k)
 
 
 
@@ -19,13 +26,16 @@ def get_application(app_id: str) -> str:
     3. Kiểm tra thông tin có đủ hay không
     4. Định dạng văn bản cho LLM
     """
+    global _ACTIVE_APP_ID
     try:
         if not app_id or not app_id.strip():
             return "Error: app_id không được để trống"
 
-        app_id = app_id.strip().upper()
+        clean_id = app_id.strip().upper()
 
-        app = db.get_application(app_id)
+        app = db.get_application(clean_id)
+        _CURRENT_APP_DATE[clean_id] = app.submitted_date
+        _ACTIVE_APP_ID = clean_id
 
         if app.existing_debt_monthly is None:
             debt = "Chưa khai báo (None)"
@@ -129,6 +139,7 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
             f"- Tổng nghĩa vụ nợ hàng tháng: {total_monthly_debt:,} VNĐ",
             f"- Tỷ lệ nợ trên thu nhập (DTI): {dti} ({dti_percent}%)",
             f"- Diễn giải công thức: {formula}",
+            f"- Căn cứ chính sách: CP-05 v1 (Quy định cách tính thu nhập đủ điều kiện và tỷ lệ DTI)",
         ]
         _DTI_DONE.add(app_id)
         return "\n".join(result_text)
@@ -197,7 +208,7 @@ def submit_decision(
         # 3. Kiểm tra reason_codes: tập đóng, và phải khớp với decision
         if isinstance(reason_codes, str):
             reason_codes = [reason_codes]
-            
+
         if not isinstance(reason_codes, list):
             return "Error: reason_codes phải là một danh sách mã lý do."
         clean_codes = list(dict.fromkeys(str(c).strip().upper() for c in reason_codes if str(c).strip()))

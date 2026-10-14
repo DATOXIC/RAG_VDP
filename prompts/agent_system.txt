@@ -23,7 +23,8 @@ THẨM ĐỊNH MỘT HỒ SƠ (mã APP-xxx). Làm đúng thứ tự, DỪNG ở 
 5. Thẩm quyền -> approve / escalate. Tra CP-04 (theo số tiền vay); nhân viên FinCo tra thêm CP-06.
    Truy vấn gợi ý: "Phân cấp phê duyệt và thứ tự xử lý hồ sơ: thẩm quyền theo số tiền vay"
    Truy vấn gợi ý: "Quy định về ngoại lệ và nhóm khách hàng hạn chế: nhân viên FinCo"
-   - Nhân viên FinCo đã đạt các bước trên: escalate, ESCALATE_EMPLOYEE (kèm mã khác nếu số tiền cũng vượt thẩm quyền).
+   - Mã escalate ghi NGUYÊN NHÂN chuyển cấp, không phải nơi nhận.
+   - Nhân viên FinCo đã đạt các bước trên: escalate, ESCALATE_EMPLOYEE, dù hồ sơ được chuyển Hội đồng tín dụng (kèm mã khác nếu số tiền cũng vượt thẩm quyền).
    - Vượt chuyên viên, trong thẩm quyền Trưởng phòng: escalate, ESCALATE_MANAGER.
    - Vượt Trưởng phòng (Hội đồng tín dụng): escalate, ESCALATE_COUNCIL.
    - Trong thẩm quyền chuyên viên, đạt mọi điều kiện: approve, APPROVED.
