@@ -106,5 +106,9 @@ def get_decision(app_id: str) -> str:
 if __name__ == "__main__":
     from finco.store import db
     db.init_db()
+    if os.getenv("FINCO_CRITIC", "1").strip() != "0":
+        from finco.critic import Critic
+        tools.set_critic(Critic(model=os.getenv("FINCO_CRITIC_MODEL") or None))
+        logger.info("Critic chốt chặn submit_decision: BẬT (FINCO_CRITIC=0 để tắt).")
     logger.info("MCP Server FinCo đang khởi động qua stdio transport...")
     mcp.run(transport="stdio")

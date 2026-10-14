@@ -1,13 +1,30 @@
 from datetime import datetime
 from typing import Optional
 
-from finco.rag.retriever import retrieve
+from finco import critic as critic_mod
+from finco.rag.retriever import retrieve_hits
 from finco.store import db
 from finco.types import REASON_CODES, REASON_CODES_BY_DECISION, Decision
 
 
 _CURRENT_APP_DATE: dict[str, str] = {}  # {app_id: submitted_date}
 _ACTIVE_APP_ID: Optional[str] = None
+_CRITIC: Optional[critic_mod.Critic] = None  # None = không chốt chặn (mặc định khi gọi tools trực tiếp)
+
+
+def set_critic(c: Optional[critic_mod.Critic]) -> None:
+    """Bật/tắt Critic nhúng trong submit_decision. MCP server bật lúc khởi động."""
+    global _CRITIC
+    _CRITIC = c
+
+
+def reset_session_state() -> None:
+    """Xóa toàn bộ trạng thái phiên trong tiến trình (test, hoặc bắt đầu lượt eval mới)."""
+    global _ACTIVE_APP_ID
+    _CURRENT_APP_DATE.clear()
+    _DTI_DONE.clear()
+    _ACTIVE_APP_ID = None
+    critic_mod.clear_evidence()
 
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
@@ -15,8 +32,11 @@ def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) 
     clean_date = str(as_of_date).strip() if as_of_date is not None else ""
     if clean_date.lower() in ("none", "null", "undefined", ""):
         clean_date = _CURRENT_APP_DATE.get(_ACTIVE_APP_ID or "", "")
-    return retrieve(query=query, as_of_date=clean_date or None, top_k=actual_k)
-
+    as_of = clean_date or None
+    text, hits = retrieve_hits(query=query, as_of_date=as_of, top_k=actual_k)
+    if hits:
+        critic_mod.record_retrieval(_ACTIVE_APP_ID, hits, as_of)
+    return text
 
 
 def get_application(app_id: str) -> str:
@@ -61,8 +81,10 @@ def get_application(app_id: str) -> str:
                 f"Ngày nộp hồ sơ: {app.submitted_date}",
                 f"Ghi chú hồ sơ: {app.note if app.note else 'Không có'}",
             ]
-        return "\n".join(info)
-    
+        text = "\n".join(info)
+        critic_mod.record_application(clean_id, text, app.submitted_date)
+        return text
+
     except db.AppNotFound:
         return f"Error: Không tìm thấy hồ sơ với mã '{app_id}'."
     except Exception as e:
@@ -142,7 +164,9 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
             f"- Căn cứ chính sách: CP-05 v1 (Quy định cách tính thu nhập đủ điều kiện và tỷ lệ DTI)",
         ]
         _DTI_DONE.add(app_id)
-        return "\n".join(result_text)
+        text = "\n".join(result_text)
+        critic_mod.record_dti(app_id, text)
+        return text
     
     except db.AppNotFound:
         return f"Error: Không tìm thấy hồ sơ với mã '{app_id}'."
@@ -229,28 +253,64 @@ def submit_decision(
                 f"Với '{clean_decision}' chỉ được dùng: {', '.join(allowed)}."
             )
 
-        # Quyết định dựa trên DTI (approve, escalate, reject vì DTI) chỉ được ghi sau khi đã tính DTI.
-        if (clean_decision in ("approve", "escalate") or "DTI_EXCEEDED" in clean_codes) and clean_app_id not in _DTI_DONE:
-            return (
-                f"Error: Chưa tính DTI cho hồ sơ {clean_app_id}. Hãy tra biểu lãi suất CP-03 lấy lãi suất theo kỳ hạn, "
-                f"gọi calc_dti, rồi mới ghi quyết định '{clean_decision}'."
-            )
+        # Breaker đã kích hoạt: lối thoát DUY NHẤT là chuyển cấp có thẩm quyền xem xét.
+        ev = critic_mod.get_evidence(clean_app_id) if _CRITIC is not None else None
+        tripped = ev is not None and ev.critic_rejections >= ev.max_rejections
+        final_reason = reason.strip()
+        if tripped:
+            if clean_decision != "escalate" or clean_codes != ["ESCALATE_MANAGER"]:
+                return (
+                    f"Error: Critic đã chặn hồ sơ {clean_app_id} {ev.critic_rejections} lần và hết lượt sửa. "
+                    "Chỉ còn được ghi decision='escalate' với reason_codes=['ESCALATE_MANAGER'] "
+                    "(chuyển cấp có thẩm quyền xem xét)."
+                )
+            final_reason += f" [CRITIC_UNRESOLVED: quyết định tự động không được Critic xác nhận sau {ev.critic_rejections} lần kiểm tra]"
+        else:
+            # Quyết định dựa trên DTI (approve, escalate, reject vì DTI) chỉ được ghi sau khi đã tính DTI.
+            if (clean_decision in ("approve", "escalate") or "DTI_EXCEEDED" in clean_codes) and clean_app_id not in _DTI_DONE:
+                return (
+                    f"Error: Chưa tính DTI cho hồ sơ {clean_app_id}. Hãy tra biểu lãi suất CP-03 lấy lãi suất theo kỳ hạn, "
+                    f"gọi calc_dti, rồi mới ghi quyết định '{clean_decision}'."
+                )
+
+            if _CRITIC is not None:
+                verdict = _CRITIC.review(
+                    critic_mod.Proposal(clean_app_id, clean_decision, reason.strip(), clean_cited, clean_codes),
+                    ev,
+                    db.get_application(clean_app_id),
+                )
+                if not verdict.ok:
+                    ev.critic_rejections += 1
+                    left = ev.max_rejections - ev.critic_rejections
+                    bullets = "\n".join(f"- {i}" for i in verdict.issues)
+                    tail = (
+                        "Hãy xử lý từng điểm (tra cứu bổ sung bằng search_policy với as_of_date = ngày nộp hồ sơ, "
+                        f"hoặc sửa decision/reason_codes/cited_docs/reason) rồi gọi lại submit_decision. Còn {left} lần sửa."
+                        if left > 0 else
+                        "Đã HẾT lượt sửa. Lần gọi submit_decision tiếp theo chỉ được chấp nhận với "
+                        "decision='escalate', reason_codes=['ESCALATE_MANAGER'] (giữ nguyên các tài liệu đã tra trong cited_docs)."
+                    )
+                    return (
+                        f"Error: CRITIC_REJECT [{verdict.stage}] lần {ev.critic_rejections}/{ev.max_rejections}: "
+                        f"quyết định CHƯA được ghi. Critic chỉ ra:\n{bullets}\n{tail}"
+                    )
 
         # 4. Tạo đối tượng Decision và gọi DB để ghi
         dec = Decision(
             app_id=clean_app_id,
             decision=clean_decision,
-            reason=reason.strip(),
+            reason=final_reason,
             cited_docs=clean_cited,
             reason_codes=clean_codes,
             decided_at=datetime.now().isoformat(timespec="seconds"),
         )
 
         db.insert_decision(dec)
+        critic_mod.clear_evidence(clean_app_id)
         return (
             f"Thành công: Đã ghi nhận quyết định '{clean_decision}' cho hồ sơ {clean_app_id}.\n"
             f"- Căn cứ trích dẫn: {', '.join(clean_cited)}\n"
-            f"- Lý do: {reason.strip()}"
+            f"- Lý do: {final_reason}"
             f" BƯỚC TIẾP THEO BẮT BUỘC: Bạn phải gọi get_decision('{clean_app_id}') "
             f"để xác nhận quyết định đã được lưu an toàn trước khi đưa ra Final Answer."
         )

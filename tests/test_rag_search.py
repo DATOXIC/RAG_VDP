@@ -21,7 +21,8 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from finco.rag.bm25 import BM25Index, is_valid_at, tokenize  # noqa: E402
 from finco.rag.dense import VectorStore  # noqa: E402
 from finco.rag.hybrid import HybridSearcher, min_max  # noqa: E402
-from finco.types import Chunk  # noqa: E402
+from finco.rag.retriever import retrieve, retrieve_hits  # noqa: E402
+from finco.types import Chunk, SearchHit  # noqa: E402
 
 
 def make_chunk(cid, text, eff="2024-01-01", exp=None, doc="CP-01", ver="v1"):
@@ -245,6 +246,32 @@ class TestRealIndex(unittest.TestCase):
             for h in self.ix.search("giới hạn tuổi số tiền kỳ hạn DTI", top_k=10, as_of_date=d):
                 if h.chunk.doc_id == "CP-01":
                     self.assertNotEqual(h.chunk.version, banned)
+
+
+class TestRetrieveHits(unittest.TestCase):
+    """Kiểm tra retrieve_hits trả về (text, hits) sạch phục vụ Zero-Regex."""
+
+    def test_empty_query_returns_error_and_empty_hits(self):
+        text, hits = retrieve_hits("   ")
+        self.assertTrue(text.startswith("Error:"))
+        self.assertEqual(hits, [])
+
+    def test_invalid_date_returns_error_and_empty_hits(self):
+        text, hits = retrieve_hits("Lãi suất", as_of_date="sai-ngay")
+        self.assertTrue(text.startswith("Error:"))
+        self.assertEqual(hits, [])
+
+    def test_valid_search_returns_text_and_structured_hits(self):
+        text, hits = retrieve_hits("quy định tuổi và số tiền vay CP-01", as_of_date="2025-01-15", top_k=2)
+        self.assertFalse(text.startswith("Error:"))
+        self.assertGreater(len(hits), 0)
+        self.assertTrue(all(isinstance(h, SearchHit) for h in hits))
+        # Có thể lấy trực tiếp doc_id và version không cần regex
+        doc_ids = {h.chunk.doc_id for h in hits}
+        self.assertIn("CP-01", doc_ids)
+        # retrieve() tương thích ngược với retrieve_hits()
+        legacy_text = retrieve("quy định tuổi và số tiền vay CP-01", as_of_date="2025-01-15", top_k=2)
+        self.assertEqual(text, legacy_text)
 
 
 if __name__ == "__main__":
