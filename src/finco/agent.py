@@ -195,6 +195,18 @@ class Agent:
 
                     # ĐIỀU KIỆN DỪNG: Model không gọi tool nào nữa -> Đã có câu trả lời cuối
                     if not turn.tool_calls:
+
+                        has_submitted = any(
+                            line.tool == WRITE_TOOL and not line.result.startswith("Error:") 
+                            for line in result.trace
+                        )
+                        if result.app_id.startswith("APP-") and not has_submitted and step < self.max_steps:
+                            messages.append({
+                                "role": "user", 
+                                "content": f"Chưa hoàn tất: Hồ sơ {result.app_id} chưa được ghi nhận quyết định thành công. Hãy gọi {WRITE_TOOL} trước khi trả lời."
+                            })
+                            continue
+
                         result.final_answer = turn.content
 
                         if not turn.content:

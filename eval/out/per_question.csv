@@ -1,17 +1,4 @@
 ﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
-T01,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,6909,339,3909,,
-T02,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,6835,429,3833,,
-S01,tổng hợp,,True,True,,,,,True,True,False,False,True,False,2,0,3,10613,851,4042,,
-S02,tổng hợp,,False,True,,,,,False,True,False,False,True,False,1,0,2,6372,656,3363,,"trích dẫn chưa đủ: có ['CP-06@v1'], cần ['CP-06', 'CP-04']"
-V01,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,6742,404,3738,,
-V02,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,6519,293,3508,,
-C01,tính toán,APP-001,False,True,,,,,False,True,False,False,True,False,3,0,4,13507,397,3773,,"trích dẫn chưa đủ: có không có, cần ['CP-03', 'CP-05']"
-C02,tính toán,APP-014,False,True,,,,,False,False,False,False,True,False,3,0,4,13751,592,3891,,"thiếu ý: 6417491; trích dẫn chưa đủ: có không có, cần ['CP-03', 'CP-05']"
-M01,thiếu dữ liệu,APP-021,True,True,,,,,True,True,False,False,True,False,2,0,3,10070,909,3830,,
-M02,thiếu dữ liệu,APP-004,True,True,,,,,True,True,False,False,True,False,2,0,3,9822,644,3603,,
-N01,no_answer,,True,True,,,,,,,True,True,True,False,2,0,3,10790,668,4256,,
-N02,no_answer,,True,True,,,,,,,True,True,True,False,3,0,4,14293,1111,4250,,
-N03,no_answer,,True,True,,,,,,,True,True,True,False,4,0,5,21464,864,5766,,
-N04,no_answer,,True,True,,,,,,,True,True,True,False,6,2,7,27432,1238,5345,,
-A01,hành động,APP-015,False,True,True,True,True,False,False,,False,False,True,True,7,0,8,27021,1514,4429,,Thiếu luật trích dẫn (Recall: 0.50 < 0.8); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.17)
-A02,hành động,APP-018,False,False,False,False,False,False,False,,False,False,True,False,0,0,0,0,0,0,"Lỗi gọi LLM: RuntimeError: Gọi LLM thất bại sau 4 lần thử lại do lỗi RateLimitError (HTTP 429): Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m0vtyytbekfa3394b82732q7` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199091, Requested 2583. Please try again in 12m3.168s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}","Sai quyết định (AI: 'none' != Chuẩn: 'escalate'); Sai mã lý do (AI: không có != Chuẩn: ['ESCALATE_EMPLOYEE']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: thiếu search_policy, chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.1633); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.155)"
+APP-003,hồ sơ,APP-003,False,True,True,True,True,True,False,,False,False,True,True,7,0,7,23047,1701,4460,,Thiếu luật trích dẫn (Recall: 0.75 < 0.8)
+APP-004,hồ sơ,APP-004,False,True,True,True,True,True,False,,False,False,True,True,5,0,5,14733,906,3728,,Thiếu luật trích dẫn (Recall: 0.50 < 0.8)
+APP-005,hồ sơ,APP-005,False,True,True,True,True,True,False,,False,False,True,True,5,0,5,14662,962,3648,,Thiếu luật trích dẫn (Recall: 0.50 < 0.8)

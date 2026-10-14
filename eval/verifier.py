@@ -192,7 +192,7 @@ def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmi
             if m:
                 dti = float(m.group(1))
                 try:
-                    rate = _as_fraction(float(str(args.get("annual_rate")).replace(",", ".")))
+                    rate = _as_fraction(float(str(args.get("annual_rate")).strip().rstrip("%").strip().replace(",", ".")))
                 except (TypeError, ValueError):
                     rate = None
 
