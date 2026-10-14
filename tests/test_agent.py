@@ -8,10 +8,14 @@ Chạy từ thư mục gốc repo:
 """
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+# Các kịch bản LLM giả không tra chính sách nên không qua nổi Critic; test Critic nằm ở tests/test_critic.py.
+os.environ.setdefault("FINCO_CRITIC", "0")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))

@@ -16,7 +16,7 @@ from finco.types import LogLine, Usage
 # --------------------------------------------------------------------------- 1. Hằng số
 LOGS_DIR = Path(__file__).resolve().parents[2] / "logs"
 
-MAX_STEPS = 12              # số lần gọi LLM tối đa mỗi lượt (quy trình dài nhất cần khoảng 9)
+MAX_STEPS = 15              # số lần gọi LLM tối đa mỗi lượt (quy trình dài nhất ~9, +3 cho vòng Critic: 2 lần bị chặn + 1 lần escalate)
 WRITE_TOOL = "submit_decision"
 VERIFY_TOOL = "get_decision"
 ANSWER_TOOL = "__answer__"  # dòng log cuối mỗi câu: câu trả lời + usage (kể cả câu không gọi tool)
