@@ -2,37 +2,41 @@
   "questions": 3,
   "passed": 0,
   "pass_rate": 0.0,
-  "run_success_rate": 100.0,
-  "decision_accuracy": 100.0,
-  "root_cause_accuracy": 100.0,
-  "read_after_write_rate": 100.0,
-  "numbers_accuracy": 100.0,
+  "run_success_rate": 0.0,
+  "decision_accuracy": 0.0,
+  "root_cause_accuracy": 0.0,
+  "read_after_write_rate": 0.0,
+  "numbers_accuracy": 33.3,
   "correct_refusal_rate": null,
   "false_refusal_rate": null,
-  "faithfulness_rule_rate": 100.0,
-  "tool_error_rate": 0.0,
-  "avg_tool_calls": 5.67,
-  "avg_llm_calls": 5.67,
-  "total_prompt_tokens": 52442,
-  "total_completion_tokens": 3569,
-  "max_prompt_tokens": 4460,
+  "faithfulness_rule_rate": null,
+  "tool_error_rate": 12.5,
+  "avg_tool_calls": 2.67,
+  "avg_llm_calls": 3.0,
+  "total_prompt_tokens": 32798,
+  "total_completion_tokens": 2960,
+  "max_prompt_tokens": 5020,
   "by_type": {
+    "hành động": {
+      "n": 1,
+      "passed": 0
+    },
     "hồ sơ": {
-      "n": 3,
+      "n": 2,
       "passed": 0
     }
   },
-  "log_file": "logs\\eval_20261014_131515.jsonl",
+  "log_file": "C:\\RAG_VDP\\logs\\eval_20261014_153148.jsonl",
   "model": "openai/gpt-oss-20b",
-  "generated_at": "2026-10-14T13:33:39",
+  "generated_at": "2026-10-14T15:45:40",
   "verifier": {
-    "total_cases": 3,
+    "total_cases": 2,
     "pass_count": 0,
     "overall_pass_rate": 0.0,
-    "decision_accuracy": 100.0,
-    "root_cause_accuracy": 100.0,
-    "citation_recall_avg": 58.33,
-    "trace_valid_rate": 100.0,
-    "math_valid_rate": 100.0
+    "decision_accuracy": 0.0,
+    "root_cause_accuracy": 0.0,
+    "citation_recall_avg": 0.0,
+    "trace_valid_rate": 0.0,
+    "math_valid_rate": 50.0
   }
 }

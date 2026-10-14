@@ -17,11 +17,16 @@ from finco import tools  # noqa: E402
 
 
 class SubmitDecisionReasonCodes(unittest.TestCase):
+    def setUp(self):
+        tools._DTI_DONE.clear()
+        self.addCleanup(tools._DTI_DONE.clear)
+
     def submit(self, app_id="APP-003", decision="reject", codes=("DTI_EXCEEDED",)):
         return tools.submit_decision(app_id, decision, "DTI vượt ngưỡng", ["CP-01 v1"], list(codes))
 
     def test_roundtrip(self):
         with isolated_db_sandbox():
+            tools.calc_dti("APP-003", "0.17")
             self.assertTrue(self.submit().startswith("Thành công"))
             out = tools.get_decision("APP-003")
             self.assertIn("DTI_EXCEEDED", out)
@@ -37,7 +42,43 @@ class SubmitDecisionReasonCodes(unittest.TestCase):
 
     def test_lowercase_codes_normalised(self):
         with isolated_db_sandbox():
+            tools.calc_dti("APP-003", "0.17")
             self.assertTrue(self.submit(codes=("dti_exceeded",)).startswith("Thành công"))
+
+
+class DtiRequiredBeforeDecision(unittest.TestCase):
+    """Quyết định dựa trên DTI chỉ được ghi sau khi calc_dti thành công cho đúng hồ sơ."""
+
+    def setUp(self):
+        tools._DTI_DONE.clear()
+        self.addCleanup(tools._DTI_DONE.clear)
+
+    def submit(self, app_id, decision, codes):
+        return tools.submit_decision(app_id, decision, "Lý do", ["CP-01 v1"], list(codes))
+
+    def test_dti_based_decisions_are_blocked_without_calc_dti(self):
+        with isolated_db_sandbox():
+            for decision, codes in (("approve", ["APPROVED"]), ("escalate", ["ESCALATE_MANAGER"]),
+                                    ("reject", ["DTI_EXCEEDED"])):
+                out = self.submit("APP-003", decision, codes)
+                self.assertTrue(out.startswith("Error:") and "calc_dti" in out, (decision, out))
+            self.assertTrue(tools.get_decision("APP-003").startswith("Error:"))  # chưa ghi gì
+
+    def test_calc_dti_for_another_application_does_not_count(self):
+        with isolated_db_sandbox():
+            tools.calc_dti("APP-001", "0.155")
+            self.assertTrue(self.submit("APP-003", "reject", ["DTI_EXCEEDED"]).startswith("Error:"))
+
+    def test_failed_calc_dti_does_not_count(self):
+        with isolated_db_sandbox():
+            tools.calc_dti("APP-003", "khong-phai-so")
+            self.assertTrue(self.submit("APP-003", "reject", ["DTI_EXCEEDED"]).startswith("Error:"))
+
+    def test_decisions_before_dti_step_need_no_calc_dti(self):
+        with isolated_db_sandbox():
+            self.assertTrue(self.submit("APP-003", "reject", ["OVERDUE"]).startswith("Thành công"))
+        with isolated_db_sandbox():
+            self.assertTrue(self.submit("APP-004", "need_info", ["MISSING_DOCS"]).startswith("Thành công"))
 
 
 if __name__ == "__main__":

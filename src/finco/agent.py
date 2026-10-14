@@ -121,6 +121,10 @@ class Agent:
         try:
             res = await mcp.call_tool(name, args)
             output = res.content[0].text if res.content else ""
+
+            if res.is_error and not output.startswith("Error:"):  # vd. "Unknown tool: ..." do MCP sinh ra
+                output = f"Error: {output or 'công cụ báo lỗi không kèm nội dung.'}"
+                
         except Exception as e:
             output = f"Error: Gọi công cụ '{name}' thất bại ({type(e).__name__}: {e})"
 
