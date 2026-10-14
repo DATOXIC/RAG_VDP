@@ -297,5 +297,25 @@ class TestCallLlmTools(CallLlmToolsBase):
         self.assertEqual(turn.usage, Usage(calls=1, prompt_tokens=0, completion_tokens=0, max_prompt=0))
 
 
+class TestParseArgs(unittest.TestCase):
+    def test_valid(self):
+        self.assertEqual(llm._parse_args('{"a": 1}'), ({"a": 1}, ""))
+
+    def test_empty_means_no_args(self):
+        self.assertEqual(llm._parse_args(""), ({}, ""))
+        self.assertEqual(llm._parse_args("   "), ({}, ""))
+
+    def test_garbage_is_error_not_exception(self):
+        args, err = llm._parse_args("không phải json")
+        self.assertEqual(args, {})
+        self.assertTrue(err.startswith("Error:"))
+
+    def test_non_dict(self):
+        for raw in ("[1, 2]", '"abc"', "42", "null"):
+            args, err = llm._parse_args(raw)
+            self.assertEqual(args, {}, raw)
+            self.assertTrue(err.startswith("Error:"), raw)
+
+
 if __name__ == "__main__":
     unittest.main()

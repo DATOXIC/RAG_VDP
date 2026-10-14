@@ -10,6 +10,7 @@ Quy tắc retry: lỗi tạm thời (429, 5xx, timeout, mất kết nối) thì 
 Retry-After; lỗi cố định (401, 400, 403, 404) thì raise ngay. Chỉ log ra stderr: stdout dành cho MCP.
 """
 
+import json
 import os
 import random
 import sys
@@ -42,22 +43,40 @@ DEFAULT_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
 DEFAULT_TIMEOUT = 60.0    # giây cho một lần gọi, để một lần treo không làm treo cả lượt
 MAX_RETRY_AFTER = 60.0    # Retry-After lớn hơn mức này thì chỉ chờ tối đa bằng mức này
 
-_TRANSIENT = (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError)
-_PERMANENT = (AuthenticationError, BadRequestError, PermissionDeniedError, NotFoundError)
+_RETRY = (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError)
+_NO_RETRY = (AuthenticationError, BadRequestError, PermissionDeniedError, NotFoundError)
 _CLIENT: Optional[OpenAI] = None
+
 
 
 class EmptyResponseError(RuntimeError):
     """LLM trả về phản hồi không dùng được (không có choices, hoặc nội dung rỗng)."""
 
+def _parse_args(raw: str) -> tuple[dict, str]:
+    """Parse chuỗi JSON tham số: trả (dict, '') hoặc ({}, 'Error: ...')."""
+    try:
+        args = json.loads((raw or "").strip() or "{}")
+        if not isinstance(args, dict):
+            return {}, 'Error: Tham số gọi tool phải là một đối tượng JSON dạng {"tên": giá_trị}.'
+        return args, ""
+    except json.JSONDecodeError as e:
+        return {}, f"Error: Tham số gọi tool không phải JSON hợp lệ ({e})."
+
 
 @dataclass
 class ToolCall:
-    """Một lời gọi tool do model yêu cầu. arguments là chuỗi JSON thô, CHƯA parse."""
     id: str
     name: str
-    arguments: str
+    arguments: str = "{}"                                         # Chuỗi thô (để tương thích test)
+    args: dict = field(default_factory=dict, compare=False)      # Dict đã parse (cho agent)
+    error: Optional[str] = field(default=None, compare=False)    # Báo lỗi nếu JSON hỏng
 
+    def __post_init__(self):
+        """Tự động parse arguments sang args và error nếu chưa có."""
+        if not self.args and not self.error and self.arguments:
+            parsed, err = _parse_args(self.arguments)
+            self.args = parsed
+            self.error = err or None
 
 @dataclass
 class ChatTurn:
@@ -67,33 +86,51 @@ class ChatTurn:
     usage: Usage = field(default_factory=lambda: Usage(0, 0, 0, 0))
     finish_reason: Optional[str] = None
 
-
-# --------------------------------------------------------------------------- 1. Cấu hình
-def _log(msg: str) -> None:
-    print(f"[llm] {msg}", file=sys.stderr, flush=True)
-
-
-def _describe(e: Exception) -> str:
-    """Tên lỗi kèm mã HTTP nếu có."""
-    status = getattr(e, "status_code", None)
-    return f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
-
-
+    def __iter__(self):
+        """Cho phép unpack kiểu tuple: content, usage = call_llm(...) khi chat văn bản."""
+        return iter((self.content, self.usage))
+    
+    def to_assistant_message(self) -> dict[str, Any]:
+        """Tự biến thành dict OpenAI để append thẳng vào messages của Agent."""
+        msg: dict[str, Any] = {"role": "assistant", "content": self.content or None}
+        if self.tool_calls:
+            msg["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.args, ensure_ascii=False) if not tc.error else "{}"
+                    }
+                }
+                for tc in self.tool_calls
+            ]
+        return msg
+    
 def get_client() -> OpenAI:
-    """OpenAI client dùng chung (singleton).
-
-    max_retries=0: tắt retry ngầm của SDK, để _create_with_retry là nơi duy nhất quyết định retry
-    (nếu không số request thật bị nhân lên). timeout hạ từ 10 phút của SDK xuống DEFAULT_TIMEOUT.
-    """
     global _CLIENT
     if _CLIENT is None:
         api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
         base_url = os.getenv("GROQ_BASE_URL") or os.getenv("OPENAI_BASE_URL") or DEFAULT_BASE_URL
         if not api_key:
             raise ValueError("Thiếu API Key! Vui lòng cấu hình GROQ_API_KEY hoặc OPENAI_API_KEY trong file .env.")
-        _CLIENT = OpenAI(api_key=api_key, base_url=base_url, max_retries=0, timeout=DEFAULT_TIMEOUT)
+
+        _CLIENT = OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            max_retries=0,
+            timeout=DEFAULT_TIMEOUT
+        )
+        
     return _CLIENT
 
+def merge_usage(*usages: Usage) -> Usage:
+    return Usage(
+        calls=sum(u.calls for u in usages),
+        prompt_tokens=sum(u.prompt_tokens for u in usages),
+        completion_tokens=sum(u.completion_tokens for u in usages),
+        max_prompt=max((u.max_prompt for u in usages), default=0),
+    )
 
 def load_prompt(filename: str) -> str:
     """Nội dung file prompt trong thư mục prompts/."""
@@ -102,135 +139,110 @@ def load_prompt(filename: str) -> str:
         raise FileNotFoundError(f"Không tìm thấy file prompt: {path}")
     return path.read_text(encoding="utf-8").strip()
 
-
-def merge_usage(*usages: Usage) -> Usage:
-    """Tổng Usage của nhiều lần gọi: calls, prompt, completion được CỘNG; max_prompt lấy GIÁ TRỊ LỚN NHẤT."""
-    return Usage(
-        calls=sum(u.calls for u in usages),
-        prompt_tokens=sum(u.prompt_tokens for u in usages),
-        completion_tokens=sum(u.completion_tokens for u in usages),
-        max_prompt=max((u.max_prompt for u in usages), default=0),
-    )
-
-
-# --------------------------------------------------------------------------- 2. Retry
-def _retry_wait(e: Exception, delay: float, max_delay: float) -> float:
-    """Giây chờ trước lần thử tiếp: ưu tiên header Retry-After, không có thì dùng backoff; cộng jitter."""
-    headers = getattr(getattr(e, "response", None), "headers", None) or {}
-    try:
-        retry_after = float(headers.get("retry-after"))
-    except (TypeError, ValueError):
-        retry_after = -1.0
-    base = min(retry_after, MAX_RETRY_AFTER) if retry_after >= 0 else min(max_delay, delay)
-    return base + random.uniform(0.1, 0.5)
-
-
-def _create_with_retry(request: dict[str, Any], max_retries: int, initial_delay: float, max_delay: float):
-    """chat.completions.create có retry; trả phản hồi thô. Raise ngay với lỗi cố định."""
-    client = get_client()
-    delay = initial_delay
-    for attempt in range(max_retries + 1):
-        try:
-            return client.chat.completions.create(**request)
-        except _PERMANENT as e:
-            _log(f"Lỗi cố định {_describe(e)}: {e}. Dừng ngay, không retry.")
-            raise
-        except _TRANSIENT as e:
-            if attempt == max_retries:
-                _log(f"Đã thử lại {max_retries} lần nhưng vẫn thất bại {_describe(e)}: {e}")
-                raise RuntimeError(
-                    f"Gọi LLM thất bại sau {max_retries} lần thử lại do lỗi {_describe(e)}: {e}"
-                ) from e
-            wait = _retry_wait(e, delay, max_delay)
-            _log(f"Lỗi tạm thời {_describe(e)} ở lần thử {attempt + 1}/{max_retries}. Chờ {wait:.2f}s...")
-            time.sleep(wait)
-            delay = min(max_delay, delay * 2.0)
-    raise RuntimeError("Gọi LLM thất bại: vòng lặp retry kết thúc bất thường.")  # không tới được
-
-
-def _usage_of(response) -> Usage:
-    """Usage của MỘT lần gọi (calls=1). Lần thử lại thất bại không đếm vì không tốn token."""
-    u = getattr(response, "usage", None)
-    prompt = u.prompt_tokens if u else 0
-    return Usage(calls=1, prompt_tokens=prompt, completion_tokens=u.completion_tokens if u else 0, max_prompt=prompt)
-
-
-def _first_choice(response):
-    if not getattr(response, "choices", None):
-        raise EmptyResponseError("LLM trả về phản hồi không có choices.")
-    choice = response.choices[0]
-    if getattr(choice, "finish_reason", None) == "length":
-        _log("Cảnh báo: phản hồi bị cắt do max_tokens (finish_reason='length').")
-    return choice
-
-
-# --------------------------------------------------------------------------- 3. Hỏi đáp thuần văn bản
-def call_llm(
-    messages: list[dict[str, str]],
-    model: Optional[str] = None,
-    temperature: float = 0.0,
-    max_tokens: int = 1500,
-    timeout: float = DEFAULT_TIMEOUT,
+def _create_with_retry(
+    request: dict[str, Any],
     max_retries: int = 4,
     initial_delay: float = 1.0,
     max_delay: float = 20.0,
-    stop: Optional[list[str]] = None,
-) -> tuple[str, Usage]:
-    """Gọi LLM, trả (nội dung, Usage của lần gọi).
+):
+    client = get_client()
+    delay = initial_delay
 
-    messages: [{"role": "system"|"user"|"assistant", "content": "..."}].
-    Raises: lỗi cố định (không retry); RuntimeError khi hết retry; EmptyResponseError khi nội dung rỗng.
-    """
-    request: dict[str, Any] = {
-        "model": model or os.getenv("LLM_MODEL") or DEFAULT_MODEL,
-        "messages": messages, "temperature": temperature, "max_tokens": max_tokens, "timeout": timeout,
-    }
-    if stop:
-        request["stop"] = stop
-    response = _create_with_retry(request, max_retries, initial_delay, max_delay)
+    for attempt in range(max_retries + 1):
+        try:
+            return client.chat.completions.create(**request)
+        
+        except _NO_RETRY as e:
+            status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+            err_name = f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
+            print(f"[llm] Lỗi cố định {err_name}: {e}. Dừng ngay!", file=sys.stderr)
+            raise
 
-    # Phân tích NGOÀI vòng retry để EmptyResponseError không bị coi là lỗi tạm thời.
-    choice = _first_choice(response)
-    content = choice.message.content or ""
-    if not content.strip():
-        hint = " (bị cắt do max_tokens, hãy tăng max_tokens)" if choice.finish_reason == "length" else ""
-        raise EmptyResponseError(f"LLM trả về nội dung rỗng, finish_reason={choice.finish_reason!r}{hint}.")
-    return content, _usage_of(response)
+        except _RETRY as e:
+            status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+            err_name = f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
+            if attempt == max_retries:
+                print(f"[llm] Đã thử lại {max_retries} lần nhưng vẫn thất bại: {e}", file=sys.stderr)
+                raise RuntimeError(f"Gọi LLM thất bại sau {max_retries} lần thử lại do lỗi {err_name}: {e}") from e
+
+            headers = getattr(getattr(e, "response", None), "headers", None) or {}
+            try:
+                retry_after = float(headers.get("retry-after", -1))
+            except (ValueError, TypeError):
+                retry_after = -1.0
+
+            base = min(retry_after, MAX_RETRY_AFTER) if retry_after >= 0 else min(max_delay, delay)
+            wait = base + random.uniform(0.1, 0.5)
+
+            print(f"[llm] Gặp lỗi tạm thời {err_name}. Chờ {wait:.2f}s...", file=sys.stderr)
+            time.sleep(wait)
+            delay = min(max_delay, delay * 2.0)
+
+    raise RuntimeError("Gọi LLM thất bại: vòng lặp kết thúc bất thường.")
 
 
-# --------------------------------------------------------------------------- 4. Gọi tool
-def call_llm_tools(
-    messages: list[dict[str, Any]],
-    tools: list[dict[str, Any]],
-    model: Optional[str] = None,
+def call_llm(
+    messages: list[dict[str, Any]],            
+    tools: Optional[list[dict[str, Any]]] = None, 
+    model: Optional[str] = None,               
     temperature: float = 0.0,
     max_tokens: int = 2000,
     timeout: float = DEFAULT_TIMEOUT,
     max_retries: int = 4,
     initial_delay: float = 1.0,
     max_delay: float = 20.0,
+    stop: Optional[list[str]] = None,
 ) -> ChatTurn:
-    """Như call_llm nhưng model được gọi tool; trả ChatTurn (văn bản và/hoặc tool_calls).
-
-    messages có thể chứa role "tool" và assistant kèm tool_calls (dict thuần, định dạng OpenAI).
-    Nội dung rỗng KHÔNG phải lỗi khi có tool_calls.
-    Raises: như call_llm.
-    """
     request: dict[str, Any] = {
         "model": model or os.getenv("LLM_MODEL") or DEFAULT_MODEL,
-        "messages": messages, "tools": tools, "tool_choice": "auto",
-        "temperature": temperature, "max_tokens": max_tokens, "timeout": timeout,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "timeout": timeout,
     }
-    response = _create_with_retry(request, max_retries, initial_delay, max_delay)
-    choice = _first_choice(response)
+    if stop:
+        request["stop"] = stop
+    if tools:
+        request["tools"] = tools
+        request["tool_choice"] = "auto"
+
+    response = _create_with_retry(request, max_retries=max_retries, initial_delay=initial_delay, max_delay=max_delay)
+
+    if not getattr(response, "choices", None):
+        raise EmptyResponseError("LLM trả về phản hồi không có choices.")
+    
+    choice = response.choices[0]
     message = choice.message
-    tool_calls = [
-        ToolCall(id=getattr(tc, "id", "") or f"call_{i}", name=tc.function.name, arguments=tc.function.arguments or "")
-        for i, tc in enumerate(getattr(message, "tool_calls", None) or [])
+    content = (message.content or "").strip()
+
+    if getattr(choice, "finish_reason", None) == "length":
+        print("[llm] Cảnh báo: phản hồi bị cắt do max_tokens (finish_reason='length').", file=sys.stderr)
+
+    raw_tool_calls = getattr(message, "tool_calls", None) or []
+    
+    if not content and not raw_tool_calls:
+        hint = " (bị cắt do max_tokens, hãy tăng max_tokens)" if choice.finish_reason == "length" else ""
+        raise EmptyResponseError(f"LLM trả về nội dung rỗng, finish_reason={choice.finish_reason!r}{hint}.")
+
+    tool_calls: list[ToolCall] = [
+        ToolCall(
+            id=getattr(tc, "id", "") or f"call_{i}",
+            name=tc.function.name,
+            arguments=tc.function.arguments or "{}",
+        )
+        for i, tc in enumerate(raw_tool_calls)
     ]
+
+    u = getattr(response, "usage", None)
+    prompt = getattr(u, "prompt_tokens", 0) if u else 0
+    completion = getattr(u, "completion_tokens", 0) if u else 0
+    usage = Usage(calls=1, prompt_tokens=prompt, completion_tokens=completion, max_prompt=prompt)
+
     return ChatTurn(
-        content=(message.content or "").strip(),
+        content=content,
         tool_calls=tool_calls,
-        usage=_usage_of(response),
-        finish_reason=getattr(choice, "finish_reason", None),
+        usage=usage,
+        finish_reason=getattr(choice, "finish_reason", None)
     )
+
+call_llm_tools = call_llm

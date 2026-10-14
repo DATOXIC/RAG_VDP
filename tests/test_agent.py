@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from eval.sandbox_db import isolated_db_sandbox  # noqa: E402
 from eval.verifier import load_trace, submission_from_trace  # noqa: E402
-from finco.agent import ANSWER_TOOL, Agent, _parse_args  # noqa: E402
+from finco.agent import ANSWER_TOOL, Agent  # noqa: E402
 from finco.llm import ChatTurn, ToolCall  # noqa: E402
 from finco.types import Usage  # noqa: E402
 
@@ -235,26 +235,6 @@ class TestRobustness(AgentTestBase):
         _, llm = self.run_agent(*script, app_id="Q", question="?")
         assistant = [m for m in llm.seen[1] if m["role"] == "assistant"][0]
         json.loads(assistant["tool_calls"][0]["function"]["arguments"])  # phải là JSON hợp lệ
-
-
-class TestParseArgs(unittest.TestCase):
-    def test_valid(self):
-        self.assertEqual(_parse_args('{"a": 1}'), ({"a": 1}, ""))
-
-    def test_empty_means_no_args(self):
-        self.assertEqual(_parse_args(""), ({}, ""))
-        self.assertEqual(_parse_args("   "), ({}, ""))
-
-    def test_garbage_is_error_not_exception(self):
-        args, err = _parse_args("không phải json")
-        self.assertEqual(args, {})
-        self.assertTrue(err.startswith("Error:"))
-
-    def test_non_dict(self):
-        for raw in ("[1, 2]", '"abc"', "42", "null"):
-            args, err = _parse_args(raw)
-            self.assertEqual(args, {}, raw)
-            self.assertTrue(err.startswith("Error:"), raw)
 
 
 if __name__ == "__main__":
