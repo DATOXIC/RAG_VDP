@@ -131,6 +131,51 @@ def _format(hits: list[SearchHit], budget: int) -> str:
     return "\n\n".join(blocks)
 
 
+def retrieve_hits(
+    query: str, as_of_date: Optional[str] = None, top_k: int = 3
+) -> tuple[str, list[SearchHit]]:
+    """Tìm các đoạn chính sách liên quan và trả về cả văn bản lẫn danh sách SearchHit có cấu trúc.
+
+    Args:
+        query: Câu hỏi, tiếng Việt.
+        as_of_date: Ngày nộp hồ sơ "YYYY-MM-DD". Bỏ trống nếu không gắn với
+            hồ sơ nào: khi đó chỉ tìm trong các đoạn chính sách đang hiện hành.
+        top_k: Số đoạn tối đa (1..5).
+    Returns:
+        tuple (văn_bản_kết_quả, danh_sách_hits):
+        - Nếu có lỗi: trả về (chuỗi lỗi "Error: ...", [])
+        - Nếu không tìm thấy: trả về (thông báo không tìm thấy, [])
+        - Nếu thành công: trả về (văn bản đã format kèm nguồn, danh sách hits nguyên bản)
+    """
+    try:
+        if not isinstance(query, str) or not query.strip():
+            return ("Error: query không được rỗng.", [])
+        err = _validate_date(as_of_date)
+        if err:
+            return (err, [])
+        if isinstance(top_k, bool) or not isinstance(top_k, int):
+            return (f"Error: top_k phải là số nguyên, nhận được {top_k!r}.", [])
+        top_k = max(1, min(top_k, MAX_TOP_K))
+
+        mode = os.environ.get("RETRIEVAL_MODE", DEFAULT_MODE).strip().lower()
+        if mode not in MODES:
+            return (f"Error: RETRIEVAL_MODE={mode!r} không hợp lệ, chỉ nhận {', '.join(MODES)}.", [])
+
+        full, current = _load_engines()
+        if as_of_date is None:
+            hits = current.search(mode, query, top_k, None)
+        else:
+            hits = full.search(mode, query, top_k, as_of_date)
+
+        if not hits:
+            when = f"tại ngày {as_of_date}" if as_of_date else "hiện hành"
+            return (f"Không tìm thấy đoạn chính sách nào phù hợp {when}.", [])
+        return (_format(hits, MAX_CONTEXT_TOKENS), hits)
+    except Exception as e:  # tool không bao giờ raise
+        _log(f"retriever: lỗi {type(e).__name__}: {e}")
+        return (f"Error: truy xuất thất bại ({type(e).__name__}: {e}).", [])
+
+
 def retrieve(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
     """Tìm các đoạn chính sách liên quan và trả về văn bản có nguồn.
 
@@ -143,30 +188,5 @@ def retrieve(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> st
         Văn bản dạng "[CP-01 v2 · 2025-04-01]\\n<mục>\\n<nội dung>"; hoặc một câu
         thông báo không tìm thấy; hoặc chuỗi bắt đầu bằng "Error: ".
     """
-    try:
-        if not isinstance(query, str) or not query.strip():
-            return "Error: query không được rỗng."
-        err = _validate_date(as_of_date)
-        if err:
-            return err
-        if isinstance(top_k, bool) or not isinstance(top_k, int):
-            return f"Error: top_k phải là số nguyên, nhận được {top_k!r}."
-        top_k = max(1, min(top_k, MAX_TOP_K))
-
-        mode = os.environ.get("RETRIEVAL_MODE", DEFAULT_MODE).strip().lower()
-        if mode not in MODES:
-            return f"Error: RETRIEVAL_MODE={mode!r} không hợp lệ, chỉ nhận {', '.join(MODES)}."
-
-        full, current = _load_engines()
-        if as_of_date is None:
-            hits = current.search(mode, query, top_k, None)
-        else:
-            hits = full.search(mode, query, top_k, as_of_date)
-
-        if not hits:
-            when = f"tại ngày {as_of_date}" if as_of_date else "hiện hành"
-            return f"Không tìm thấy đoạn chính sách nào phù hợp {when}."
-        return _format(hits, MAX_CONTEXT_TOKENS)
-    except Exception as e:  # tool không bao giờ raise
-        _log(f"retriever: lỗi {type(e).__name__}: {e}")
-        return f"Error: truy xuất thất bại ({type(e).__name__}: {e})."
+    text, _ = retrieve_hits(query=query, as_of_date=as_of_date, top_k=top_k)
+    return text
