@@ -1,0 +1,38 @@
+{
+  "questions": 1,
+  "passed": 0,
+  "pass_rate": 0.0,
+  "run_success_rate": 0.0,
+  "decision_accuracy": 100.0,
+  "root_cause_accuracy": 0.0,
+  "read_after_write_rate": 100.0,
+  "numbers_accuracy": 100.0,
+  "correct_refusal_rate": null,
+  "false_refusal_rate": null,
+  "faithfulness_rule_rate": null,
+  "tool_error_rate": 18.2,
+  "avg_tool_calls": 11.0,
+  "avg_llm_calls": 10.0,
+  "total_prompt_tokens": 45751,
+  "total_completion_tokens": 4312,
+  "max_prompt_tokens": 6913,
+  "by_type": {
+    "hồ sơ": {
+      "n": 1,
+      "passed": 0
+    }
+  },
+  "log_file": "logs\\eval_20261015_233155.jsonl",
+  "model": "openai/gpt-oss-120b",
+  "generated_at": "2026-10-16T00:10:30",
+  "verifier": {
+    "total_cases": 1,
+    "pass_count": 0,
+    "overall_pass_rate": 0.0,
+    "decision_accuracy": 100.0,
+    "root_cause_accuracy": 0.0,
+    "citation_recall_avg": 100.0,
+    "trace_valid_rate": 100.0,
+    "math_valid_rate": 100.0
+  }
+}

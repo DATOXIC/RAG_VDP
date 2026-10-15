@@ -16,7 +16,6 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 DECISIONS = ("approve", "reject", "escalate", "need_info")
-# Mã lỗi dừng ở Bước 2 của quy trình: hồ sơ loại trừ thì không đi tiếp tới CP-02/CP-03...
 _EXCLUSION_CODES = {"AGE", "AMOUNT_RANGE", "TERM_RANGE", "OVERDUE"}
 MIN_QUOTE_LEN = 8
 
@@ -100,9 +99,12 @@ def record_dti(app_id: str, raw: str) -> None:
     ev.retrievals.append(Retrieval(doc_id="CP-05", version="v1", as_of=None, text=raw, trusted=True))
 
 
-# --------------------------------------------------------------------------- 2. Đề xuất & phán quyết
+
 @dataclass
 class Proposal:
+    """
+    Kết quả của Actor
+    """
     app_id: str
     decision: str
     reason: str

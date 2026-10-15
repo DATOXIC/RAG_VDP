@@ -9,48 +9,99 @@ Việc chấm điểm do code thực hiện, không dùng LLM:
 - **Câu `no_answer`:** đạt khi agent từ chối bằng câu chuẩn và không ghi quyết định.
 - **Câu hỏi đáp có đáp án:** đạt khi có đủ các ý chính đánh dấu trong đáp án chuẩn, trích đúng tài liệu và không từ chối nhầm.
 
-Hai model được dùng, cùng prompt, cùng RAG, cùng bộ công cụ MCP:
+Các model và cấu hình đã chạy, cùng prompt, cùng RAG, cùng bộ công cụ MCP:
 
-| Model | Vai trò | Nơi chạy |
-|---|---|---|
-| `openai/gpt-oss-20b` | model chính của sản phẩm | Groq API (gói miễn phí) |
-| `Qwen/Qwen2.5-14B-Instruct-AWQ` | model đối chứng, nhỏ hơn và tự lưu trữ | vLLM trên Colab T4, `max-model-len 8192` |
+| Cấu hình | Actor | Critic | Nơi chạy | Log |
+|---|---|---|---|---|
+| A | `openai/gpt-oss-120b` | không | Groq (gói miễn phí) | `logs/eval_20261014_202454.jsonl` |
+| B | `openai/gpt-oss-120b` | critic-agent `gemini-3.1-flash-lite` | Groq + Google AI Studio | `logs/eval_agent_full_merged.jsonl` |
+| C | `Qwen/Qwen2.5-7B-Instruct-AWQ` | không | vLLM trên Colab T4, `max-model-len 8192` | `logs/eval_20261015_133814.jsonl` |
+| D | `Qwen/Qwen2.5-7B-Instruct-AWQ` | critic một lần gọi (chính nó), bản đã sửa | như C | `logs/eval_local_critic_v2_merged.jsonl` |
+| E | `Qwen/Qwen2.5-14B-Instruct-AWQ` | không | như C | `logs/eval_qwen2.5-14b_full.jsonl` |
+| F | `openai/gpt-oss-20b` | không | Groq (chỉ 16 câu testset) | `logs/eval_gptoss_final.jsonl` |
+
+Critic là một chốt chặn nhúng trong tool `submit_decision` (xem `src/finco/critic.py`, `src/finco/critic_agent.py`): Tầng 1 kiểm tra bằng chứng bằng code (không tốn token); Tầng 2 là LLM tự suy ra quyết định đúng rồi code so sánh, và mọi phản đối phải trích dẫn nguyên văn từ bằng chứng thì mới được chặn. Critic-agent là bản nâng cấp: một agent thứ hai có vòng lặp riêng và ba tool chỉ-đọc (`get_application`, `search_policy`, `calc_dti`), tự tra cứu độc lập chứ không đọc bằng chứng của Actor, và bị ép tự tính DTI trước khi kết luận nếu quyết định phụ thuộc DTI. Sau 2 lần bị chặn, Actor chỉ còn được ghi `escalate`.
 
 ## 2. Kết quả
 
-**Qwen2.5-14B-Instruct-AWQ, đủ 37 tình huống** (`logs/eval_qwen2.5-14b_full.jsonl`):
+### 2.1. Ảnh hưởng của model (không critic)
 
-| Chỉ số | Kết quả |
-|---|---|
-| Đạt toàn diện | 21,6% (8/37) |
-| Lượt chạy hoàn tất không lỗi | 81,1% |
-| Đúng quyết định, đúng mã lý do (23 hồ sơ và câu hành động) | 43,5% |
-| Có ghi + đọc lại + tra cứu | 69,6% |
-| Đúng DTI và lãi suất | 60,9% |
-| Từ chối đúng (câu `no_answer`) | 25,0% |
-| Từ chối nhầm (câu có đáp án) | 0,0% |
-| Faithfulness theo luật | 100% |
-| Tỷ lệ lời gọi tool lỗi | 18,9% |
-| Trung bình lời gọi tool, lượt gọi LLM mỗi câu | 6,2 và 6,7 |
-
-**So sánh trên 16 câu testset** (hồ sơ chưa có số liệu cho `gpt-oss`, xem mục 4):
-
-| Loại câu | gpt-oss-20b | Qwen2.5-14B |
+| Chỉ số | gpt-oss-120b (A) | Qwen2.5-7B (C) |
 |---|---|---|
-| Tra cứu (2) | 2 | 1 |
-| Tổng hợp (2) | 1 | 0 |
-| Phiên bản chính sách (2) | 2 | 1 |
-| Tính toán (2) | 0 | 0 |
-| Thiếu dữ liệu (2) | 2 | 1 |
-| `no_answer` (4) | 4 | 1 |
-| Hành động (2) | 0 | 0 |
-| **Tổng (16)** | **11** | **4** |
+| Đạt toàn diện | **34/37 (92%)** | 10/37 (27%) |
+| Chạy xong không lỗi | 37/37 | 30/37 |
+| Đúng quyết định, 21 hồ sơ | **21/21** | 6/21 |
+| Lượt gọi LLM (cả 37 ca) | 198 | 353 |
+| Prompt token (cả 37 ca) | 689.453 | 1.501.556 |
+| Lỗi gọi tool | 0 | 16 |
 
-Faithfulness theo luật bằng 100% ở cả hai model: không câu nào trích tài liệu chưa từng xuất hiện trong kết quả công cụ. Cả hai model không từ chối nhầm câu nào có đáp án.
+Qwen2.5-14B (E) đạt 8/37 (21,6%), trong đó từ chối đúng `no_answer` 25%, tỉ lệ lời gọi tool lỗi 18,9%; `gpt-oss-20b` (F) đạt 11/16 trên testset (hồ sơ bị giới hạn token, xem mục 4).
+
+Theo loại câu (số câu đạt):
+
+| Loại câu | gpt-oss-120b | Qwen2.5-7B |
+|---|---|---|
+| Tra cứu (2) | 2 | 0 |
+| Tổng hợp (2) | 2 | 0 |
+| Phiên bản chính sách (2) | 2 | 1 |
+| Tính toán (2) | 2 | 0 |
+| Thiếu dữ liệu (2) | 2 | 2 |
+| `no_answer` (4) | 3 | 4 |
+| Hành động (2) | 1 | 0 |
+| Hồ sơ (21) | 20 | 3 |
+
+Kết luận về kích thước: chênh lệch giữa họ model là rất lớn (92% so với 22 đến 27%), nhưng **kích thước đơn thuần không giải thích được**: Qwen 14B không tốt hơn Qwen 7B (8 và 10 ca). Hai họ model còn khác nền tảng phục vụ, độ dài ngữ cảnh và cách gọi tool, và gpt-oss là MoE (chỉ khoảng 5B tham số kích hoạt mỗi token).
+
+### 2.2. Thí nghiệm A/B critic
+
+**Actor gpt-oss-120b: không critic (A) so với critic-agent Gemini (B).** Cả hai chạy đủ 37 ca.
+
+| Chỉ số | Không critic (A) | Critic-agent (B) |
+|---|---|---|
+| Đạt toàn diện | **34/37** | 32/37 |
+| Chạy xong không lỗi | 37/37 | 35/37 |
+| Đúng quyết định, 21 hồ sơ | 21/21 | 21/21 |
+| Lượt gọi LLM của Actor | 198 | 204 |
+| Prompt token của Actor | 689.453 | 732.316 |
+| Thêm cho critic | 0 | 171 lượt, 375.548 prompt token, 5.414 completion token |
+| **Tổng prompt token** | 689.453 | **1.107.864 (+61%)** |
+| Lỗi gọi tool (gồm các lần bị chặn) | 0 | 5 |
+
+Bốn ca khác nhau giữa hai nhánh:
+
+| Ca | A | B | Ghi chú |
+|---|---|---|---|
+| A02 | trượt | đạt | không tách được tác động của critic khỏi nhiễu |
+| APP-011 | đạt | trượt | lỗi hạ tầng Groq HTTP 413 (request vượt 8.000 token) |
+| APP-019 | đạt | trượt | thiếu trích dẫn, recall 0,75 so với ngưỡng 0,8 |
+| C02 | đạt | trượt | câu hỏi đáp, **không đi qua critic**: nhiễu thuần túy |
+
+Hoạt động của critic-agent trong 32 lần thẩm tra:
+
+| Kết quả | Số lần | Ghi chú |
+|---|---|---|
+| Đồng ý (pass) | 25 | |
+| Chặn có trích dẫn | 3 | cả ba ở APP-018 |
+| Lỗi: không trả JSON | 2 | APP-006, `gemini-3.1-flash-lite` |
+| Lỗi: kết luận khi chưa tự tính DTI | 2 | APP-011, dù đã bị nhắc |
+
+**Actor Qwen2.5-7B: không critic (C), critic một lần gọi bản đầu, và bản đã sửa (D).**
+
+| Chỉ số | Không critic (C) | Critic bản đầu | Critic bản sửa (D) |
+|---|---|---|---|
+| Đạt toàn diện | 10/37 | 8/37 | 9/37 |
+| Đúng quyết định, 21 hồ sơ | 6 | 2 | 5 |
+| Chạy xong không lỗi | 30 | 24 | 25 |
+| Lỗi gọi tool | 16 | 41 | 35 |
+| Lượt gọi LLM | 353 | 379 | 398 |
+
+Ba chỉnh sửa (không chặn vì quên trích dẫn mà tự bổ sung, giới hạn nội dung phản hồi, và không phạt Actor khi critic chỉ lỗi hạ tầng) đưa critic từ gây hại rõ ràng về gần mức không critic, nhưng chưa vượt.
 
 ## 3. Phân tích lỗi
 
-Lỗi của model nhỏ tập trung ở **tuân thủ quy trình**, ít ở kiến thức chính sách:
+### 3.1. Model nhỏ: lỗi tuân thủ quy trình
+
+Lỗi của Qwen tập trung ở **tuân thủ quy trình**, ít ở kiến thức chính sách:
 
 | Nhóm lỗi | Biểu hiện (Qwen) | Số ca |
 |---|---|---|
@@ -58,20 +109,46 @@ Lỗi của model nhỏ tập trung ở **tuân thủ quy trình**, ít ở ki�
 | Ghi xong không đọc lại | có `submit_decision` nhưng không gọi `get_decision` | 3 hồ sơ (APP-007, 010, 019) |
 | Hết bước hoặc xoay vòng tra cứu | vượt `MAX_STEPS`, hoặc prompt vượt giới hạn ngữ cảnh | 2 hồ sơ (APP-018, 011) |
 | Duyệt nhầm hồ sơ thiếu thông tin | `approve` khi thiếu chứng từ hoặc chưa khai báo nợ | APP-004, 005 |
+| Chọn sai lãi suất theo kỳ hạn | dùng 15,5% thay cho 17% hoặc 18,5% theo biểu CP-03, kéo theo sai DTI | nhiều hồ sơ |
 | Không nhận ra sản phẩm khác | dùng biểu lãi suất vay tiêu dùng để trả lời câu hỏi về vay thế chấp | N01, N02, N04 |
-| Thiếu trích dẫn trong câu trả lời | nội dung đúng nhưng không nêu tài liệu | nhiều câu hỏi đáp |
-
-Với `gpt-oss-20b`, hai nhóm lỗi còn lại ở testset là thiếu trích dẫn (S02, C01, C02) và một ca hành động sai (A01).
 
 Tầng truy xuất không phải nguyên nhân chính: đo riêng, recall@3 đạt 1,00 và gold@3 đạt 0,90 sau khi giảm điểm tài liệu diễn giải (CP-15, CP-16).
 
+### 3.2. Ca thất bại của model mạnh (gpt-oss-120b, không critic)
+
+| Ca | Biểu hiện | Phân tích |
+|---|---|---|
+| APP-018 | `escalate` đúng nhưng mã lý do `ESCALATE_COUNCIL`, chuẩn là `ESCALATE_EMPLOYEE` | Model nhầm thẩm quyền của **nhân viên FinCo** (ngoại lệ CP-06) sang Hội đồng |
+| A02 | cùng lỗi mã lý do `ESCALATE_COUNCIL` thay vì `ESCALATE_EMPLOYEE` | cùng một lỗi có hệ thống ở nhánh nhân viên |
+| N03 | không từ chối dù tài liệu không chứa thông tin | lỗi calibration: trả lời bịa thay vì nói không đủ dữ liệu |
+
+Đây là ca thất bại tiêu biểu để phân tích: quyết định tổng thể đúng (`escalate`) nên chỉ so khớp mã lý do mới phát hiện được lỗi, và lỗi nằm ở một quy tắc cụ thể (nhân viên FinCo đi theo nhánh riêng, không theo số tiền vay).
+
+### 3.3. Critic: vì sao không cải thiện
+
+1. **Không có dư địa với Actor mạnh.** gpt-oss-120b đã đúng quyết định 21/21; chỗ còn sai là mã lý do (APP-018, A02) và calibration (N03), mà critic không sửa được.
+2. **Critic bất đồng nhưng cũng sai.** Cả 3 lần critic chặn ở APP-018 đều đề xuất `approve` / `APPROVED`, trong khi đáp án chuẩn là `escalate` / `ESCALATE_EMPLOYEE`; vì cùng một hạn chế về quy tắc nhân viên nên critic không phải một góc nhìn độc lập thực sự ở điểm này.
+3. **Critic yếu hơn mức cần.** Với model nhỏ làm critic (Qwen 7B hoặc Gemini Flash Lite), khoảng 12,5% lần thẩm tra thất bại về định dạng JSON hoặc bỏ qua bước tính DTI. Khi critic lỗi hạ tầng, quyết định của Actor vẫn được ghi kèm cờ chưa xác minh nên không bị phạt oan, nhưng cũng không có giá trị bổ sung.
+4. **Phản hồi chặn làm ngữ cảnh Actor phình.** Ở gói miễn phí (giới hạn 8.000 token mỗi request), điều này dẫn tới lỗi HTTP 413 ở các ca dài (APP-011, APP-018).
+
+Quan sát có kiểm chứng: critic-agent thật sự độc lập (tự đọc hồ sơ, tự tra CP-01, CP-03, CP-04, tự gọi `calc_dti`) và hoàn tất thẩm tra trong 5 đến 6 lượt gọi, khoảng 12.000 đến 14.000 prompt token mỗi lần.
+
 ## 4. Hạn chế
 
-- **Chưa có kết quả hồ sơ cho `gpt-oss-20b`.** Lần chạy 21 hồ sơ bị giới hạn token của gói miễn phí (HTTP 429), nên chúng không phản ánh năng lực model; số liệu hồ sơ trong báo cáo hiện chỉ của Qwen. Cần chạy lại khi có hạn mức.
-- **Một lần chạy mỗi model** nên chưa đo được độ biến thiên; với 37 mẫu, chênh lệch nhỏ giữa các nhóm chưa có ý nghĩa thống kê.
-- **Hai model chạy trên hai nền tảng khác nhau** (Groq và Colab T4), nên so sánh chỉ mang tính định hướng.
-- Bộ chấm yêu cầu trích dẫn xuất hiện trong văn bản trả lời của câu hỏi đáp; một câu trả lời đúng nhưng không nêu mã tài liệu bị tính là trượt.
+- **Một lần chạy mỗi cấu hình**, nên chưa đo được độ biến thiên. Với 37 mẫu, khoảng sai số 95% của một tỉ lệ khoảng ±13 điểm phần trăm; các chênh lệch 1 đến 3 ca (như 34 so với 32) nằm trong nhiễu và không có ý nghĩa thống kê. Kết luận A/B chỉ nên đọc là "không thấy cải thiện", không phải "critic có hại".
+- **Chưa có kết quả hồ sơ đủ cho `gpt-oss-20b`.** Lần chạy 21 hồ sơ bị giới hạn token của gói miễn phí (HTTP 429), nên số liệu của model này chỉ có trên 16 câu testset. Nhánh critic một lần gọi trên `gpt-oss-120b` cũng chưa chạy đủ vì cùng lý do.
+- **Giới hạn hạ tầng ảnh hưởng kết quả:** HTTP 413 do request vượt 8.000 token mỗi phút (gói `on_demand`) làm hỏng ca dài như APP-011, APP-016, APP-018; HTTP 429 và hết hạn mức token/ngày làm kéo dài thời gian. Đây là lỗi hạ tầng, không phải lỗi model, nhưng có thể làm lệch số liệu giữa các nhánh.
+- **Các model chạy trên các nền tảng khác nhau** (Groq, Colab T4), nên so sánh theo kích thước chỉ mang tính định hướng; chưa có "thang kích thước" cùng họ trên cùng nền tảng.
+- **Critic và Actor dùng model khác họ ở cấu hình B** nên chỉ giảm được một phần lỗi tương quan; ở cấu hình D thì dùng chung model nên lỗi có thể tương quan.
+- Bộ chấm yêu cầu trích dẫn xuất hiện trong văn bản trả lời của câu hỏi đáp; một câu trả lời đúng nhưng không nêu mã tài liệu bị tính là trượt (ví dụ C02).
+- Chưa có đối chứng không-RAG và kiểm tra bằng cách đổi số.
 
 ## 5. Kết luận và hướng tiếp theo
 
-Hệ thống vận hành đúng từ đầu đến cuối trên model thật (MCP, tra cứu, ghi và đọc lại, log có USAGE, chấm điểm tự động). Chất lượng phụ thuộc mạnh vào model, và phần lớn lỗi của model nhỏ là những bước mà code có thể ép buộc. Đây là cơ sở cho giai đoạn đa agent: để code thực hiện bước ghi và đọc lại, và thêm một agent phản biện kiểm tra trích dẫn trước khi ghi, rồi đo A/B bằng chính bộ đánh giá này.
+Hệ thống vận hành đúng từ đầu đến cuối trên model thật (MCP, tra cứu, ghi và đọc lại, log có USAGE, chấm điểm tự động). Kết luận chính:
+
+1. **Chất lượng model quyết định kết quả.** gpt-oss-120b đạt 92%, Qwen nhỏ đạt 22 đến 27%; lỗi của model nhỏ là lỗi tuân thủ quy trình, không phải thiếu kiến thức chính sách.
+2. **Critic chưa cho thấy lợi ích đo được.** Cả critic một lần gọi lẫn critic-agent đều không vượt nhánh không critic, và critic-agent tốn thêm khoảng 61% prompt token. Với Actor yếu, critic cũng không cứu được vì lỗi nằm ở bước hành động; với Actor mạnh, không còn chỗ để cải thiện.
+3. **Cấu hình mặc định nên là không critic** (`FINCO_CRITIC=0`) cho đến khi có bằng chứng ngược lại; critic-agent giữ lại như một cấu hình thí nghiệm có tài liệu (`FINCO_CRITIC_MODE=agent`, `FINCO_CRITIC_PROVIDER=gemini`).
+
+Hướng tiếp theo, theo thứ tự đáng làm: (a) chạy lặp lại cấu hình A và B đủ nhiều lần để đo độ biến thiên thật; (b) sửa gốc lỗi mã lý do của nhánh nhân viên (APP-018, A02) bằng quy tắc rõ trong prompt và đo lại; (c) thử critic mạnh hơn hoặc cùng họ với Actor, và cho critic xác minh riêng mã lý do thay vì chỉ quyết định; (d) làm thang kích thước cùng họ trên cùng nền tảng (ví dụ `gpt-oss-20b` và `120b`, hoặc Llama 8B và 70B) để kết luận đúng về ảnh hưởng của số tham số.
