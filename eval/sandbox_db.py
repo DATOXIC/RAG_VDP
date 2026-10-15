@@ -6,7 +6,8 @@ from typing import Iterator
 from finco.store import db
 
 ROOT = Path(__file__).parents[1]
-SANDBOX_PATH = ROOT / "data" / "finco_sandbox.db"
+# FINCO_SANDBOX_SUFFIX: mỗi worker song song một file sandbox riêng (vd. "_w1"), tránh dẫm lên nhau.
+SANDBOX_PATH = ROOT / "data" / f"finco_sandbox{os.getenv('FINCO_SANDBOX_SUFFIX', '')}.db"
 
 @contextmanager
 def isolated_db_sandbox(sandbox_path: Path = SANDBOX_PATH):

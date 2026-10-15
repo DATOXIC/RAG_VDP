@@ -13,6 +13,7 @@ Retry-After; lỗi cố định (401, 400, 403, 404) thì raise ngay. Chỉ log 
 import json
 import os
 import random
+import re
 import sys
 import time
 from dataclasses import dataclass, field
@@ -40,8 +41,14 @@ load_dotenv(REPO_ROOT / ".env")
 PROMPTS_DIR = REPO_ROOT / "prompts"
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
+DEFAULT_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2000"))  # hạ xuống khi server có ngữ cảnh nhỏ (vLLM 8k)
 DEFAULT_TIMEOUT = 60.0    # giây cho một lần gọi, để một lần treo không làm treo cả lượt
 MAX_RETRY_AFTER = 60.0    # Retry-After lớn hơn mức này thì chỉ chờ tối đa bằng mức này
+# Hết hạn mức TOKEN/NGÀY (TPD): thử lại sau vài giây vô ích. Server báo rõ "try again in 9m15s" nên chờ
+# đúng thời gian đó (không đốt lần retry), nhưng không chờ quá MAX_DAILY_WAIT: lâu hơn thì dừng ngay.
+MAX_DAILY_WAIT = float(os.getenv("LLM_MAX_DAILY_WAIT", "1800"))
+MAX_DAILY_WAITS = 12
+_TRY_AGAIN = re.compile(r"try again in\s+((?:\d+h)?(?:\d+m(?!s))?(?:[\d.]+s(?!\w))?(?:[\d.]+ms)?)", re.IGNORECASE)
 
 _RETRY = (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError)
 _NO_RETRY = (AuthenticationError, BadRequestError, PermissionDeniedError, NotFoundError)
@@ -107,8 +114,48 @@ class ChatTurn:
             ]
         return msg
     
-def get_client() -> OpenAI:
-    global _CLIENT
+_CRITIC_CLIENT: Optional[OpenAI] = None
+
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+GEMINI_DEFAULT_MODEL = "gemini-3.5-flash"
+
+
+def critic_endpoint() -> Optional[tuple[str, str]]:
+    """(api_key, base_url) riêng cho Critic, hoặc None nếu dùng chung endpoint với Actor.
+
+    FINCO_CRITIC_PROVIDER=gemini: khóa GEMINI_API_KEY, endpoint OpenAI-compatible của Google.
+    Hoặc đặt trực tiếp FINCO_CRITIC_BASE_URL + FINCO_CRITIC_API_KEY (vLLM, OpenRouter...).
+    """
+    if os.getenv("FINCO_CRITIC_PROVIDER", "").strip().lower() == "gemini":
+        key = os.getenv("GEMINI_API_KEY")
+        if not key:
+            raise ValueError("FINCO_CRITIC_PROVIDER=gemini nhưng thiếu GEMINI_API_KEY trong .env.")
+        return key, os.getenv("FINCO_CRITIC_BASE_URL") or GEMINI_BASE_URL
+    base, key = os.getenv("FINCO_CRITIC_BASE_URL"), os.getenv("FINCO_CRITIC_API_KEY")
+    if base and key:
+        return key, base
+    return None
+
+
+def critic_default_model() -> Optional[str]:
+    """Model mặc định của Critic khi gọi với profile='critic' (None = dùng LLM_MODEL như Actor)."""
+    m = os.getenv("FINCO_CRITIC_MODEL")
+    if m:
+        return m
+    if os.getenv("FINCO_CRITIC_PROVIDER", "").strip().lower() == "gemini":
+        return GEMINI_DEFAULT_MODEL
+    return None
+
+
+def get_client(profile: Optional[str] = None) -> OpenAI:
+    """profile='critic': client riêng cho Critic nếu có cấu hình (critic_endpoint), không thì dùng chung."""
+    global _CLIENT, _CRITIC_CLIENT
+    if profile == "critic":
+        ep = critic_endpoint()
+        if ep is not None:
+            if _CRITIC_CLIENT is None:
+                _CRITIC_CLIENT = OpenAI(api_key=ep[0], base_url=ep[1], max_retries=0, timeout=DEFAULT_TIMEOUT)
+            return _CRITIC_CLIENT
     if _CLIENT is None:
         api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
         base_url = os.getenv("GROQ_BASE_URL") or os.getenv("OPENAI_BASE_URL") or DEFAULT_BASE_URL
@@ -139,16 +186,33 @@ def load_prompt(filename: str) -> str:
         raise FileNotFoundError(f"Không tìm thấy file prompt: {path}")
     return path.read_text(encoding="utf-8").strip()
 
+def _daily_quota_wait(e: Exception) -> Optional[float]:
+    """Số giây server yêu cầu chờ nếu lỗi là hết hạn mức token/NGÀY; None nếu không phải lỗi đó."""
+    msg = str(e)
+    if "per day" not in msg and "(TPD)" not in msg:
+        return None
+    m = _TRY_AGAIN.search(msg)
+    if not m or not m.group(1):
+        return float("inf")  # hết hạn mức ngày nhưng không biết bao giờ hồi
+    total = 0.0
+    for num, unit in re.findall(r"([\d.]+)(ms|h|m|s)", m.group(1)):
+        total += float(num) * {"h": 3600, "m": 60, "s": 1, "ms": 0.001}[unit]
+    return total
+
+
 def _create_with_retry(
     request: dict[str, Any],
     max_retries: int = 4,
     initial_delay: float = 1.0,
     max_delay: float = 20.0,
+    profile: Optional[str] = None,
 ):
-    client = get_client()
+    client = get_client(profile) if profile else get_client()
     delay = initial_delay
 
-    for attempt in range(max_retries + 1):
+    attempt = 0
+    daily_waits = 0
+    while attempt <= max_retries:
         try:
             return client.chat.completions.create(**request)
         
@@ -161,6 +225,19 @@ def _create_with_retry(
         except _RETRY as e:
             status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
             err_name = f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
+
+            daily = _daily_quota_wait(e)
+            if daily is not None:
+                if daily > MAX_DAILY_WAIT or daily_waits >= MAX_DAILY_WAITS:
+                    shown = "không rõ" if daily == float("inf") else f"{daily / 60:.0f} phút"
+                    print(f"[llm] Hết hạn mức token/ngày, cần chờ {shown} (> {MAX_DAILY_WAIT / 60:.0f} phút): dừng.", file=sys.stderr)
+                    raise RuntimeError(f"Gọi LLM thất bại: hết hạn mức token/ngày ({err_name}), cần chờ {shown}: {e}") from e
+                daily_waits += 1
+                wait = daily + random.uniform(1.0, 3.0)
+                print(f"[llm] Hết hạn mức token/ngày. Chờ đúng {wait:.0f}s rồi thử lại (không tính vào số lần retry)...", file=sys.stderr)
+                time.sleep(wait)
+                continue  # không tăng attempt: chờ đủ lâu thì lần này là lần thử "mới"
+
             if attempt == max_retries:
                 print(f"[llm] Đã thử lại {max_retries} lần nhưng vẫn thất bại: {e}", file=sys.stderr)
                 raise RuntimeError(f"Gọi LLM thất bại sau {max_retries} lần thử lại do lỗi {err_name}: {e}") from e
@@ -177,6 +254,7 @@ def _create_with_retry(
             print(f"[llm] Gặp lỗi tạm thời {err_name}. Chờ {wait:.2f}s...", file=sys.stderr)
             time.sleep(wait)
             delay = min(max_delay, delay * 2.0)
+            attempt += 1
 
     raise RuntimeError("Gọi LLM thất bại: vòng lặp kết thúc bất thường.")
 
@@ -186,13 +264,16 @@ def call_llm(
     tools: Optional[list[dict[str, Any]]] = None, 
     model: Optional[str] = None,               
     temperature: float = 0.0,
-    max_tokens: int = 2000,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
     timeout: float = DEFAULT_TIMEOUT,
     max_retries: int = 4,
     initial_delay: float = 1.0,
     max_delay: float = 20.0,
     stop: Optional[list[str]] = None,
+    profile: Optional[str] = None,
 ) -> ChatTurn:
+    if profile == "critic" and not model and critic_endpoint() is not None:
+        model = critic_default_model()
     request: dict[str, Any] = {
         "model": model or os.getenv("LLM_MODEL") or DEFAULT_MODEL,
         "messages": messages,
@@ -206,7 +287,9 @@ def call_llm(
         request["tools"] = tools
         request["tool_choice"] = "auto"
 
-    response = _create_with_retry(request, max_retries=max_retries, initial_delay=initial_delay, max_delay=max_delay)
+    response = _create_with_retry(
+        request, max_retries=max_retries, initial_delay=initial_delay, max_delay=max_delay, profile=profile
+    )
 
     if not getattr(response, "choices", None):
         raise EmptyResponseError("LLM trả về phản hồi không có choices.")

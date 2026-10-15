@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -16,7 +17,7 @@ from finco.types import LogLine, Usage
 # --------------------------------------------------------------------------- 1. Hằng số
 LOGS_DIR = Path(__file__).resolve().parents[2] / "logs"
 
-MAX_STEPS = 15              # số lần gọi LLM tối đa mỗi lượt (quy trình dài nhất ~9, +3 cho vòng Critic: 2 lần bị chặn + 1 lần escalate)
+MAX_STEPS = int(os.getenv("FINCO_MAX_STEPS", "15"))  # số lần gọi LLM tối đa mỗi lượt (quy trình dài nhất ~9, +3 cho vòng Critic); model yếu hay lặp nên có thể nâng
 WRITE_TOOL = "submit_decision"
 VERIFY_TOOL = "get_decision"
 ANSWER_TOOL = "__answer__"  # dòng log cuối mỗi câu: câu trả lời + usage (kể cả câu không gọi tool)
@@ -38,6 +39,7 @@ class AgentRunResult:
     trace: list[LogLine] = field(default_factory=list)
     usage: Usage = field(default_factory=lambda: Usage(0, 0, 0, 0))
     answer_log: Optional[LogLine] = None
+    seen_calls: dict[str, int] = field(default_factory=dict, repr=False)  # (tool, args) -> bước gọi thành công đầu tiên
 
     @property
     def tool_calls(self) -> list[str]:
@@ -139,6 +141,9 @@ class Agent:
         self.underwrite_prompt = load_prompt("agent_underwrite.txt")
         self.qa_prompt = load_prompt("agent_qa.txt")
         self.system_prompt = self.underwrite_prompt
+        # Model yếu hay gọi lặp cùng tool/tham số, mỗi lần nhét lại cả đoạn chính sách vào ngữ cảnh.
+        # Bật FINCO_DEDUP_TOOLS=1: lần lặp được trả lời ngắn, không gọi server. Mặc định tắt (giữ nguyên baseline).
+        self.dedup_tools = os.getenv("FINCO_DEDUP_TOOLS", "0").strip() == "1"
         
         if llm is not None:
             self._llm = llm
@@ -160,6 +165,22 @@ class Agent:
         if self.verbose:
             print(f"\n[Bước {step}]\nThought: {thought or '(không có)'}\nAction : {name}({args})")
 
+        call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=False)}"
+        first_step = result.seen_calls.get(call_key)
+        if self.dedup_tools and first_step is not None and name not in (WRITE_TOOL, VERIFY_TOOL):
+            output = (
+                f"Bạn đã gọi {name} với đúng tham số này ở bước {first_step}; kết quả không đổi (xem lại phía trên). "
+                "Không gọi lặp: hãy chuyển sang bước kế tiếp của quy trình."
+            )
+            if self.verbose:
+                print(f"Observation: [bỏ qua lời gọi lặp] {output[:120]}")
+            result.trace.append(LogLine(
+                ts=datetime.now().isoformat(timespec="seconds"), run_id=result.run_id,
+                question_id=result.question_id, step=step, tool=name, args=args,
+                result=output, usage=result.usage,
+            ))
+            return output
+
         try:
             res = await mcp.call_tool(name, args)
             output = res.content[0].text if res.content else ""
@@ -172,6 +193,9 @@ class Agent:
 
         if self.verbose:
             print(f"Observation: {output[:160]}{'...' if len(output) > 160 else ''}")
+
+        if not output.startswith("Error:"):
+            result.seen_calls.setdefault(call_key, step)
 
         # Thực hiện tool xong -> Ghi lại Log
         result.trace.append(LogLine(
