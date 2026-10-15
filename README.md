@@ -6,10 +6,10 @@ Thành phần: RAG (dense + hybrid BM25, lọc theo ngày hiệu lực) · vòng
 
 ## Chạy nhanh
 
-Yêu cầu: Python 3.11+, có mạng ở lần đầu (tải mô hình embedding `BAAI/bge-m3`, ~2 GB), khóa API LLM.
+Yêu cầu: Python 3.11+, có mạng ở lần đầu (tải mô hình embedding `BAAI/bge-m3`, ~2 GB), khóa API LLM của một endpoint tương thích OpenAI (mặc định Groq; xem mục "Mô hình và endpoint").
 
 ```bash
-cp .env.example .env        # điền GROQ_API_KEY
+cp .env.example .env        # điền GROQ_API_KEY (hoặc OPENAI_API_KEY + OPENAI_BASE_URL)
 make setup && make demo
 ```
 
@@ -34,6 +34,18 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 
 Giới hạn tốc độ của API: `make eval ARGS="--pace 8"` nghỉ 8 giây giữa các câu; log được ghi ngay sau mỗi câu nên bị ngắt giữa chừng vẫn chạy tiếp được bằng `ARGS="--resume logs/eval_X.jsonl"`.
 
+## Mô hình và endpoint
+
+Mọi lời gọi LLM đi qua SDK `openai` tới một endpoint tương thích OpenAI, cấu hình bằng `.env` (xem `.env.example`):
+
+| Vai trò | Biến | Ghi chú |
+|---|---|---|
+| Actor (agent) | `GROQ_API_KEY` (+ `GROQ_BASE_URL`) hoặc `OPENAI_API_KEY` + `OPENAI_BASE_URL`; `LLM_MODEL` | mặc định `openai/gpt-oss-20b` trên Groq; `gpt-oss-120b` là cấu hình cho số liệu chính; Qwen2.5 7B/14B chạy trên vLLM (Colab T4) qua `OPENAI_BASE_URL` |
+| Critic (tùy chọn) | `FINCO_CRITIC=0` tắt; `FINCO_CRITIC_MODE=single\|agent`; `FINCO_CRITIC_PROVIDER=gemini` + `GEMINI_API_KEY`, hoặc `FINCO_CRITIC_BASE_URL` + `FINCO_CRITIC_API_KEY` | code mặc định **bật** chế độ `single`; kết quả A/B chưa thấy critic cải thiện nên các số liệu "không critic" chạy với `FINCO_CRITIC=0` |
+| Giám khảo LLM | `JUDGE_MODEL` | chỉ `eval/judge.py`, nên khác Actor |
+
+Các model đã đánh giá và log tương ứng: `docs/ket-qua-danh-gia.md` mục 1. Chỉ cần một khóa Groq là chạy được `make demo`; Gemini và vLLM chỉ cần cho thí nghiệm critic và so sánh model.
+
 ## Kiến trúc
 
 ```
@@ -56,6 +68,7 @@ Quyết định thiết kế chính:
 - **Không raise ra ngoài.** Lỗi tool, lỗi MCP, tham số JSON hỏng, tên tool lạ, hết retry LLM đều thành `Error: ...` hoặc kết thúc gọn với `success=False`; trace và usage vẫn được giữ.
 - **Ghi xong tự đọc lại.** `submit_decision` thành công thì code tự gọi `get_decision` và đính kèm kết quả vào phản hồi cho model; verifier kiểm tra cặp ghi + đọc lại trong trace.
 - **Đo bằng trace, không bằng văn bản tự do.** Verifier dựng bài nộp từ chính các lời gọi tool (`submission_from_trace`), nên không phụ thuộc cách model diễn đạt.
+- **Critic chốt chặn trong `submit_decision`** (`src/finco/critic.py`, `critic_agent.py`): kiểm tra bằng chứng bằng code rồi nhờ một LLM tự suy ra quyết định để so sánh; chỉ chặn khi phản đối trích được nguyên văn bằng chứng, tối đa 2 lần chặn. Là thí nghiệm có đo (A/B trong `docs/ket-qua-danh-gia.md`), tắt bằng `FINCO_CRITIC=0`.
 - **Thứ tự xử lý theo CP-04** (loại trừ → chứng từ → DTI → thẩm quyền, dừng ở bước đầu tiên không đạt): agent chỉ tra cứu những gì bước hiện tại cần, tiết kiệm lượt gọi LLM.
 
 RAG: chunk theo mục `##` của Markdown (một mục = một điều kiện hoàn chỉnh; chunk dài hơn 430 token mới tách theo điều khoản), mỗi chunk mang dòng đầu `[doc_id version | hiệu lực từ ...]` để chunk giữa tài liệu vẫn biết thuộc đâu. Hybrid = 0,3 BM25 + 0,7 cosine, chuẩn hóa min-max sau khi **lọc theo ngày hiệu lực** (`as_of_date`), vì hai phiên bản CP-01 gần như trùng chữ, chỉ khác con số nên tìm kiếm ngữ nghĩa thuần không phân biệt được.
@@ -92,7 +105,7 @@ logs/  report/            log chạy thật, báo cáo
 
 ## Giới hạn đã biết
 
-- Mô hình nhỏ có thể gọi tool sai hoặc dừng sớm; agent chỉ nhắc 2 lần rồi đánh dấu thất bại thay vì tự sửa tiếp.
+- Mô hình nhỏ có thể gọi tool sai hoặc dừng sớm; khi model dừng mà chưa ghi quyết định, agent nhắc gọi `submit_decision` (mỗi lần model dừng sớm nhắc một lần, trong giới hạn `MAX_STEPS`); hết bước mà vẫn chưa ghi thì đánh dấu thất bại, không tự sửa tiếp.
 - Faithfulness theo luật chỉ kiểm tra tài liệu được trích có thật trong kết quả tool, chưa kiểm từng khẳng định (`eval/judge.py` là giám khảo LLM tùy chọn, chạy riêng, và chính nó là LLM nên cũng có thể sai).
 - Tầng truy xuất còn nhạy với cách đặt truy vấn: truy vấn kiểu "CP-01 ..." có thể trả bản diễn giải (CP-15/16) trước chính sách gốc, nên prompt dùng truy vấn bám tên tài liệu (có test giữ ràng buộc này: `tests/test_prompt.py`).
 - Quyết định `need_info` chưa thay được bằng quyết định mới khi hồ sơ bổ sung đủ (CP-07 mục 3.3).
