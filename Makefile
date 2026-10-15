@@ -9,7 +9,7 @@ else
   PY := $(VENV)/bin/python
 endif
 
-.PHONY: setup demo run eval eval-score test retrieval-eval clean
+.PHONY: setup demo run eval eval-score test retrieval-eval interop clean
 
 # Tạo venv, cài thư viện, tạo DB hồ sơ, tải mô hình embedding (lần đầu ~2 GB), kiểm tra khóa API
 setup:
@@ -39,6 +39,10 @@ eval-score:
 # Đo riêng tầng truy xuất (không cần khóa API)
 retrieval-eval:
 	$(PY) eval/retrieval_eval.py
+
+# Host thứ hai: client JSON-RPC thuần (không SDK, không LLM) gọi MCP server FinCo trên bản sao DB
+interop:
+	$(PY) examples/client2.py
 
 # Toàn bộ test offline: agent giả, chấm điểm, MCP, truy xuất. Không gọi LLM.
 test:
