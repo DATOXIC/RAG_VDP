@@ -1,0 +1,13 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+S01,tổng hợp,,True,True,,,,,True,True,False,False,True,False,2,0,3,5458,950,2520,,
+V02,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,2984,302,1784,,
+M01,thiếu dữ liệu,APP-021,True,True,,,,,True,True,False,False,True,True,5,0,6,19969,2400,4292,,
+N02,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,3072,501,1887,,
+A01,hành động,APP-015,True,True,True,True,True,True,True,,False,False,True,True,7,0,7,25802,1662,5100,,
+APP-002,hồ sơ,APP-002,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,41025,3110,7342,,
+APP-005,hồ sơ,APP-005,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,16164,1348,4379,,
+APP-008,hồ sơ,APP-008,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,11432,674,3505,,
+APP-011,hồ sơ,APP-011,False,False,True,True,True,True,True,,False,False,True,True,11,2,10,48992,5540,7368,"Lỗi gọi LLM: APIStatusError: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in organization `org_01m4zy17jhecdaweqad3neft61` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 9679, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+APP-014,hồ sơ,APP-014,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,32775,2234,6348,,
+APP-017,hồ sơ,APP-017,True,True,True,True,True,True,True,,False,False,True,True,7,0,7,26085,1959,5285,,
+APP-020,hồ sơ,APP-020,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,15085,993,3660,,

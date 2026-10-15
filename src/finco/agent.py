@@ -167,6 +167,7 @@ class Agent:
         call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=False)}"
         first_step = result.seen_calls.get(call_key)
 
+        # Trùng key + KHÔNG PHẢI WRITE_TOOL / VERIFY_TOOL --> Chặn
         if self.dedup_tools and first_step is not None and name not in (WRITE_TOOL, VERIFY_TOOL):
             output = (
                 f"Bạn đã gọi {name} với đúng tham số này ở bước {first_step}; kết quả không đổi (xem lại phía trên). "
@@ -174,7 +175,7 @@ class Agent:
             )
             if self.verbose:
                 print(f"Observation: [bỏ qua lời gọi lặp] {output[:120]}")
-                
+
             result.trace.append(
                 LogLine(
                 ts=datetime.now().isoformat(timespec="seconds"), 
@@ -225,7 +226,8 @@ class Agent:
                 ts=datetime.now().isoformat(timespec="seconds"), 
                 run_id=result.run_id,
                 question_id=result.question_id, 
-                step=step, tool=VERIFY_TOOL, 
+                step=step, 
+                tool=VERIFY_TOOL, 
                 args=readback_args, 
                 result=readback_text, 
                 usage=result.usage,
@@ -240,9 +242,12 @@ class Agent:
         question: Optional[str] = None,
         question_id: Optional[str] = None
     ) -> AgentRunResult:
-        """Trái tim suy luận: mở MCP Server -> Vòng lặp ReAct -> Trả kết quả."""
+        """  """
+
         app_id = app_id.strip()
+
         is_underwrite = is_underwrite_intent(app_id, question)
+
         query = question or f"Hãy thẩm định hồ sơ {app_id} theo quy trình chính sách FinCo và ghi nhận quyết định vào hệ thống."
         
         result = AgentRunResult(
@@ -251,26 +256,31 @@ class Agent:
             question_id=question_id or app_id, 
             question=query
         )
+
         try:
             # 1. Kết nối MCP Server & Discovery tools
             async with Client(get_default_server_params()) as mcp:
+
+                # DISCOVERY
                 all_tools = to_openai_tools((await mcp.list_tools()).tools)
-                
+
+                # LỌC TOOLS
                 if is_underwrite:
                     tools = all_tools
                 else:
-                    tools = [
-                        t for t in all_tools
-                        if (t.get("function", {}).get("name") or t.get("name")) not in (WRITE_TOOL, VERIFY_TOOL)
-                    ]
+                    tools = [ t for t in all_tools if t.get("function", {}).get("name")  not in (WRITE_TOOL, VERIFY_TOOL) ]
 
+                # LỌC PROMPT
                 active_prompt = self.underwrite_prompt if is_underwrite else self.qa_prompt
                 messages: list[dict[str, Any]] = [
                     {"role": "system", "content": active_prompt},
                     {"role": "user", "content": query},
                 ]
+
+
                 # 2. Vòng lặp ReAct
                 for step in range(1, self.max_steps + 1):
+
                     try:
                         turn = await asyncio.to_thread(self._llm, messages, tools, self.model)
                     except Exception as e:
@@ -287,12 +297,17 @@ class Agent:
                             line.tool == WRITE_TOOL and not line.result.startswith("Error:") 
                             for line in result.trace
                         )
-                        if is_underwrite and not has_submitted and step < self.max_steps:
-                            messages.append({
-                                "role": "user", 
-                                "content": f"Chưa hoàn tất: Hồ sơ {result.app_id} chưa được ghi nhận quyết định thành công. Hãy gọi {WRITE_TOOL} trước khi trả lời."
-                            })
-                            continue
+
+                        # NUDGE nhắc nhở LLM
+                        if is_underwrite and step < self.max_steps:
+                            has_submitted = any(line for line in result.trace if line.tool == WRITE_TOOL and not line.result.startswith("Error:"))
+
+                            if not has_submitted:
+                                messages.append({
+                                    "role": "user", 
+                                    "content": f"Chưa hoàn tất: Hồ sơ {result.app_id} chưa được ghi nhận quyết định thành công. Hãy gọi {WRITE_TOOL} trước khi trả lời."
+                                })
+                                continue
 
                         result.final_answer = turn.content
 
@@ -305,8 +320,9 @@ class Agent:
                         break
 
                     # NẾU CÓ TOOL CALL:
-                    # Lưu lượt nói của model vào messages (dùng helper từ llm.py)
+                    # Lưu lượt nói của model vào messages 
                     messages.append(turn.to_assistant_message())
+
                     # Thực thi từng tool
                     for tc in turn.tool_calls:
                         output = tc.error or await self._run_tool(mcp, tc.name, tc.args, step, result)
@@ -316,7 +332,8 @@ class Agent:
                     result.success = False
                     result.error_message = f"Vượt quá MAX_STEPS ({self.max_steps}) mà chưa có câu trả lời cuối."
         except Exception as e:
-            result.success, result.error_message = False, f"{type(e).__name__}: {e}"
+            result.success= False 
+            result.error_message = f"{type(e).__name__}: {e}"
 
         # 3. Ghi dòng tổng kết cuối cùng
         result.answer_log = LogLine(

@@ -1,15 +1,3 @@
-"""Client gọi LLM qua OpenAI-compatible API (Groq), có Retry + Exponential Backoff + Jitter (W2).
-
-Đọc file từ trên xuống:
-  1. get_client / load_prompt   : khóa API từ .env, đọc prompt từ prompts/*.txt
-  2. _create_with_retry         : NƠI DUY NHẤT quyết định lỗi nào retry
-  3. call_llm                   : hỏi đáp thuần văn bản -> (nội dung, Usage)
-  4. call_llm_tools             : cho model gọi tool (function calling) -> ChatTurn
-
-Quy tắc retry: lỗi tạm thời (429, 5xx, timeout, mất kết nối) thì chờ rồi thử lại, ưu tiên header
-Retry-After; lỗi cố định (401, 400, 403, 404) thì raise ngay. Chỉ log ra stderr: stdout dành cho MCP.
-"""
-
 import json
 import os
 import random
@@ -60,12 +48,10 @@ class EmptyResponseError(RuntimeError):
     """LLM trả về phản hồi không dùng được (không có choices, hoặc nội dung rỗng)."""
 
 def _extra_content(raw_tool_call: Any) -> Optional[dict]:
-    """Phần `extra_content` (vd. thought_signature của Gemini) mà SDK giữ ở model_extra, nếu có."""
-    value = getattr(raw_tool_call, "extra_content", None)
-    if value is None:
-        extra = getattr(raw_tool_call, "model_extra", None)
-        value = extra.get("extra_content") if isinstance(extra, dict) else None
-    return value if isinstance(value, dict) and value else None
+    """để code chạy tốt với cả Google (Gemini) lẫn OpenAI"""
+
+    extra = getattr(raw_tool_call, "model_extra", None)
+    return extra.get("extra_content") if isinstance(extra, dict) else None
 
 
 def _parse_args(raw: str) -> tuple[dict, str]:
@@ -86,10 +72,10 @@ class ToolCall:
     arguments: str = "{}"                                         # Chuỗi thô (để tương thích test)
     args: dict = field(default_factory=dict, compare=False)      # Dict đã parse (cho agent)
     error: Optional[str] = field(default=None, compare=False)    # Báo lỗi nếu JSON hỏng
-    # Gemini 3 gắn chữ ký suy luận vào tool_call (extra_content.google.thought_signature) và đòi gửi lại
-    # nguyên vẹn ở lượt sau; thiếu thì HTTP 400. Các nhà cung cấp khác không có trường này (None).
+    #TRƯỜNG LẠ
     extra_content: Optional[dict] = field(default=None, compare=False)
 
+    # Tự parse khi khởi tạo CLASS
     def __post_init__(self):
         """Tự động parse arguments sang args và error nếu chưa có."""
         if not self.args and not self.error and self.arguments:
@@ -135,15 +121,13 @@ GEMINI_DEFAULT_MODEL = "gemini-3.5-flash"
 
 def critic_endpoint() -> Optional[tuple[str, str]]:
     """(api_key, base_url) riêng cho Critic, hoặc None nếu dùng chung endpoint với Actor.
-
-    FINCO_CRITIC_PROVIDER=gemini: khóa GEMINI_API_KEY, endpoint OpenAI-compatible của Google.
-    Hoặc đặt trực tiếp FINCO_CRITIC_BASE_URL + FINCO_CRITIC_API_KEY (vLLM, OpenRouter...).
     """
     if os.getenv("FINCO_CRITIC_PROVIDER", "").strip().lower() == "gemini":
         key = os.getenv("GEMINI_API_KEY")
         if not key:
             raise ValueError("FINCO_CRITIC_PROVIDER=gemini nhưng thiếu GEMINI_API_KEY trong .env.")
         return key, os.getenv("FINCO_CRITIC_BASE_URL") or GEMINI_BASE_URL
+
     base, key = os.getenv("FINCO_CRITIC_BASE_URL"), os.getenv("FINCO_CRITIC_API_KEY")
     if base and key:
         return key, base
@@ -169,6 +153,7 @@ def get_client(profile: Optional[str] = None) -> OpenAI:
             if _CRITIC_CLIENT is None:
                 _CRITIC_CLIENT = OpenAI(api_key=ep[0], base_url=ep[1], max_retries=0, timeout=DEFAULT_TIMEOUT)
             return _CRITIC_CLIENT
+
     if _CLIENT is None:
         api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
         base_url = os.getenv("GROQ_BASE_URL") or os.getenv("OPENAI_BASE_URL") or DEFAULT_BASE_URL
@@ -204,6 +189,7 @@ def _daily_quota_wait(e: Exception) -> Optional[float]:
     msg = str(e)
     if "per day" not in msg and "(TPD)" not in msg:
         return None
+
     m = _TRY_AGAIN.search(msg)
     if not m or not m.group(1):
         return float("inf")  # hết hạn mức ngày nhưng không biết bao giờ hồi
@@ -285,8 +271,10 @@ def call_llm(
     stop: Optional[list[str]] = None,
     profile: Optional[str] = None,
 ) -> ChatTurn:
+
     if profile == "critic" and not model and critic_endpoint() is not None:
         model = critic_default_model()
+
     request: dict[str, Any] = {
         "model": model or os.getenv("LLM_MODEL") or DEFAULT_MODEL,
         "messages": messages,
@@ -296,6 +284,7 @@ def call_llm(
     }
     if stop:
         request["stop"] = stop
+
     if tools:
         request["tools"] = tools
         request["tool_choice"] = "auto"
