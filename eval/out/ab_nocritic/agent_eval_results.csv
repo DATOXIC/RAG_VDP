@@ -16,5 +16,9 @@ APP-012,True,True,escalate,escalate,True,ESCALATE_COUNCIL,ESCALATE_COUNCIL,1.0,1
 APP-013,True,True,reject,reject,True,AMOUNT_RANGE,AMOUNT_RANGE,1.0,1.0,True,True,False,True,True,True,,0.0,True,
 APP-014,True,True,approve,approve,True,APPROVED,APPROVED,1.0,1.0,True,True,True,True,True,True,0.4709,0.4709,True,
 APP-015,True,True,reject,reject,True,DTI_EXCEEDED,DTI_EXCEEDED,1.0,1.0,True,True,True,True,True,True,0.4709,0.4709,True,
-APP-016,False,False,none,approve,False,,APPROVED,0.0,0.0,False,True,False,False,False,False,,0.4848,False,Sai quyết định (AI: 'none' != Chuẩn: 'approve'); Sai mã lý do (AI: không có != Chuẩn: ['APPROVED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.4848); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.155)
-APP-017,False,False,none,reject,False,,DTI_EXCEEDED,0.0,0.0,False,True,False,False,False,False,,0.4848,False,Sai quyết định (AI: 'none' != Chuẩn: 'reject'); Sai mã lý do (AI: không có != Chuẩn: ['DTI_EXCEEDED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.4848); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.155)
+APP-016,True,True,approve,approve,True,APPROVED,APPROVED,1.0,1.0,True,True,True,True,True,True,0.4848,0.4848,True,
+APP-017,True,True,reject,reject,True,DTI_EXCEEDED,DTI_EXCEEDED,1.0,1.0,True,True,True,True,True,True,0.4848,0.4848,True,
+APP-018,False,True,escalate,escalate,False,ESCALATE_COUNCIL,ESCALATE_EMPLOYEE,0.83,0.83,True,True,True,True,True,True,0.1633,0.1633,True,Sai mã lý do (AI: ['ESCALATE_COUNCIL'] != Chuẩn: ['ESCALATE_EMPLOYEE'])
+APP-019,True,True,reject,reject,True,DTI_EXCEEDED,DTI_EXCEEDED,1.0,1.0,True,True,True,True,True,True,0.5153,0.5153,True,
+APP-020,True,True,reject,reject,True,TERM_RANGE,TERM_RANGE,1.0,1.0,True,True,False,True,True,True,,0.0,True,
+APP-021,True,True,need_info,need_info,True,MISSING_DEBT_DECLARATION,MISSING_DEBT_DECLARATION,1.0,1.0,True,True,False,True,True,True,,0.0,True,

@@ -214,14 +214,15 @@ class TestVerdicts(AgentTestBase):
     def test_step_budget_forces_final_answer_without_tools(self):
         agent, llm, _ = self.make(
             turn("", call("get_application", app_id=APP)),
+            turn("", call("calc_dti", app_id=APP, annual_rate="0.17")),
             turn("", call("search_policy", query="a")),
-            final(), max_steps=3)
+            final(), max_steps=4)
         with isolated_db_sandbox():
             self.gather_actor()
             out = self.submit()
             self.assertTrue(out.startswith("Thành công"), out)
         self.assertIsNone(llm.tools_seen[-1])        # bước cuối không còn tool
-        self.assertEqual(agent.last_run.calls, 3)
+        self.assertEqual(agent.last_run.calls, 4)
 
     def test_never_concluding_fails_closed(self):
         self.make(turn("", call("get_application", app_id=APP)), max_steps=3)
@@ -255,6 +256,39 @@ class TestVerdicts(AgentTestBase):
             self.gather_actor()
             out = self.submit()
         self.assertTrue(out.startswith("Thành công") or "CRITIC_REJECT" in out, out)
+
+
+class TestDtiIsSelfComputed(AgentTestBase):
+    def test_conclusion_without_calc_dti_is_sent_back(self):
+        agent, llm, log = self.make(
+            turn("", call("get_application", app_id=APP)),
+            turn("", call("search_policy", query="CP-01")),
+            final(),                                               # gật đầu khi chưa tự tính DTI
+            turn("", call("calc_dti", app_id=APP, annual_rate="0.17")),
+            final())
+        with isolated_db_sandbox():
+            self.gather_actor()
+            out = self.submit()
+            self.assertTrue(out.startswith("Thành công"), out)
+        self.assertEqual(log["dti"], 1)
+        self.assertIn("PHẢI tự gọi calc_dti", llm.messages_seen[3][-1]["content"])
+
+    def test_never_computing_dti_fails_closed(self):
+        self.make(turn("", call("get_application", app_id=APP)), final())
+        with isolated_db_sandbox():
+            self.gather_actor()
+            out = self.submit()
+            self.assertIn("CRITIC_REJECT [error]", out)
+            self.assertIn("chưa tự tính DTI", out)
+
+    def test_only_dti_dependent_decisions_require_it(self):
+        P = critic_mod.Proposal
+        need = CriticAgent._needs_dti
+        self.assertTrue(need(P(APP, "approve", "", [], ["APPROVED"])))
+        self.assertTrue(need(P(APP, "escalate", "", [], ["ESCALATE_MANAGER"])))
+        self.assertTrue(need(P(APP, "reject", "", [], ["dti_exceeded"])))
+        self.assertFalse(need(P(APP, "reject", "", [], ["AGE"])))
+        self.assertFalse(need(P(APP, "need_info", "", [], ["MISSING_DOCS"])))
 
 
 class TestPureHelpers(unittest.TestCase):

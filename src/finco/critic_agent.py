@@ -123,6 +123,10 @@ def _default_step(model: Optional[str], max_tokens: int) -> StepFn:
     return run
 
 
+class _NoDti(ValueError):
+    """Critic kết luận khi chưa tự tính DTI trong quyết định phụ thuộc DTI."""
+
+
 @dataclass
 class RunRecord:
     """Dấu vết một lượt thẩm tra của critic-agent (để đo token và đưa vào report)."""
@@ -183,6 +187,11 @@ class CriticAgent:
             self._prompt = load_prompt("critic_agent.txt")
         return self._prompt
 
+    @staticmethod
+    def _needs_dti(p: Proposal) -> bool:
+        """Quyết định dựa trên DTI (cùng quy tắc với cổng DTI của submit_decision)."""
+        return p.decision in ("approve", "escalate") or "DTI_EXCEEDED" in [c.upper() for c in p.reason_codes]
+
     def _tools(self) -> Toolbox:
         if self._toolbox is None:
             self._toolbox = local_toolbox()
@@ -221,8 +230,19 @@ class CriticAgent:
 
             try:
                 data = cm._parse_json(turn.content)
+                if self._needs_dti(p) and not any(s["tool"] == "calc_dti" for s in rec.steps):
+                    # Không cho "gật đầu" khi chưa tự tính DTI: ép bằng code, không chỉ nhắc trong prompt.
+                    if step > self.max_steps - 3:  # còn không đủ bước để gọi calc_dti rồi kết luận
+                        raise _NoDti("critic-agent kết luận mà chưa tự tính DTI")
+                    messages.append({"role": "assistant", "content": turn.content})
+                    messages.append({"role": "user", "content": (
+                        "Quyết định này phụ thuộc DTI nên bạn PHẢI tự gọi calc_dti (lãi suất theo CP-03 ứng với "
+                        "kỳ hạn của hồ sơ) rồi mới kết luận. Gọi calc_dti ngay.")})
+                    continue
                 rec.steps.append({"tool": "__final__", "args": {}, "result": turn.content[:200]})
                 return data, own
+            except _NoDti:
+                raise
             except ValueError:
                 if last:
                     raise
