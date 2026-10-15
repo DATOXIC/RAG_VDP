@@ -51,7 +51,9 @@ def _extra_content(raw_tool_call: Any) -> Optional[dict]:
     """để code chạy tốt với cả Google (Gemini) lẫn OpenAI"""
 
     extra = getattr(raw_tool_call, "model_extra", None)
-    return extra.get("extra_content") if isinstance(extra, dict) else None
+    if isinstance(extra, dict) and extra.get("extra_content") is not None:
+        return extra["extra_content"]
+    return getattr(raw_tool_call, "extra_content", None)
 
 
 def _parse_args(raw: str) -> tuple[dict, str]:
