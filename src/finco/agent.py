@@ -36,7 +36,7 @@ class AgentRunResult:
     final_answer: str = ""
     success: bool = True
     error_message: Optional[str] = None
-    trace: list[LogLine] = field(default_factory=list)
+    trace: list[LogLine] = field(default_factory=list) # Cứ gọi tool là thực hiện lưu lại LogLine
     usage: Usage = field(default_factory=lambda: Usage(0, 0, 0, 0))
     answer_log: Optional[LogLine] = None
     seen_calls: dict[str, int] = field(default_factory=dict, repr=False)  # (tool, args) -> bước gọi thành công đầu tiên
@@ -141,9 +141,7 @@ class Agent:
         self.underwrite_prompt = load_prompt("agent_underwrite.txt")
         self.qa_prompt = load_prompt("agent_qa.txt")
         self.system_prompt = self.underwrite_prompt
-        # Model yếu hay gọi lặp cùng tool/tham số, mỗi lần nhét lại cả đoạn chính sách vào ngữ cảnh.
-        # Bật FINCO_DEDUP_TOOLS=1: lần lặp được trả lời ngắn, không gọi server. Mặc định tắt (giữ nguyên baseline).
-        self.dedup_tools = os.getenv("FINCO_DEDUP_TOOLS", "0").strip() == "1"
+        self.dedup_tools = os.getenv("FINCO_DEDUP_TOOLS", "0").strip() == "1"  # cờ bật/tắt tính năng chống gọi trùng lặp
         
         if llm is not None:
             self._llm = llm
@@ -165,8 +163,10 @@ class Agent:
         if self.verbose:
             print(f"\n[Bước {step}]\nThought: {thought or '(không có)'}\nAction : {name}({args})")
 
+        # KIỂM TRA TRÙNG LẶP
         call_key = f"{name}:{json.dumps(args, sort_keys=True, ensure_ascii=False)}"
         first_step = result.seen_calls.get(call_key)
+
         if self.dedup_tools and first_step is not None and name not in (WRITE_TOOL, VERIFY_TOOL):
             output = (
                 f"Bạn đã gọi {name} với đúng tham số này ở bước {first_step}; kết quả không đổi (xem lại phía trên). "
@@ -174,10 +174,17 @@ class Agent:
             )
             if self.verbose:
                 print(f"Observation: [bỏ qua lời gọi lặp] {output[:120]}")
-            result.trace.append(LogLine(
-                ts=datetime.now().isoformat(timespec="seconds"), run_id=result.run_id,
-                question_id=result.question_id, step=step, tool=name, args=args,
-                result=output, usage=result.usage,
+                
+            result.trace.append(
+                LogLine(
+                ts=datetime.now().isoformat(timespec="seconds"), 
+                run_id=result.run_id,
+                question_id=result.question_id, 
+                step=step, 
+                tool=name,
+                args=args,
+                result=output, 
+                usage=result.usage,
             ))
             return output
 

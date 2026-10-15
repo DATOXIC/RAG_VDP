@@ -55,5 +55,35 @@ class TestCriticProfile(unittest.TestCase):
             self.assertIs(llm.get_client("critic"), llm.get_client())
 
 
+class TestThoughtSignature(unittest.TestCase):
+    """Gemini 3 đòi gửi lại extra_content (thought_signature) của tool_call ở lượt kế tiếp."""
+
+    SIG = {"google": {"thought_signature": "abc123"}}
+
+    def _raw_call(self, **kw):
+        from types import SimpleNamespace
+        fn = SimpleNamespace(name="get_application", arguments='{"app_id": "APP-001"}')
+        return SimpleNamespace(id="c1", function=fn, **kw)
+
+    def test_extra_content_attribute_is_captured(self):
+        self.assertEqual(llm._extra_content(self._raw_call(extra_content=self.SIG)), self.SIG)
+
+    def test_extra_content_from_model_extra_is_captured(self):
+        self.assertEqual(llm._extra_content(self._raw_call(model_extra={"extra_content": self.SIG})), self.SIG)
+
+    def test_absent_is_none(self):
+        self.assertIsNone(llm._extra_content(self._raw_call()))
+
+    def test_signature_is_echoed_back_in_assistant_message(self):
+        tc = llm.ToolCall(id="c1", name="get_application", arguments='{"app_id": "APP-001"}', extra_content=self.SIG)
+        msg = llm.ChatTurn(content="", tool_calls=[tc]).to_assistant_message()
+        self.assertEqual(msg["tool_calls"][0]["extra_content"], self.SIG)
+
+    def test_no_extra_key_when_provider_gives_none(self):
+        tc = llm.ToolCall(id="c1", name="x", arguments="{}")
+        msg = llm.ChatTurn(content="", tool_calls=[tc]).to_assistant_message()
+        self.assertNotIn("extra_content", msg["tool_calls"][0])
+
+
 if __name__ == "__main__":
     unittest.main()

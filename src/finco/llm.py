@@ -59,6 +59,15 @@ _CLIENT: Optional[OpenAI] = None
 class EmptyResponseError(RuntimeError):
     """LLM trả về phản hồi không dùng được (không có choices, hoặc nội dung rỗng)."""
 
+def _extra_content(raw_tool_call: Any) -> Optional[dict]:
+    """Phần `extra_content` (vd. thought_signature của Gemini) mà SDK giữ ở model_extra, nếu có."""
+    value = getattr(raw_tool_call, "extra_content", None)
+    if value is None:
+        extra = getattr(raw_tool_call, "model_extra", None)
+        value = extra.get("extra_content") if isinstance(extra, dict) else None
+    return value if isinstance(value, dict) and value else None
+
+
 def _parse_args(raw: str) -> tuple[dict, str]:
     """Parse chuỗi JSON tham số: trả (dict, '') hoặc ({}, 'Error: ...')."""
     try:
@@ -77,6 +86,9 @@ class ToolCall:
     arguments: str = "{}"                                         # Chuỗi thô (để tương thích test)
     args: dict = field(default_factory=dict, compare=False)      # Dict đã parse (cho agent)
     error: Optional[str] = field(default=None, compare=False)    # Báo lỗi nếu JSON hỏng
+    # Gemini 3 gắn chữ ký suy luận vào tool_call (extra_content.google.thought_signature) và đòi gửi lại
+    # nguyên vẹn ở lượt sau; thiếu thì HTTP 400. Các nhà cung cấp khác không có trường này (None).
+    extra_content: Optional[dict] = field(default=None, compare=False)
 
     def __post_init__(self):
         """Tự động parse arguments sang args và error nếu chưa có."""
@@ -108,7 +120,8 @@ class ChatTurn:
                     "function": {
                         "name": tc.name,
                         "arguments": json.dumps(tc.args, ensure_ascii=False) if not tc.error else "{}"
-                    }
+                    },
+                    **({"extra_content": tc.extra_content} if tc.extra_content else {}),
                 }
                 for tc in self.tool_calls
             ]
@@ -312,6 +325,7 @@ def call_llm(
             id=getattr(tc, "id", "") or f"call_{i}",
             name=tc.function.name,
             arguments=tc.function.arguments or "{}",
+            extra_content=_extra_content(tc),
         )
         for i, tc in enumerate(raw_tool_calls)
     ]
