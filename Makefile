@@ -9,7 +9,11 @@ else
   PY := $(VENV)/bin/python
 endif
 
-.PHONY: setup demo run eval eval-score test retrieval-eval interop clean
+.PHONY: all setup demo run eval eval-score test retrieval-eval interop check clean
+
+# Lệnh duy nhất tái lập demo từ máy sạch:  make all   (= setup + demo)
+# Tái lập kết quả đánh giá:               make eval  (37 ca: 16 câu hỏi + 21 hồ sơ)
+all: setup demo
 
 # Tạo venv, cài thư viện, tạo DB hồ sơ, tải mô hình embedding (lần đầu ~2 GB), kiểm tra khóa API
 setup:
@@ -27,8 +31,10 @@ demo:
 run:
 	$(PY) run.py
 
-# Chạy 16 câu trong tests/testset.jsonl. Ghi logs/eval_<thời gian>.jsonl và eval/out/*.
-# Thêm tham số:  make eval ARGS="--apps --pace 8"   hoặc chỉ vài hồ sơ:  ARGS="--ids APP-001 APP-003"
+# Mặc định chạy ĐỦ 37 ca (16 câu trong tests/testset.jsonl + 21 hồ sơ). Ghi logs/eval_<thời gian>.jsonl và eval/out/*.
+# Đổi tham số:  make eval ARGS="--apps --pace 8"   hoặc chỉ vài hồ sơ:  ARGS="--apps --ids APP-001 APP-003"
+# Chỉ 16 câu hỏi (không hồ sơ):  make eval ARGS=""
+ARGS ?= --apps
 eval:
 	$(PY) eval/run_eval.py $(ARGS)
 
@@ -43,6 +49,11 @@ retrieval-eval:
 # Host thứ hai: client JSON-RPC thuần (không SDK, không LLM) gọi MCP server FinCo trên bản sao DB
 interop:
 	$(PY) examples/client2.py
+
+# Kiểm chứng không cần khóa API và không gọi LLM: test offline, đo truy xuất, host thứ hai, chấm lại log chính.
+CHECK_LOG ?= logs/eval_20261014_202454.jsonl
+check: test retrieval-eval interop
+	$(PY) eval/run_eval.py --score-only $(CHECK_LOG) --apps --out-dir eval/out/check
 
 # Toàn bộ test offline: agent giả, chấm điểm, MCP, truy xuất. Không gọi LLM.
 test:

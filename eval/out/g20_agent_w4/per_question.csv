@@ -1,0 +1,10 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+S02,tổng hợp,,True,True,,,,,True,True,False,False,True,False,1,0,2,3218,657,2020,,
+C02,tính toán,APP-014,False,True,,,,,True,False,False,False,True,False,3,0,4,6341,698,2015,,thiếu ý: 6417491
+N02,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2717,592,1532,,
+A02,hành động,APP-018,False,False,False,False,False,True,False,,False,False,True,False,9,2,9,32834,2614,5094,"Lỗi gọi LLM: EmptyResponseError: LLM trả về nội dung rỗng, finish_reason='length' (bị cắt do max_tokens, hãy tăng max_tokens).",Sai quyết định (AI: 'none' != Chuẩn: 'escalate'); Sai mã lý do (AI: không có != Chuẩn: ['ESCALATE_EMPLOYEE']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision
+APP-004,hồ sơ,APP-004,True,True,True,True,True,True,True,,False,False,True,True,6,0,6,18361,1210,3857,,
+APP-008,hồ sơ,APP-008,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,14119,866,3333,,
+APP-012,hồ sơ,APP-012,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33264,2126,5530,,
+APP-016,hồ sơ,APP-016,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,27951,2040,5155,,
+APP-020,hồ sơ,APP-020,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,14483,1262,3631,,

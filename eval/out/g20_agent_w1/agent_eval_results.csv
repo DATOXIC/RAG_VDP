@@ -1,0 +1,7 @@
+﻿app_id,is_overall_pass,decision_correct,actual_decision,expected_decision,root_cause_correct,actual_reason_codes,expected_reason_codes,citation_recall,citation_precision,citation_valid,has_search_policy,has_calc_dti,read_after_write,trace_valid,dti_correct,actual_dti,expected_dti,rate_correct,error_message
+APP-001,True,True,approve,approve,True,APPROVED,APPROVED,1.0,1.0,True,True,True,True,True,True,0.2462,0.2462,True,
+APP-005,True,True,need_info,need_info,True,MISSING_DOCS,MISSING_DOCS,1.0,1.0,True,True,False,True,True,True,,0.0,True,
+APP-009,True,True,approve,approve,True,APPROVED,APPROVED,1.0,1.0,True,True,True,True,True,True,0.1964,0.1964,True,
+APP-013,True,True,reject,reject,True,AMOUNT_RANGE,AMOUNT_RANGE,1.0,1.0,True,True,False,True,True,True,,0.0,True,
+APP-017,True,True,reject,reject,True,DTI_EXCEEDED,DTI_EXCEEDED,1.0,1.0,True,True,True,True,True,True,0.4848,0.4848,True,
+APP-021,True,True,need_info,need_info,True,MISSING_DEBT_DECLARATION,MISSING_DEBT_DECLARATION,1.0,1.0,True,True,False,True,True,True,,0.0,True,
