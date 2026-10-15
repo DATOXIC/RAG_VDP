@@ -71,7 +71,7 @@ make demo / make eval
    │                                          ├─ search_policy   [đọc, RAG]
    │                                          ├─ get_application [đọc]
    │                                          ├─ calc_dti        [đọc, tính bằng code]
-   │                                          ├─ submit_decision [GHI]
+   │                                          ├─ submit_decision [GHI]  ◄── critic (tùy chọn, mục 9b)
    │                                          └─ get_decision    [đọc → VERIFY]
    ▼
  verifier.py (kiểm tra bằng code: doc_id có thật? số khớp? có bước verify?)
@@ -98,7 +98,7 @@ Quy tắc kiến trúc:
 | W7 | MCP host/client/server; `list_tools`/`call_tool`; thiết kế tool như API công khai; stdout là giao thức; probe thô; agent không có registry viết tay | Xem mục 6.4 và 10 |
 | W8 | 4 mẫu đa agent (pipeline, orchestrator–worker, router, critic); handoff contract | **Không bắt buộc**, xem bên dưới |
 
-**Quyết định về đa agent:** dùng **một agent + verifier bằng code** (không dùng 5 agent như repo cũ). Giáo trình W8 nói: đo agent đơn trước; nếu tách ra không tốt hơn ở điểm nào chỉ ra được thì việc tách chỉ là trang trí. Verifier bằng code đã là "người phản biện" độc lập (không dùng chung ngữ cảnh với agent soạn, nên không phải con dấu cao su). Nếu còn thời gian, thử **mẫu critic** (một LLM phản biện riêng, nhận bản nháp + bằng chứng, ngân sách sửa = 1) như một thí nghiệm A/B; chỉ giữ nếu số liệu tốt hơn.
+**Quyết định về đa agent:** dùng **một agent + verifier bằng code** (không dùng 5 agent như repo cũ). Giáo trình W8 nói: đo agent đơn trước; nếu tách ra không tốt hơn ở điểm nào chỉ ra được thì việc tách chỉ là trang trí. Verifier bằng code đã là "người phản biện" độc lập (không dùng chung ngữ cảnh với agent soạn, nên không phải con dấu cao su). Mẫu **critic** của W8 đã được thử như thí nghiệm A/B (xem mục 9b và `docs/ket-qua-danh-gia.md`): critic nhúng trong `submit_decision`, hai chế độ `single` và `agent`. **Kết quả: chưa thấy cải thiện** (gpt-oss-120b: 34/37 không critic so với 32/37 có critic-agent, tốn thêm ~61% prompt token; chênh lệch nằm trong nhiễu), nên critic giữ như cấu hình thí nghiệm, không phải thành phần bắt buộc.
 
 **Tái dùng bài lab của chính các bạn** (Lab 3 `VectorStore`, Lab 4 `RAGSystem`, Lab 5 evaluator, Lab 6 `Agent`, Lab 7 `rag_server`): đây là code các bạn đã viết và hiểu, tiết kiệm nhiều ngày nhất. Phải sửa theo hợp đồng ở mục 6.
 
@@ -227,7 +227,7 @@ Dùng **con số riêng của FinCo**, không bắt chước chính sách ngân 
 
 **Trạng thái: ĐÃ VIẾT XONG.** Chi tiết từng trường, cách ingestion đọc, và bảng tình huống cài sẵn nằm ở `data/README.md` (đọc file đó trước khi viết code đọc dữ liệu). Toàn bộ là dữ liệu giả lập.
 
-15 file trong `data/policies/` (14 mã, riêng `CP-01` có 2 phiên bản; tách chunk theo `## ` cho **68 chunk**). `CP-01..CP-07` là lõi quyết định đáp án; `CP-08..CP-14` là tài liệu nhiễu của sản phẩm khác (thẻ, tiền gửi, bảo mật, khiếu nại, ưu đãi đã hết hạn, định danh), cố ý gần từ vựng với FinCo Easy nhưng không làm đổi đáp án nào (xem `data/README.md` mục 2). Phần lõi:
+18 file trong `data/policies/` (17 mã `CP-01..CP-17`, riêng `CP-01` có 2 phiên bản; tách theo `## ` được 88 mục, chia nhỏ thêm các mục dài của `CP-15..CP-17` thành **112 chunk** trong `data/index/`). `CP-01..CP-07` là lõi quyết định đáp án; `CP-08..CP-14` là tài liệu nhiễu của sản phẩm khác (thẻ, tiền gửi, bảo mật, khiếu nại, ưu đãi đã hết hạn, định danh), cố ý gần từ vựng với FinCo Easy nhưng không làm đổi đáp án nào; `CP-15..CP-17` là tài liệu dài (sổ tay thẩm định, hỏi đáp khách vay, xử lý nợ quá hạn) chỉ diễn giải hoặc bổ sung, khi mâu thuẫn thì chính sách gốc được ưu tiên (xem `data/README.md`). Phần lõi:
 
 | doc_id | Nội dung | Số liệu / bẫy cài vào |
 |---|---|---|
@@ -266,7 +266,7 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 ## 9. Agent (B)
 
 - **Dùng function calling gốc của API (đã đổi so với bản đầu của kế hoạch, theo cách `src/finco/agent.py` được triển khai; cần nhóm xác nhận).** Đề (mục 2.2, 2.6) chỉ yêu cầu vòng lặp tự viết và parse action an toàn, không bắt ReAct văn bản. Để vẫn có "Thought" cho audit, `mcp_client.to_openai_tools` tiêm thêm tham số bắt buộc `thought` vào schema mỗi tool; agent tách `thought` ra khỏi tham số trước khi gọi tool. "Parse an toàn" nay nằm ở biên tool: JSON tham số hỏng/không phải đối tượng, tên tool lạ, tool ném lỗi → trả `Error: ...` cho model, không raise.
-- Vòng lặp: gọi LLM → có `tool_calls` thì chạy từng tool qua MCP và đưa kết quả lại (role `tool`) → không còn `tool_calls` thì dừng; hết `MAX_STEPS` (mặc định 12: quy trình dài nhất cần ~9 lần gọi) thì trả kết quả dừng gọn kèm `success=False`, không treo. Không có cơ chế nhắc/ép model: model quên ghi quyết định thì verifier chấm trượt (số liệu trung thực thay vì được code vá).
+- Vòng lặp: gọi LLM → có `tool_calls` thì chạy từng tool qua MCP và đưa kết quả lại (role `tool`) → không còn `tool_calls` thì dừng; hết `MAX_STEPS` (mặc định 15, đặt bằng `FINCO_MAX_STEPS`: quy trình dài nhất cần ~9 lần gọi, thêm dư cho vòng critic) thì trả kết quả dừng gọn kèm `success=False`, không treo. **Cơ chế nhắc (nudge):** ở chế độ thẩm định hồ sơ, nếu model dừng (không còn `tool_calls`) mà chưa có `submit_decision` thành công, agent chèn một tin nhắn nhắc gọi `submit_decision` rồi cho chạy tiếp; mỗi lần dừng sớm nhắc một lần, bị chặn bởi `MAX_STEPS`. Nhắc chỉ nói "chưa ghi", không nói ghi gì, nên quyết định vẫn là của model; hết bước mà chưa ghi thì verifier chấm trượt.
 - **Parse an toàn:** JSON hỏng / không phải đối tượng / tên tool lạ / tool hoặc MCP ném lỗi → KHÔNG raise; trả `Error: ...` cho model tự sửa. LLM lỗi hoặc trả rỗng thì lượt thất bại gọn (`success=False`, trace và USAGE vẫn được ghi). Mỗi kiểu có test trong `tests/test_agent.py` (LLM giả, không tốn API).
 - **Không bao giờ `eval()`** đầu vào hay đầu ra của tool (W6); phép tính dùng hàm có kiểu hoặc bảng tra.
 - **Bộ nhớ hội thoại:** cửa sổ trượt nhưng **luôn giữ câu hỏi/nhiệm vụ gốc** (lỗi kinh điển: cửa sổ quá nhỏ làm agent quên nhiệm vụ).
@@ -275,6 +275,19 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 - Sau `submit_decision` thành công, **code tự gọi** `get_decision` (cùng bước, ghi một dòng log riêng) và đính kèm kết quả vào phản hồi của `submit_decision`; verifier kiểm tra cặp này trong trace.
 - **Verifier (bằng code):** `doc_id` trích có nằm trong tập chunk đã truy xuất? Con số trong câu trả lời khớp kết quả tool? Có cặp ghi → đọc lại?
 - **Calibration:** không tìm thấy căn cứ → nói rõ "không có trong tài liệu"; thiếu dữ liệu để tính → `need_info`, không đoán.
+
+## 9b. Critic và đánh giá đa model (thêm sau kế hoạch ban đầu)
+
+Hai phần này không có trong kế hoạch 10 ngày ban đầu; thêm theo góp ý của GV (`idea_todo.txt`: thử nhiều model để đo độ chống chịu lỗi và khả năng phòng thủ với model ít tham số).
+
+- **Critic** (`src/finco/critic.py`, `critic_agent.py`, prompt `prompts/critic*.txt`) nằm trong tool `submit_decision` phía MCP server, nên **agent không đổi** và client MCP không biết critic tồn tại.
+  - Tầng 1 (code, 0 token): bằng chứng có đủ không (đã đọc hồ sơ, đã tra đúng phiên bản theo ngày nộp, đã `calc_dti`).
+  - Tầng 2 (LLM): tự suy ra quyết định từ bằng chứng rồi code so sánh; chỉ chặn nếu phản đối trích **nguyên văn** bằng chứng.
+  - Circuit breaker: tối đa 2 lần chặn, sau đó Actor chỉ còn được ghi `escalate`; critic lỗi hạ tầng thì quyết định vẫn được ghi kèm cờ chưa xác minh.
+  - `FINCO_CRITIC_MODE=single` (một lần gọi) hoặc `agent` (agent thứ hai, vòng lặp riêng, 3 tool chỉ-đọc `get_application`, `search_policy`, `calc_dti`, `FINCO_CRITIC_MAX_STEPS` bước).
+  - Mặc định của code là **bật** chế độ `single`; `FINCO_CRITIC=0` tắt.
+- **Nhiều model:** Actor và Critic dùng endpoint tương thích OpenAI nên đổi bằng `.env`: Groq (`gpt-oss-120b`, `gpt-oss-20b`), vLLM tự dựng trên Colab T4 (`Qwen2.5-7B/14B-Instruct-AWQ`, qua `OPENAI_BASE_URL`), Gemini cho critic (`FINCO_CRITIC_PROVIDER=gemini`). Bảng cấu hình A–F và log nằm ở `docs/ket-qua-danh-gia.md` mục 1.
+- Chỉ số theo góp ý GV: độ đúng quyết định trên 21 hồ sơ, tỉ lệ lời gọi tool lỗi, số bước trung bình, token. Chưa đo riêng chi phí/thời gian của model local.
 
 ## 10. MCP (C)
 
@@ -366,25 +379,25 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 ## 15. Checklist nộp bài
 
 - [ ] `report.docx` 8–9 trang, đủ 9 mục (có ≥1 ca thất bại; ≥2 hạn chế trung thực; commit hash)
-- [ ] Repo kèm `.git`, lịch sử thể hiện cả 3 người
-- [ ] `logs/`: ≥3 file `.jsonl` chạy thật, có timestamp, bước, args/kết quả tool, USAGE từng câu
-- [ ] `tests/testset.jsonl`: ≥12 câu (kế hoạch 16), ≥4 `no_answer`
-- [ ] `ai-usage.md`: công cụ nào, phần nào, prompt chính, đoạn code do AI sinh
-- [ ] `README.md`: `make setup && make demo`, `make eval`; **chạy được trên máy sạch**
-- [ ] `.env.example` đầy đủ; **không lộ key**
-- [ ] Dữ liệu có sẵn trong repo (không phụ thuộc tải từ web)
+- [x] Repo kèm `.git`, lịch sử thể hiện cả 3 người (3 tác giả: DATOXIC/TÔ PHƯƠNG ĐẠT, VuongVuiVe123, nphi)
+- [x] `logs/`: ≥3 file `.jsonl` chạy thật, có timestamp, bước, args/kết quả tool, USAGE từng câu *(còn phải chọn và ghi tên 3 file chính trong report; `logs/` đang lẫn nhiều file thử)*
+- [x] `tests/testset.jsonl`: ≥12 câu (kế hoạch 16), ≥4 `no_answer`
+- [ ] `ai-usage.md`: công cụ nào, phần nào, prompt chính, đoạn code do AI sinh *(còn mục "CHƯA KHAI BÁO"; chưa nhắc critic và các model đa nền tảng)*
+- [ ] `README.md`: `make setup && make demo`, `make eval`; **chạy được trên máy sạch** *(nội dung đã cập nhật; chưa thử cold start trên máy sạch)*
+- [x] `.env.example` đầy đủ; **không lộ key** *(`git grep` chưa thấy khóa; quét lại cả `git log -p` trước khi nộp)*
+- [x] Dữ liệu có sẵn trong repo (không phụ thuộc tải từ web; mô hình embedding tải lần đầu từ HuggingFace)
 - [ ] Mọi số trong report tái lập được bằng `make eval`
 
 ## 16. Yêu cầu kỹ thuật bắt buộc (tick khi xong)
 
-- [ ] Python 3.11+, chạy bằng đúng 1 lệnh
-- [ ] Vòng agent **viết tay** (chỉ dùng: mcp SDK, thư viện embedding, `rank_bm25`, numpy, pandas, python-docx; thêm `matplotlib` đã được GV đồng ý; `openai` và `python-dotenv` ngoài danh sách nên ghi trong `ai-usage.md`/README và xác nhận với GV)
-- [ ] Tool schema bằng dataclass/TypedDict có type hint
-- [ ] `call_llm` có retry + timeout + log lỗi HTTP; prompt tách khỏi code
-- [ ] ≥2 chế độ truy vấn (dense + hybrid); chunking có lý do
-- [ ] `MAX_STEPS`; tool lỗi trả `"Error: ..."`; parse action an toàn
-- [ ] ≥1 tool ghi + bước verify
-- [ ] MCP: tự viết, ≥2 tool (≥1 ghi), stdio, stdout sạch, client discover động
+- [x] Vòng agent **viết tay** (chỉ dùng: mcp SDK, thư viện embedding, `rank_bm25`, numpy, pandas, python-docx; thêm `matplotlib` đã được GV đồng ý; `openai` và `python-dotenv` ngoài danh sách nên ghi trong `ai-usage.md`/README và xác nhận với GV) *(vòng lặp tự viết xong; việc xác nhận thư viện với GV còn mở, mục 20)*
+- [x] Tool schema bằng dataclass/TypedDict có type hint (`src/finco/types.py`)
+- [x] `call_llm` có retry + timeout + log lỗi HTTP; prompt tách khỏi code (`src/finco/llm.py`, `prompts/`, `tests/test_llm.py`)
+- [x] ≥2 chế độ truy vấn (dense + hybrid); chunking có lý do
+- [x] `MAX_STEPS`; tool lỗi trả `"Error: ..."`; parse action an toàn
+- [x] ≥1 tool ghi + bước verify (`submit_decision` → `get_decision`)
+- [x] MCP: tự viết, ≥2 tool (≥1 ghi), stdio, stdout sạch, client discover động
+- [ ] Python 3.11+, chạy bằng đúng 1 lệnh *(chưa kiểm chứng trên máy sạch; còn 1 test `tests/test_llm.py` đang fail, `thought_signature`)*
 
 ---
 
@@ -436,16 +449,16 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 
 **Đã chốt:**
 - [x] **Ngôn ngữ dữ liệu: tiếng Việt** (chính sách, hồ sơ, câu hỏi). Cần embedding hỗ trợ tiếng Việt.
-- [x] **Dữ liệu đầu vào đã viết xong** (mục 7): 9 chính sách, 21 hồ sơ, đáp án chuẩn.
+- [x] **Dữ liệu đầu vào đã viết xong** (mục 7): 17 mã chính sách (18 file, 2 phiên bản CP-01), 21 hồ sơ, đáp án chuẩn.
 - [x] **Client LLM: SDK `openai`** (nhóm chọn; vẫn nên xác nhận với GV, xem dưới).
 - [x] **`requirements.txt` đã có** và ghim phiên bản; có thêm `python-dotenv` (đọc `.env`, đề có nhắc `.env.example`).
 - [x] **Test cá nhân** để trong `scratch/` (không commit). `tests/testset.jsonl` vẫn là sản phẩm nộp và **phải commit**.
 
 **Còn mở:**
 - [ ] **`ragas`: chưa dùng.** Có trong giáo trình/GV có dùng, nhưng danh sách thư viện được dùng ở đề (mục 2.2) không nhắc, và nó kéo `langchain`/`datasets` có thể xung đột phiên bản. Hỏi GV; nếu được phép, tách ra `requirements-eval.txt` riêng để không ảnh hưởng `make setup`. Mặc định: tự viết `eval/judge.py` (mục 11).
-- [ ] **Mô hình LLM** dùng là gì (quyết định mức sai của agent và giới hạn eval)? Giáo trình dùng SDK `openai` (và nói Groq tương thích, mã giống hệt). **Xác nhận với GV** SDK `openai` có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM).
+- [ ] **Xác nhận với GV** SDK `openai` (và endpoint Gemini tương thích OpenAI dùng cho critic) có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM). *Đã chốt phần kỹ thuật:* Actor chính là `gpt-oss-120b` trên Groq, so sánh với `gpt-oss-20b` và Qwen2.5 7B/14B (mục 9b).
 - [ ] GV: 2 điểm cộng còn lại (+6 vs 4 mục) tính cho việc gì?
-- [ ] **Mô hình LLM** dùng là gì (quyết định mức sai của agent và giới hạn eval)? Giáo trình dùng SDK `openai` (và nói Groq tương thích, mã giống hệt). **Xác nhận với GV** SDK `openai` có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM).
+- [ ] File yêu cầu ghi "Nhóm: 2 SV" còn đề tài ghi 3 SV (nhóm đang có 3 người): xác nhận với GV.
 - [ ] Bản `mcp`: v1 hay v2 (xem mục 10)? `requirements.txt` đang ghim `mcp==2.2.0` (bản máy nhóm đang cài); nếu giáo trình dùng `FastMCP` v1 thì đổi sang `mcp==1.30.0` và báo người làm MCP. Chạy thử import trước ngày 3.
 - [ ] Còn giữ bài lab W3–W7 của mình không? Đó là điểm xuất phát nhanh nhất.
 - [ ] Đã lấy `w4/ex2_1_hybrid_search.py` và DOC0001–0006 của lớp chưa? (xem file hybrid để biết GV dùng embedding nào)
