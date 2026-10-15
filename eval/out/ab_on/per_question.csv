@@ -1,0 +1,4 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+APP-004,hồ sơ,APP-004,True,True,True,True,True,True,True,,False,False,True,True,6,0,6,18456,1124,3925,,
+APP-005,hồ sơ,APP-005,True,True,True,True,True,True,True,,False,False,True,True,6,0,6,18393,942,3877,,
+APP-014,hồ sơ,APP-014,True,True,True,True,True,True,True,,False,False,True,True,10,1,10,38194,4096,5591,,
