@@ -109,3 +109,9 @@ logs/  report/            log chạy thật, báo cáo
 - Faithfulness theo luật chỉ kiểm tra tài liệu được trích có thật trong kết quả tool, chưa kiểm từng khẳng định (`eval/judge.py` là giám khảo LLM tùy chọn, chạy riêng, và chính nó là LLM nên cũng có thể sai).
 - Tầng truy xuất còn nhạy với cách đặt truy vấn: truy vấn kiểu "CP-01 ..." có thể trả bản diễn giải (CP-15/16) trước chính sách gốc, nên prompt dùng truy vấn bám tên tài liệu (có test giữ ràng buộc này: `tests/test_prompt.py`).
 - Quyết định `need_info` chưa thay được bằng quyết định mới khi hồ sơ bổ sung đủ (CP-07 mục 3.3).
+
+## Interop: dùng MCP server từ host thứ hai
+
+`make interop` (hoặc `python examples/client2.py`) chạy một client JSON-RPC thuần stdlib, không SDK `mcp`, không agent/LLM:
+initialize → tools/list → get_application / search_policy → submit_decision → get_decision.
+Chạy trên bản sao tạm của DB, không cần khóa API.

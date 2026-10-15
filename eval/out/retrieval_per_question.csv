@@ -1,23 +1,67 @@
 ﻿id,type,mode,as_of_date,date_filter,has_gold,rank_gold,rank_any,wrong_version,top1_chunk,top1_score,topk_chunks,query
-R01,versioned,hybrid,2025-03-15,on,True,1,1,0,CP-01-v1-01,0.7816,CP-01-v1-01 CP-01-v1-04 CP-09-v1-01 CP-16-v1-01 CP-01-v1-00,Người 59 tuổi nộp hồ sơ vào giữa tháng 3/2025 có được vay không?
-R02,versioned,hybrid,2025-05-01,on,True,5,5,0,CP-01-v2-05,0.7991,CP-01-v2-05 CP-01-v2-03 CP-09-v1-02 CP-04-v1-00 CP-01-v2-02,Số tiền vay tối đa hiện nay là bao nhiêu?
-R03,versioned,hybrid,2025-02-10,on,True,3,3,0,CP-01-v1-04,0.7155,CP-01-v1-04 CP-01-v1-00 CP-01-v1-02 CP-06-v1-00 CP-16-v1-01,Kỳ hạn vay dài nhất được chọn đối với hồ sơ nộp trước tháng 4/2025
-R04,numeric,hybrid,,on,True,1,1,0,CP-03-v1-00,0.8487,CP-03-v1-00 CP-05-v1-03 CP-09-v1-04 CP-10-v1-02 CP-17-v1-04,Vay trong 18 tháng thì lãi suất mỗi năm là bao nhiêu?
-R05,paraphrase,hybrid,,on,True,1,1,0,CP-03-v1-02,0.9536,CP-03-v1-02 CP-10-v1-03 CP-08-v1-00 CP-06-v1-00 CP-17-v1-04,Khoản tiền bị trừ ngay khi giải ngân là bao nhiêu phần trăm?
-R06,paraphrase,hybrid,,on,True,2,2,0,CP-09-v1-04,0.8487,CP-09-v1-04 CP-03-v1-03 CP-03-v1-02 CP-17-v1-11 CP-03-v1-00,Tất toán khoản vay sau 8 tháng thì có mất phí không?
+R01,versioned,dense,2025-03-15,on,True,2,1,0,CP-16-v1-01,0.6877,CP-16-v1-01 CP-01-v1-01 CP-15-v1-10 CP-15-v1-12 CP-15-v1-05,Người 59 tuổi nộp hồ sơ vào giữa tháng 3/2025 có được vay không?
+R01,versioned,bm25,2025-03-15,on,True,3,1,0,CP-16-v1-01,19.3983,CP-16-v1-01 CP-15-v1-10 CP-01-v1-01 CP-16-v1-05 CP-15-v1-04,Người 59 tuổi nộp hồ sơ vào giữa tháng 3/2025 có được vay không?
+R01,versioned,hybrid,2025-03-15,on,True,2,1,0,CP-16-v1-01,0.85,CP-16-v1-01 CP-01-v1-01 CP-01-v1-04 CP-15-v1-10 CP-09-v1-01,Người 59 tuổi nộp hồ sơ vào giữa tháng 3/2025 có được vay không?
+R02,versioned,dense,2025-05-01,on,True,4,1,0,CP-16-v1-01,0.6914,CP-16-v1-01 CP-01-v2-05 CP-04-v1-00 CP-01-v2-02 CP-09-v1-02,Số tiền vay tối đa hiện nay là bao nhiêu?
+R02,versioned,bm25,2025-05-01,on,True,,1,0,CP-16-v1-01,17.6412,CP-16-v1-01 CP-01-v2-05 CP-16-v1-06 CP-01-v2-03 CP-05-v1-02,Số tiền vay tối đa hiện nay là bao nhiêu?
+R02,versioned,hybrid,2025-05-01,on,True,,1,0,CP-16-v1-01,0.85,CP-16-v1-01 CP-01-v2-05 CP-01-v2-03 CP-09-v1-02 CP-04-v1-00,Số tiền vay tối đa hiện nay là bao nhiêu?
+R03,versioned,dense,2025-02-10,on,True,,1,0,CP-16-v1-01,0.6344,CP-16-v1-01 CP-15-v1-10 CP-15-v1-04 CP-15-v1-12 CP-15-v1-15,Kỳ hạn vay dài nhất được chọn đối với hồ sơ nộp trước tháng 4/2025
+R03,versioned,bm25,2025-02-10,on,True,,1,0,CP-16-v1-01,15.5547,CP-16-v1-01 CP-15-v1-15 CP-15-v1-04 CP-15-v1-10 CP-15-v1-02,Kỳ hạn vay dài nhất được chọn đối với hồ sơ nộp trước tháng 4/2025
+R03,versioned,hybrid,2025-02-10,on,True,,1,0,CP-16-v1-01,0.85,CP-16-v1-01 CP-15-v1-10 CP-15-v1-04 CP-01-v1-04 CP-15-v1-15,Kỳ hạn vay dài nhất được chọn đối với hồ sơ nộp trước tháng 4/2025
+R04,numeric,dense,,on,True,2,1,0,CP-16-v1-06,0.7024,CP-16-v1-06 CP-03-v1-00 CP-05-v1-03 CP-09-v1-04 CP-10-v1-02,Vay trong 18 tháng thì lãi suất mỗi năm là bao nhiêu?
+R04,numeric,bm25,,on,True,,1,0,CP-16-v1-06,16.1544,CP-16-v1-06 CP-16-v1-01 CP-17-v1-04 CP-05-v1-03 CP-09-v1-04,Vay trong 18 tháng thì lãi suất mỗi năm là bao nhiêu?
+R04,numeric,hybrid,,on,True,2,1,0,CP-16-v1-06,0.85,CP-16-v1-06 CP-03-v1-00 CP-05-v1-03 CP-09-v1-04 CP-10-v1-02,Vay trong 18 tháng thì lãi suất mỗi năm là bao nhiêu?
+R05,paraphrase,dense,,on,True,4,2,0,CP-10-v1-03,0.6138,CP-10-v1-03 CP-16-v1-07 CP-17-v1-04 CP-03-v1-02 CP-09-v1-03,Khoản tiền bị trừ ngay khi giải ngân là bao nhiêu phần trăm?
+R05,paraphrase,bm25,,on,True,3,3,0,CP-16-v1-09,10.4773,CP-16-v1-09 CP-16-v1-01 CP-03-v1-02 CP-16-v1-07 CP-08-v1-00,Khoản tiền bị trừ ngay khi giải ngân là bao nhiêu phần trăm?
+R05,paraphrase,hybrid,,on,True,1,1,0,CP-03-v1-02,0.9536,CP-03-v1-02 CP-16-v1-07 CP-10-v1-03 CP-08-v1-00 CP-06-v1-00,Khoản tiền bị trừ ngay khi giải ngân là bao nhiêu phần trăm?
+R06,paraphrase,dense,,on,True,3,1,0,CP-16-v1-07,0.6837,CP-16-v1-07 CP-16-v1-12 CP-03-v1-03 CP-09-v1-04 CP-03-v1-02,Tất toán khoản vay sau 8 tháng thì có mất phí không?
+R06,paraphrase,bm25,,on,True,,2,0,CP-16-v1-02,10.5454,CP-16-v1-02 CP-16-v1-12 CP-16-v1-11 CP-17-v1-11 CP-16-v1-07,Tất toán khoản vay sau 8 tháng thì có mất phí không?
+R06,paraphrase,hybrid,,on,True,2,2,0,CP-09-v1-04,0.8487,CP-09-v1-04 CP-03-v1-03 CP-16-v1-12 CP-16-v1-07 CP-03-v1-02,Tất toán khoản vay sau 8 tháng thì có mất phí không?
+R07,hard-negative,dense,2025-06-01,on,True,3,3,0,CP-05-v1-03,0.7012,CP-05-v1-03 CP-05-v1-02 CP-01-v2-03 CP-09-v1-03 CP-05-v1-00,Tổng nợ hàng tháng so với thu nhập tối đa được bao nhiêu phần trăm?
+R07,hard-negative,bm25,2025-06-01,on,True,5,1,0,CP-16-v1-01,18.8315,CP-16-v1-01 CP-05-v1-02 CP-01-v2-05 CP-16-v1-02 CP-01-v2-03,Tổng nợ hàng tháng so với thu nhập tối đa được bao nhiêu phần trăm?
 R07,hard-negative,hybrid,2025-06-01,on,True,2,2,0,CP-05-v1-02,0.9273,CP-05-v1-02 CP-01-v2-03 CP-05-v1-03 CP-09-v1-03 CP-05-v1-00,Tổng nợ hàng tháng so với thu nhập tối đa được bao nhiêu phần trăm?
-R08,numeric,hybrid,,on,True,1,1,0,CP-05-v1-00,0.8214,CP-05-v1-00 CP-16-v1-03 CP-09-v1-03 CP-05-v1-02 CP-05-v1-03,Thu nhập phụ của người kinh doanh tự do được tính bao nhiêu phần trăm?
+R08,numeric,dense,,on,True,4,1,0,CP-16-v1-03,0.6488,CP-16-v1-03 CP-15-v1-13 CP-15-v1-11 CP-05-v1-00 CP-15-v1-02,Thu nhập phụ của người kinh doanh tự do được tính bao nhiêu phần trăm?
+R08,numeric,bm25,,on,True,3,1,0,CP-16-v1-03,18.5191,CP-16-v1-03 CP-15-v1-02 CP-05-v1-00 CP-15-v1-15 CP-15-v1-11,Thu nhập phụ của người kinh doanh tự do được tính bao nhiêu phần trăm?
+R08,numeric,hybrid,,on,True,2,1,0,CP-16-v1-03,0.85,CP-16-v1-03 CP-05-v1-00 CP-15-v1-13 CP-15-v1-11 CP-15-v1-02,Thu nhập phụ của người kinh doanh tự do được tính bao nhiêu phần trăm?
+R09,lexical,dense,,on,True,1,1,0,CP-03-v1-01,0.6596,CP-03-v1-01 CP-05-v1-01 CP-05-v1-03 CP-05-v1-02 CP-05-v1-00,Công thức tính khoản trả đều mỗi tháng
+R09,lexical,bm25,,on,True,1,1,0,CP-03-v1-01,15.0101,CP-03-v1-01 CP-17-v1-04 CP-15-v1-03 CP-05-v1-01 CP-16-v1-06,Công thức tính khoản trả đều mỗi tháng
 R09,lexical,hybrid,,on,True,1,1,0,CP-03-v1-01,1.0,CP-03-v1-01 CP-05-v1-01 CP-05-v1-02 CP-05-v1-03 CP-17-v1-04,Công thức tính khoản trả đều mỗi tháng
+R10,numeric,dense,,on,True,1,1,0,CP-17-v1-04,0.7723,CP-17-v1-04 CP-03-v1-04 CP-17-v1-05 CP-03-v1-03 CP-16-v1-12,Trả chậm 40 ngày thì bị phạt lãi bao nhiêu?
+R10,numeric,bm25,,on,True,1,1,0,CP-17-v1-04,15.3062,CP-17-v1-04 CP-03-v1-04 CP-17-v1-05 CP-16-v1-01 CP-16-v1-02,Trả chậm 40 ngày thì bị phạt lãi bao nhiêu?
 R10,numeric,hybrid,,on,True,1,1,0,CP-17-v1-04,1.0,CP-17-v1-04 CP-03-v1-04 CP-17-v1-05 CP-03-v1-03 CP-17-v1-08,Trả chậm 40 ngày thì bị phạt lãi bao nhiêu?
-R11,paraphrase,hybrid,,on,True,1,1,0,CP-06-v1-01,0.9425,CP-06-v1-01 CP-08-v1-00 CP-17-v1-10 CP-17-v1-11 CP-01-v1-04,Người đang làm ở FinCo nộp hồ sơ vay thì quy trình khác gì?
-R12,numeric,hybrid,,on,True,1,1,0,CP-04-v1-00,1.0,CP-04-v1-00 CP-01-v1-02 CP-01-v2-02 CP-01-v2-05 CP-06-v1-01,Khoản vay 600 triệu đồng do ai phê duyệt?
-R13,paraphrase,hybrid,,on,True,1,1,0,CP-02-v1-04,0.9034,CP-02-v1-04 CP-04-v1-01 CP-02-v1-02 CP-02-v1-03 CP-02-v1-01,Hồ sơ thiếu sao kê thì xử lý thế nào?
-R14,numeric,hybrid,,on,True,1,1,0,CP-02-v1-02,0.7985,CP-02-v1-02 CP-16-v1-04 CP-05-v1-00 CP-09-v1-01 CP-02-v1-03,Người tự kinh doanh phải nộp sao kê của bao nhiêu tháng?
+R11,paraphrase,dense,,on,True,1,1,0,CP-06-v1-01,0.7103,CP-06-v1-01 CP-15-v1-08 CP-16-v1-05 CP-08-v1-00 CP-16-v1-10,Người đang làm ở FinCo nộp hồ sơ vay thì quy trình khác gì?
+R11,paraphrase,bm25,,on,True,,1,0,CP-16-v1-02,11.9646,CP-16-v1-02 CP-16-v1-05 CP-16-v1-04 CP-08-v1-00 CP-01-v1-04,Người đang làm ở FinCo nộp hồ sơ vay thì quy trình khác gì?
+R11,paraphrase,hybrid,,on,True,1,1,0,CP-06-v1-01,0.9425,CP-06-v1-01 CP-08-v1-00 CP-16-v1-05 CP-17-v1-10 CP-15-v1-08,Người đang làm ở FinCo nộp hồ sơ vay thì quy trình khác gì?
+R12,numeric,dense,,on,True,1,1,0,CP-04-v1-00,0.6181,CP-04-v1-00 CP-15-v1-08 CP-15-v1-12 CP-16-v1-10 CP-15-v1-14,Khoản vay 600 triệu đồng do ai phê duyệt?
+R12,numeric,bm25,,on,True,1,1,0,CP-04-v1-00,13.7354,CP-04-v1-00 CP-16-v1-10 CP-09-v1-02 CP-15-v1-10 CP-15-v1-12,Khoản vay 600 triệu đồng do ai phê duyệt?
+R12,numeric,hybrid,,on,True,1,1,0,CP-04-v1-00,1.0,CP-04-v1-00 CP-16-v1-10 CP-01-v1-02 CP-01-v2-02 CP-15-v1-08,Khoản vay 600 triệu đồng do ai phê duyệt?
+R13,paraphrase,dense,,on,True,1,1,0,CP-02-v1-04,0.6249,CP-02-v1-04 CP-16-v1-05 CP-16-v1-04 CP-15-v1-06 CP-15-v1-17,Hồ sơ thiếu sao kê thì xử lý thế nào?
+R13,paraphrase,bm25,,on,True,,2,0,CP-15-v1-06,12.8238,CP-15-v1-06 CP-16-v1-05 CP-16-v1-04 CP-09-v1-01 CP-02-v1-01,Hồ sơ thiếu sao kê thì xử lý thế nào?
+R13,paraphrase,hybrid,,on,True,1,1,0,CP-02-v1-04,0.9034,CP-02-v1-04 CP-16-v1-05 CP-15-v1-06 CP-16-v1-04 CP-04-v1-01,Hồ sơ thiếu sao kê thì xử lý thế nào?
+R14,numeric,dense,,on,True,2,1,0,CP-16-v1-04,0.6703,CP-16-v1-04 CP-02-v1-02 CP-15-v1-13 CP-05-v1-00 CP-02-v1-03,Người tự kinh doanh phải nộp sao kê của bao nhiêu tháng?
+R14,numeric,bm25,,on,True,2,1,0,CP-16-v1-04,22.6852,CP-16-v1-04 CP-02-v1-02 CP-16-v1-01 CP-15-v1-02 CP-09-v1-01,Người tự kinh doanh phải nộp sao kê của bao nhiêu tháng?
+R14,numeric,hybrid,,on,True,2,1,0,CP-16-v1-04,0.85,CP-16-v1-04 CP-02-v1-02 CP-15-v1-13 CP-05-v1-00 CP-09-v1-01,Người tự kinh doanh phải nộp sao kê của bao nhiêu tháng?
+R15,paraphrase,dense,,on,True,1,1,0,CP-11-v1-02,0.6566,CP-11-v1-02 CP-11-v1-00 CP-11-v1-01 CP-11-v1-03 CP-16-v1-04,Tôi có quyền yêu cầu xóa dữ liệu cá nhân của mình không?
+R15,paraphrase,bm25,,on,True,1,1,0,CP-11-v1-02,35.8866,CP-11-v1-02 CP-11-v1-00 CP-11-v1-01 CP-16-v1-12 CP-11-v1-04,Tôi có quyền yêu cầu xóa dữ liệu cá nhân của mình không?
 R15,paraphrase,hybrid,,on,True,1,1,0,CP-11-v1-02,1.0,CP-11-v1-02 CP-11-v1-00 CP-11-v1-01 CP-11-v1-03 CP-11-v1-04,Tôi có quyền yêu cầu xóa dữ liệu cá nhân của mình không?
+R16,numeric,dense,,on,True,1,1,0,CP-17-v1-02,0.6976,CP-17-v1-02 CP-17-v1-03 CP-06-v1-00 CP-17-v1-07 CP-17-v1-06,Nợ quá hạn 45 ngày được xếp vào nhóm mấy?
+R16,numeric,bm25,,on,True,1,1,0,CP-17-v1-03,7.2189,CP-17-v1-03 CP-17-v1-07 CP-17-v1-06 CP-17-v1-02 CP-01-v2-03,Nợ quá hạn 45 ngày được xếp vào nhóm mấy?
 R16,numeric,hybrid,,on,True,1,1,0,CP-17-v1-03,0.9689,CP-17-v1-03 CP-17-v1-02 CP-17-v1-07 CP-17-v1-06 CP-06-v1-00,Nợ quá hạn 45 ngày được xếp vào nhóm mấy?
+R17,paraphrase,dense,,on,True,2,1,0,CP-17-v1-06,0.6718,CP-17-v1-06 CP-17-v1-10 CP-08-v1-02 CP-17-v1-08 CP-17-v1-11,Nhân viên thu hồi nợ có được gọi điện cho khách lúc 8 giờ tối không?
+R17,paraphrase,bm25,,on,True,2,1,0,CP-17-v1-06,24.8183,CP-17-v1-06 CP-17-v1-10 CP-16-v1-10 CP-17-v1-08 CP-08-v1-02,Nhân viên thu hồi nợ có được gọi điện cho khách lúc 8 giờ tối không?
 R17,paraphrase,hybrid,,on,True,2,1,0,CP-17-v1-06,1.0,CP-17-v1-06 CP-17-v1-10 CP-08-v1-02 CP-17-v1-08 CP-17-v1-11,Nhân viên thu hồi nợ có được gọi điện cho khách lúc 8 giờ tối không?
+R18,hard-negative,dense,,on,True,1,1,0,CP-09-v1-02,0.7651,CP-09-v1-02 CP-09-v1-03 CP-09-v1-01 CP-09-v1-04 CP-09-v1-00,Hạn mức tối đa của thẻ tín dụng là bao nhiêu?
+R18,hard-negative,bm25,,on,True,2,2,0,CP-16-v1-01,15.8939,CP-16-v1-01 CP-09-v1-02 CP-09-v1-04 CP-09-v1-03 CP-13-v1-01,Hạn mức tối đa của thẻ tín dụng là bao nhiêu?
 R18,hard-negative,hybrid,,on,True,1,1,0,CP-09-v1-02,0.9862,CP-09-v1-02 CP-09-v1-04 CP-09-v1-03 CP-09-v1-01 CP-13-v1-01,Hạn mức tối đa của thẻ tín dụng là bao nhiêu?
+R19,hard-negative,dense,,on,True,1,1,0,CP-10-v1-02,0.7152,CP-10-v1-02 CP-16-v1-06 CP-03-v1-00 CP-13-v1-02 CP-10-v1-00,Gửi tiết kiệm kỳ hạn 12 tháng lãi suất bao nhiêu?
+R19,hard-negative,bm25,,on,True,1,1,0,CP-10-v1-02,15.7594,CP-10-v1-02 CP-16-v1-06 CP-10-v1-00 CP-13-v1-02 CP-10-v1-03,Gửi tiết kiệm kỳ hạn 12 tháng lãi suất bao nhiêu?
 R19,hard-negative,hybrid,,on,True,1,1,0,CP-10-v1-02,1.0,CP-10-v1-02 CP-10-v1-00 CP-13-v1-02 CP-03-v1-00 CP-10-v1-03,Gửi tiết kiệm kỳ hạn 12 tháng lãi suất bao nhiêu?
-R20,hard-negative,hybrid,,on,True,3,3,0,CP-12-v1-00,0.8943,CP-12-v1-00 CP-12-v1-02 CP-08-v1-02 CP-08-v1-01 CP-17-v1-08,Muốn khiếu nại kết quả thẩm định hồ sơ vay thì có thời hạn bao lâu?
+R20,hard-negative,dense,,on,True,,2,0,CP-12-v1-02,0.7192,CP-12-v1-02 CP-16-v1-10 CP-17-v1-08 CP-12-v1-00 CP-16-v1-09,Muốn khiếu nại kết quả thẩm định hồ sơ vay thì có thời hạn bao lâu?
+R20,hard-negative,bm25,,on,True,4,2,0,CP-12-v1-00,20.4004,CP-12-v1-00 CP-16-v1-09 CP-16-v1-10 CP-08-v1-02 CP-11-v1-01,Muốn khiếu nại kết quả thẩm định hồ sơ vay thì có thời hạn bao lâu?
+R20,hard-negative,hybrid,,on,True,3,3,0,CP-12-v1-00,0.8943,CP-12-v1-00 CP-12-v1-02 CP-08-v1-02 CP-16-v1-10 CP-16-v1-09,Muốn khiếu nại kết quả thẩm định hồ sơ vay thì có thời hạn bao lâu?
+R21,no_answer,dense,,on,False,,,0,CP-13-v1-02,0.6488,CP-13-v1-02 CP-13-v1-01 CP-13-v1-04 CP-13-v1-03 CP-13-v1-00,Lãi suất khuyến mãi mùa hè cho khoản vay là bao nhiêu?
+R21,no_answer,bm25,,on,False,,,0,CP-13-v1-04,12.4137,CP-13-v1-04 CP-16-v1-08 CP-16-v1-06 CP-13-v1-02 CP-16-v1-01,Lãi suất khuyến mãi mùa hè cho khoản vay là bao nhiêu?
 R21,no_answer,hybrid,,on,False,,,0,CP-13-v1-02,0.9693,CP-13-v1-02 CP-13-v1-04 CP-13-v1-01 CP-13-v1-03 CP-13-v1-00,Lãi suất khuyến mãi mùa hè cho khoản vay là bao nhiêu?
+R22,no_answer,dense,,on,False,,,0,CP-02-v1-00,0.5384,CP-02-v1-00 CP-02-v1-03 CP-16-v1-04 CP-02-v1-04 CP-16-v1-02,Tôi có thể vay thế chấp bằng sổ đỏ không?
+R22,no_answer,bm25,,on,False,,,0,CP-14-v1-01,9.5905,CP-14-v1-01 CP-17-v1-08 CP-16-v1-12 CP-16-v1-06 CP-01-v2-00,Tôi có thể vay thế chấp bằng sổ đỏ không?
 R22,no_answer,hybrid,,on,False,,,0,CP-02-v1-03,0.8097,CP-02-v1-03 CP-01-v2-00 CP-14-v1-01 CP-02-v1-00 CP-02-v1-04,Tôi có thể vay thế chấp bằng sổ đỏ không?
