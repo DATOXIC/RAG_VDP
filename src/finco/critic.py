@@ -252,7 +252,7 @@ class Critic:
     """Critic hai tầng. `llm` nhận messages, trả chuỗi (tiêm giả khi test)."""
 
     def __init__(self, llm: Optional[LlmFn] = None, model: Optional[str] = None,
-                 max_tokens: int = 900, prompt: Optional[str] = None):
+                 max_tokens: int = 2000, prompt: Optional[str] = None):
         self._llm = llm or _default_llm(model, max_tokens)
         self._prompt = prompt
 
