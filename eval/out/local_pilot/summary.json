@@ -1,0 +1,38 @@
+{
+  "questions": 1,
+  "passed": 0,
+  "pass_rate": 0.0,
+  "run_success_rate": 0.0,
+  "decision_accuracy": 0.0,
+  "root_cause_accuracy": 0.0,
+  "read_after_write_rate": 0.0,
+  "numbers_accuracy": 100.0,
+  "correct_refusal_rate": null,
+  "false_refusal_rate": null,
+  "faithfulness_rule_rate": null,
+  "tool_error_rate": 6.7,
+  "avg_tool_calls": 15.0,
+  "avg_llm_calls": 15.0,
+  "total_prompt_tokens": 70491,
+  "total_completion_tokens": 1760,
+  "max_prompt_tokens": 6948,
+  "by_type": {
+    "hành động": {
+      "n": 1,
+      "passed": 0
+    }
+  },
+  "log_file": "C:\\RAG_VDP\\logs\\eval_20261015_133205.jsonl",
+  "model": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+  "generated_at": "2026-10-15T13:34:56",
+  "verifier": {
+    "total_cases": 1,
+    "pass_count": 0,
+    "overall_pass_rate": 0.0,
+    "decision_accuracy": 0.0,
+    "root_cause_accuracy": 0.0,
+    "citation_recall_avg": 0.0,
+    "trace_valid_rate": 0.0,
+    "math_valid_rate": 100.0
+  }
+}

@@ -150,6 +150,45 @@ class TestRetry(CallLlmBase):
         self.assertIn("429", str(cm.exception))
 
 
+def tpd_error(wait="9m15.9s"):
+    err = http_error(RateLimitError, 429)
+    err.args = (f"Rate limit reached on tokens per day (TPD): Limit 200000, Used 196000. Please try again in {wait}.",)
+    return err
+
+
+class TestDailyQuota(CallLlmBase):
+    def test_waits_exactly_the_time_the_server_asks_then_succeeds(self):
+        client = fake_client(tpd_error("9m15.9s"), ok_response())
+        self.call(client)
+        self.assertEqual(client.chat.completions.create.call_count, 2)
+        self.assertAlmostEqual(self.sleep.call_args.args[0], 9 * 60 + 15.9 + 0.2)
+
+    def test_daily_waits_do_not_burn_normal_retries(self):
+        client = fake_client(tpd_error("1m"), tpd_error("1m"), tpd_error("1m"), ok_response())
+        self.call(client, max_retries=1)
+        self.assertEqual(client.chat.completions.create.call_count, 4)
+
+    def test_too_long_a_wait_fails_fast_without_sleeping(self):
+        client = fake_client(tpd_error("3h10m"))
+        with self.assertRaises(RuntimeError) as cm:
+            self.call(client)
+        self.assertEqual(self.sleep.call_count, 0)
+        self.assertEqual(client.chat.completions.create.call_count, 1)
+        self.assertIn("hạn mức token/ngày", str(cm.exception))
+
+    def test_milliseconds_are_understood(self):
+        client = fake_client(tpd_error("850ms"), ok_response())
+        self.call(client)
+        self.assertAlmostEqual(self.sleep.call_args.args[0], 0.85 + 0.2)
+
+    def test_per_minute_limit_keeps_normal_backoff(self):
+        err = http_error(RateLimitError, 429)
+        err.args = ("Rate limit reached on tokens per minute (TPM). Please try again in 3s.",)
+        client = fake_client(err, ok_response())
+        self.call(client, initial_delay=1.0)
+        self.assertEqual(self.sleep.call_args.args[0], 1.2)
+
+
 class TestPermanentErrors(CallLlmBase):
     def test_auth_error_not_retried(self):
         client = fake_client(http_error(AuthenticationError, 401), ok_response())

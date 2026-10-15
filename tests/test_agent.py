@@ -13,6 +13,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 # Các kịch bản LLM giả không tra chính sách nên không qua nổi Critic; test Critic nằm ở tests/test_critic.py.
 os.environ.setdefault("FINCO_CRITIC", "0")
@@ -84,6 +85,35 @@ class AgentTestBase(unittest.TestCase):
         with isolated_db_sandbox():
             result = agent.run_sync(app_id, question=question)
         return result, script
+
+
+class TestDedupTools(AgentTestBase):
+    """FINCO_DEDUP_TOOLS=1: gọi lặp cùng tool + tham số thì trả lời ngắn, không gọi server, không phình ngữ cảnh."""
+
+    def run_with(self, dedup: bool):
+        script = Script(
+            turn(call("get_application", app_id=APP)),
+            turn(call("get_application", app_id=APP)),
+            *good_decision_script()[1:],
+        )
+        with patch.dict(os.environ, {"FINCO_DEDUP_TOOLS": "1" if dedup else "0"}):
+            agent = Agent(max_steps=12, verbose=False, llm=script)
+        with isolated_db_sandbox():
+            return agent.run_sync(APP)
+
+    def test_repeat_is_short_circuited(self):
+        result = self.run_with(dedup=True)
+        self.assertTrue(result.success, result.error_message)
+        first, repeat = [l for l in result.trace if l.tool == "get_application"]
+        self.assertTrue(first.result.startswith("Mã hồ sơ"))
+        self.assertIn("đã gọi get_application", repeat.result)
+        self.assertFalse(repeat.result.startswith("Error:"))
+        self.assertEqual(result.to_submission().decision, "reject")  # quyết định vẫn ghi được
+
+    def test_off_by_default_keeps_original_behaviour(self):
+        result = self.run_with(dedup=False)
+        first, repeat = [l for l in result.trace if l.tool == "get_application"]
+        self.assertTrue(repeat.result.startswith("Mã hồ sơ"))
 
 
 class TestHappyPath(AgentTestBase):

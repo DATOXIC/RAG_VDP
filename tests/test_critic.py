@@ -103,6 +103,33 @@ class TestEvidenceTier(CriticTestBase):
             out = self.submit(cited=("CP-01 v2", "CP-02 v1", "CP-03 v1", "CP-05 v1"))
         self.assertIn("phiên bản đã thấy của CP-01 là v1", out)
 
+    def test_forgotten_citations_are_added_not_blocked(self):
+        llm = self.use(AGREE)
+        with isolated_db_sandbox():
+            self.gather()
+            out = self.submit(cited=("CP-01 v1", "CP-02 v1"))  # đã tra CP-03/CP-05 nhưng quên trích dẫn
+            self.assertTrue(out.startswith("Thành công"), out)
+            stored = tools.get_decision(APP)
+        self.assertIn("CP-03 v1", stored)
+        self.assertIn("CP-05 v1", stored)
+        self.assertEqual(llm.calls, 1)
+
+    def test_missing_evidence_is_still_blocked_and_advises_searching(self):
+        self.use(AGREE)
+        with isolated_db_sandbox():
+            self.gather(docs=("CP-01", "CP-03"))
+            out = self.submit(cited=("CP-01 v1", "CP-03 v1", "CP-05 v1"))
+        self.assertIn("Chưa tra cứu CP-02", out)
+        self.assertIn("search_policy", out)
+
+    def test_feedback_is_capped_at_three_issues(self):
+        self.use(AGREE)
+        with isolated_db_sandbox():
+            tools.calc_dti(APP, "0.17")  # chưa đọc hồ sơ, chưa tra gì: rất nhiều vấn đề
+            out = self.submit()
+        self.assertLessEqual(out.count("\n- "), 4)  # 3 vấn đề + dòng "(+N vấn đề khác)"
+        self.assertIn("vấn đề khác", out)
+
     def test_decision_stays_unwritten_after_rejection(self):
         self.use(AGREE)
         with isolated_db_sandbox():
@@ -171,9 +198,10 @@ class TestLlmTier(CriticTestBase):
 
 class TestCircuitBreaker(CriticTestBase):
     def trip(self):
-        self.gather()
-        self.assertIn("lần 1/2", self.submit(cited=("CP-01 v1",)))
-        out = self.submit(cited=("CP-01 v1",))
+        self.gather(docs=("CP-01", "CP-03"))  # thiếu CP-02: bằng chứng cứng, không tự sửa được
+        cited = ("CP-01 v1", "CP-03 v1", "CP-05 v1")
+        self.assertIn("lần 1/2", self.submit(cited=cited))
+        out = self.submit(cited=cited)
         self.assertIn("lần 2/2", out)
         self.assertIn("escalate", out)
 
@@ -205,6 +233,36 @@ class TestCircuitBreaker(CriticTestBase):
         with isolated_db_sandbox():
             self.trip()
             self.assertEqual(critic_mod.get_evidence("APP-004").critic_rejections, 0)
+
+
+class TestInfraErrorsDoNotPenaliseDecision(CriticTestBase):
+    """Critic chỉ lỗi hạ tầng (không xác minh được) thì hết lượt vẫn ghi quyết định của Actor, kèm cờ."""
+
+    def test_writes_actor_decision_flagged_after_exhausting_attempts(self):
+        self.use(RuntimeError("API sập"))
+        with isolated_db_sandbox():
+            self.gather()
+            self.assertIn("lần 1/2", self.submit())
+            out2 = self.submit()
+            self.assertIn("lần 2/2", out2)
+            self.assertIn("ghi kèm cờ", out2)
+            out3 = self.submit()
+            self.assertTrue(out3.startswith("Thành công"), out3)
+            stored = tools.get_decision(APP)
+        self.assertIn("REJECT", stored.upper())
+        self.assertIn("CRITIC_UNVERIFIED", stored)
+
+    def test_hard_block_after_errors_still_forces_escalate(self):
+        self.use(RuntimeError("API sập"))
+        with isolated_db_sandbox():
+            self.gather()
+            self.submit()
+            self.submit()  # hai lần lỗi hạ tầng
+            tools_ev = critic_mod.get_evidence(APP)
+            tools_ev.app_data_raw = ""  # bây giờ thiếu bằng chứng cứng
+            out = self.submit()
+        self.assertIn("CRITIC_REJECT [evidence]", out)
+        self.assertIn("escalate", out)
 
 
 class TestCriticOffByDefault(CriticTestBase):

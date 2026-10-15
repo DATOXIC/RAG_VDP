@@ -39,6 +39,36 @@ def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) 
     return text
 
 
+def render_application(app) -> str:
+    """Định dạng hồ sơ thành văn bản cho LLM (dùng chung cho get_application và critic-agent)."""
+    if app.existing_debt_monthly is None:
+        debt = "Chưa khai báo (None)"
+    else:
+        debt = f"{app.existing_debt_monthly:,} VND" # cặp ":," trong fstring giúp phân cách số cho dễ đọc
+
+    docs = ", ".join(app.docs_submitted) if app.docs_submitted else "Không có"
+
+    info = [
+            f"Mã hồ sơ: {app.app_id}",
+            f"Tên khách hàng: {app.applicant_name}",
+            f"Tuổi: {app.age}",
+            f"Sản phẩm vay: {app.product}",
+            f"Số tiền đề nghị vay: {app.amount:,} VNĐ",
+            f"Kỳ hạn vay: {app.term_months} tháng",
+            f"Loại nguồn thu nhập: {app.income_type} ({'Hưởng lương' if app.income_type == 'salary' else 'Tự kinh doanh'})",
+            f"Thu nhập chính hàng tháng: {app.monthly_income:,} VNĐ",
+            f"Thu nhập phụ hàng tháng: {app.supplementary_income:,} VNĐ",
+            f"Nghĩa vụ nợ hiện tại mỗi tháng: {debt}",
+            f"Là nhân viên FinCo: {'Có' if app.is_employee else 'Không'}",
+            f"Có nợ quá hạn >30 ngày trong 12 tháng: {'Có' if app.overdue_30d_12m else 'Không'}",
+            f"Chứng từ đã nộp: {docs}",
+            f"Ngày nộp hồ sơ: {app.submitted_date}",
+            f"Ghi chú hồ sơ: {app.note if app.note else 'Không có'}",
+        ]
+    text = "\n".join(info)
+    return text
+
+
 def get_application(app_id: str) -> str:
     """
     1. Kiểm tra app_id rỗng
@@ -57,31 +87,7 @@ def get_application(app_id: str) -> str:
         _CURRENT_APP_DATE[clean_id] = app.submitted_date
         _ACTIVE_APP_ID = clean_id
 
-        if app.existing_debt_monthly is None:
-            debt = "Chưa khai báo (None)"
-        else:
-            debt = f"{app.existing_debt_monthly:,} VND" # cặp ":," trong fstring giúp phân cách số cho dễ đọc
-
-        docs = ", ".join(app.docs_submitted) if app.docs_submitted else "Không có"
-
-        info = [
-                f"Mã hồ sơ: {app.app_id}",
-                f"Tên khách hàng: {app.applicant_name}",
-                f"Tuổi: {app.age}",
-                f"Sản phẩm vay: {app.product}",
-                f"Số tiền đề nghị vay: {app.amount:,} VNĐ",
-                f"Kỳ hạn vay: {app.term_months} tháng",
-                f"Loại nguồn thu nhập: {app.income_type} ({'Hưởng lương' if app.income_type == 'salary' else 'Tự kinh doanh'})",
-                f"Thu nhập chính hàng tháng: {app.monthly_income:,} VNĐ",
-                f"Thu nhập phụ hàng tháng: {app.supplementary_income:,} VNĐ",
-                f"Nghĩa vụ nợ hiện tại mỗi tháng: {debt}",
-                f"Là nhân viên FinCo: {'Có' if app.is_employee else 'Không'}",
-                f"Có nợ quá hạn >30 ngày trong 12 tháng: {'Có' if app.overdue_30d_12m else 'Không'}",
-                f"Chứng từ đã nộp: {docs}",
-                f"Ngày nộp hồ sơ: {app.submitted_date}",
-                f"Ghi chú hồ sơ: {app.note if app.note else 'Không có'}",
-            ]
-        text = "\n".join(info)
+        text = render_application(app)
         critic_mod.record_application(clean_id, text, app.submitted_date)
         return text
 
@@ -92,6 +98,64 @@ def get_application(app_id: str) -> str:
 
 
 _DTI_DONE: set[str] = set()  # hồ sơ đã calc_dti thành công trong tiến trình MCP server này
+
+
+def compute_dti(app, annual_rate: str) -> str:
+    """Tính DTI thuần (không ghi trạng thái): dùng chung cho calc_dti và critic-agent. Lỗi trả chuỗi 'Error: ...'."""
+    app_id = app.app_id
+    if app.existing_debt_monthly is None:
+        return (
+            f"Error: Hồ sơ {app_id} chưa khai báo nghĩa vụ nợ hiện tại "
+            "(existing_debt_monthly là None) theo CP-02. Không thể tính DTI, "
+            "cần chuyển sang quyết định need_info."
+        )
+
+    rate_cleaned = str(annual_rate).strip().rstrip("%").strip()
+    rate = float(rate_cleaned)
+    if rate <= 0:
+        return f"Error: annual_rate phải lớn hơn 0, nhận được {rate}."
+    if rate > 1.0:
+        rate = rate / 100.0  # Ví dụ: 15.5 -> 0.155 hoặc '17.0%' -> 0.17
+
+    if app.income_type == "salary": # Làm công
+        qualified_income = round(app.monthly_income + 0.7 * app.supplementary_income)
+        income_desc = f"{app.monthly_income:,} + 70% × {app.supplementary_income:,}"
+    else:  # Làm tư
+        qualified_income = round(0.8 * app.monthly_income + 0.5 * app.supplementary_income)
+        income_desc = f"80% × {app.monthly_income:,} + 50% × {app.supplementary_income:,}"
+
+    if qualified_income <= 0:
+        return f"Error: Thu nhập đủ điều kiện bằng 0 hoặc âm ({qualified_income:,} VNĐ), không thể tính DTI."
+
+    P = app.amount # Khoản vay
+    n = app.term_months # Kỳ hạn vay
+    r = rate / 12 # Lãi suất tháng
+
+    PMT = round(P * r / (1.0 - (1.0 + r) ** (-n)))
+
+    # Tính DTI
+    existing_debt = app.existing_debt_monthly
+    total_monthly_debt = PMT + existing_debt
+    dti = round(total_monthly_debt / qualified_income, 4)
+    dti_percent = round(dti * 100, 2)
+    
+    formula = (
+        f"DTI = ({PMT:,} [PMT] + {existing_debt:,} [Nợ cũ]) / "
+        f"{qualified_income:,} [Thu nhập] = {dti_percent}%"
+    )
+    result_text = [
+        f"=== KẾT QUẢ TÍNH DTI HỒ SƠ {app_id} ===",
+        f"- Số tiền vay: {P:,} VNĐ, kỳ hạn: {n} tháng, lãi suất: {rate * 100:.1f}%/năm",
+        f"- Khoản trả hàng tháng của khoản vay mới (PMT): {PMT:,} VNĐ",
+        f"- Thu nhập đủ điều kiện (CP-05): {qualified_income:,} VNĐ (Công thức: {income_desc})",
+        f"- Nghĩa vụ nợ hiện tại: {existing_debt:,} VNĐ",
+        f"- Tổng nghĩa vụ nợ hàng tháng: {total_monthly_debt:,} VNĐ",
+        f"- Tỷ lệ nợ trên thu nhập (DTI): {dti} ({dti_percent}%)",
+        f"- Diễn giải công thức: {formula}",
+        f"- Căn cứ chính sách: CP-05 v1 (Quy định cách tính thu nhập đủ điều kiện và tỷ lệ DTI)",
+    ]
+    text = "\n".join(result_text)
+    return text
 
 
 def calc_dti(app_id: str, annual_rate: str) -> str:
@@ -112,60 +176,10 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
 
         app = db.get_application(app_id)
 
-        if app.existing_debt_monthly is None:
-            return (
-                f"Error: Hồ sơ {app_id} chưa khai báo nghĩa vụ nợ hiện tại "
-                "(existing_debt_monthly là None) theo CP-02. Không thể tính DTI, "
-                "cần chuyển sang quyết định need_info."
-            )
-
-        rate_cleaned = str(annual_rate).strip().rstrip("%").strip()
-        rate = float(rate_cleaned)
-        if rate <= 0:
-            return f"Error: annual_rate phải lớn hơn 0, nhận được {rate}."
-        if rate > 1.0:
-            rate = rate / 100.0  # Ví dụ: 15.5 -> 0.155 hoặc '17.0%' -> 0.17
-
-        if app.income_type == "salary": # Làm công
-            qualified_income = round(app.monthly_income + 0.7 * app.supplementary_income)
-            income_desc = f"{app.monthly_income:,} + 70% × {app.supplementary_income:,}"
-        else:  # Làm tư
-            qualified_income = round(0.8 * app.monthly_income + 0.5 * app.supplementary_income)
-            income_desc = f"80% × {app.monthly_income:,} + 50% × {app.supplementary_income:,}"
-
-        if qualified_income <= 0:
-            return f"Error: Thu nhập đủ điều kiện bằng 0 hoặc âm ({qualified_income:,} VNĐ), không thể tính DTI."
-
-        P = app.amount # Khoản vay
-        n = app.term_months # Kỳ hạn vay
-        r = rate / 12 # Lãi suất tháng
-
-        PMT = round(P * r / (1.0 - (1.0 + r) ** (-n)))
-
-        # Tính DTI
-        existing_debt = app.existing_debt_monthly
-        total_monthly_debt = PMT + existing_debt
-        dti = round(total_monthly_debt / qualified_income, 4)
-        dti_percent = round(dti * 100, 2)
-        
-        formula = (
-            f"DTI = ({PMT:,} [PMT] + {existing_debt:,} [Nợ cũ]) / "
-            f"{qualified_income:,} [Thu nhập] = {dti_percent}%"
-        )
-        result_text = [
-            f"=== KẾT QUẢ TÍNH DTI HỒ SƠ {app_id} ===",
-            f"- Số tiền vay: {P:,} VNĐ, kỳ hạn: {n} tháng, lãi suất: {rate * 100:.1f}%/năm",
-            f"- Khoản trả hàng tháng của khoản vay mới (PMT): {PMT:,} VNĐ",
-            f"- Thu nhập đủ điều kiện (CP-05): {qualified_income:,} VNĐ (Công thức: {income_desc})",
-            f"- Nghĩa vụ nợ hiện tại: {existing_debt:,} VNĐ",
-            f"- Tổng nghĩa vụ nợ hàng tháng: {total_monthly_debt:,} VNĐ",
-            f"- Tỷ lệ nợ trên thu nhập (DTI): {dti} ({dti_percent}%)",
-            f"- Diễn giải công thức: {formula}",
-            f"- Căn cứ chính sách: CP-05 v1 (Quy định cách tính thu nhập đủ điều kiện và tỷ lệ DTI)",
-        ]
-        _DTI_DONE.add(app_id)
-        text = "\n".join(result_text)
-        critic_mod.record_dti(app_id, text)
+        text = compute_dti(app, annual_rate)
+        if not text.startswith("Error:"):
+            _DTI_DONE.add(app_id)
+            critic_mod.record_dti(app_id, text)
         return text
     
     except db.AppNotFound:
@@ -253,11 +267,13 @@ def submit_decision(
                 f"Với '{clean_decision}' chỉ được dùng: {', '.join(allowed)}."
             )
 
-        # Breaker đã kích hoạt: lối thoát DUY NHẤT là chuyển cấp có thẩm quyền xem xét.
         ev = critic_mod.get_evidence(clean_app_id) if _CRITIC is not None else None
         tripped = ev is not None and ev.critic_rejections >= ev.max_rejections
         final_reason = reason.strip()
-        if tripped:
+        # Breaker: chỉ ép escalate khi đã từng bị chặn vì thiếu bằng chứng cứng hoặc Critic bất đồng có trích dẫn.
+        # Nếu cả lịch sử chỉ là "Critic không xác minh được" (lỗi hạ tầng) thì không phạt quyết định.
+        escalate_only = tripped and any(s != "error" for s in ev.block_stages)
+        if escalate_only:
             if clean_decision != "escalate" or clean_codes != ["ESCALATE_MANAGER"]:
                 return (
                     f"Error: Critic đã chặn hồ sơ {clean_app_id} {ev.critic_rejections} lần và hết lượt sửa. "
@@ -279,20 +295,34 @@ def submit_decision(
                     ev,
                     db.get_application(clean_app_id),
                 )
-                if not verdict.ok:
+                if verdict.ok:
+                    # Đã tra nhưng quên trích dẫn: tự bổ sung (đã xác minh), không bắt Actor sửa.
+                    clean_cited += [d for d in verdict.cited_add if d not in clean_cited]
+                elif tripped and verdict.stage == "error":
+                    final_reason += " [CRITIC_UNVERIFIED: Critic không xác minh được quyết định này; cần người xem lại]"
+                else:
                     ev.critic_rejections += 1
+                    ev.block_stages.append(verdict.stage)
                     left = ev.max_rejections - ev.critic_rejections
-                    bullets = "\n".join(f"- {i}" for i in verdict.issues)
-                    tail = (
-                        "Hãy xử lý từng điểm (tra cứu bổ sung bằng search_policy với as_of_date = ngày nộp hồ sơ, "
-                        f"hoặc sửa decision/reason_codes/cited_docs/reason) rồi gọi lại submit_decision. Còn {left} lần sửa."
-                        if left > 0 else
-                        "Đã HẾT lượt sửa. Lần gọi submit_decision tiếp theo chỉ được chấp nhận với "
-                        "decision='escalate', reason_codes=['ESCALATE_MANAGER'] (giữ nguyên các tài liệu đã tra trong cited_docs)."
-                    )
+                    shown = [i if len(i) <= 170 else i[:167] + "..." for i in verdict.issues[:3]]
+                    if len(verdict.issues) > 3:
+                        shown.append(f"(+{len(verdict.issues) - 3} vấn đề khác)")
+                    bullets = "\n".join(f"- {i}" for i in shown)
+                    if left > 0:
+                        tail = (
+                            "Sửa rồi gọi lại submit_decision (search_policy với as_of_date = ngày nộp hồ sơ nếu thiếu "
+                            f"tài liệu, hoặc sửa decision/reason_codes). Còn {left} lần sửa."
+                        )
+                    elif any(s != "error" for s in ev.block_stages):
+                        tail = (
+                            "HẾT lượt sửa. Lần gọi tiếp theo chỉ nhận decision='escalate', "
+                            "reason_codes=['ESCALATE_MANAGER'] (giữ nguyên cited_docs)."
+                        )
+                    else:
+                        tail = "Critic tạm thời không xác minh được. Gọi lại submit_decision: quyết định sẽ được ghi kèm cờ chưa xác minh."
                     return (
                         f"Error: CRITIC_REJECT [{verdict.stage}] lần {ev.critic_rejections}/{ev.max_rejections}: "
-                        f"quyết định CHƯA được ghi. Critic chỉ ra:\n{bullets}\n{tail}"
+                        f"quyết định CHƯA được ghi.\n{bullets}\n{tail}"
                     )
 
         # 4. Tạo đối tượng Decision và gọi DB để ghi

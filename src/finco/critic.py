@@ -41,6 +41,7 @@ class SessionEvidence:
     dti_result_raw: str = ""                     # Kết quả từ calc_dti
     critic_rejections: int = 0
     max_rejections: int = 2                      # Circuit Breaker: tối đa 2 lần bắt bẻ
+    block_stages: list[str] = field(default_factory=list)  # tầng của từng lần bị chặn: "evidence" | "critic" | "error"
 
     def valid_retrievals(self) -> list[Retrieval]:
         """Chỉ tính đoạn tra ĐÚNG ngày nộp hồ sơ (sai ngày có thể trả nhầm phiên bản)."""
@@ -115,6 +116,7 @@ class Verdict:
     issues: list[str] = field(default_factory=list)
     stage: str = "pass"       # "evidence" | "critic" | "error" | "pass"
     warning: str = ""
+    cited_add: list[str] = field(default_factory=list)  # đã thấy nhưng Actor quên trích dẫn: server tự bổ sung
 
 
 _CITE = re.compile(r"([A-Za-z]+-\d+)(?:[\s@_\-(]*[vV](\d+))?")
@@ -148,8 +150,14 @@ def required_docs(decision: str, codes: list[str], app: Any) -> set[str]:
 
 
 # --------------------------------------------------------------------------- 3. Tầng 1: xác định
-def check_evidence(p: Proposal, ev: SessionEvidence, app: Any) -> list[str]:
+def check_evidence(p: Proposal, ev: SessionEvidence, app: Any) -> tuple[list[str], list[str]]:
+    """Trả (vấn đề CỨNG, mục cited_docs tự bổ sung).
+
+    Thiếu mục trong cited_docs là lỗi MỀM: tài liệu đã được xác minh là đã thấy nên server tự bổ sung,
+    không bắt Actor (nhất là model yếu) đi sửa rồi bị ép escalate vì lỗi hình thức.
+    """
     issues: list[str] = []
+    add: list[str] = []
     if not ev.app_data_raw:
         issues.append("Chưa gọi get_application cho hồ sơ này: quyết định không có dữ liệu hồ sơ làm căn cứ.")
 
@@ -184,12 +192,13 @@ def check_evidence(p: Proposal, ev: SessionEvidence, app: Any) -> list[str]:
                 f"gọi search_policy với as_of_date = {when}."
             )
         elif doc not in cited_ids:
-            issues.append(f"cited_docs thiếu {doc}: đã tra và đối chiếu thì phải trích dẫn.")
+            ver = max(seen[doc], key=lambda v: int(v[1:]) if v[1:].isdigit() else 0)
+            add.append(f"{doc} {ver}")
 
     if p.decision in ("approve", "escalate") or "DTI_EXCEEDED" in p.reason_codes:
         if not ev.dti_result_raw:
             issues.append("Chưa có kết quả calc_dti cho hồ sơ này.")
-    return issues
+    return issues, add
 
 
 # --------------------------------------------------------------------------- 4. Tầng 2: LLM
@@ -199,7 +208,7 @@ LlmFn = Callable[[list[dict[str, Any]]], str]
 def _default_llm(model: Optional[str], max_tokens: int) -> LlmFn:
     def run(messages: list[dict[str, Any]]) -> str:
         from finco.llm import call_llm  # import trễ: tools.py được test mà không cần SDK/khóa API
-        return call_llm(messages, tools=None, model=model, temperature=0.0, max_tokens=max_tokens).content
+        return call_llm(messages, tools=None, model=model, temperature=0.0, max_tokens=max_tokens, profile="critic").content
     return run
 
 
@@ -252,9 +261,11 @@ class Critic:
         return self._prompt
 
     def review(self, p: Proposal, ev: SessionEvidence, app: Any) -> Verdict:
-        issues = check_evidence(p, ev, app)
+        issues, add = check_evidence(p, ev, app)
         if issues:  # thiếu bằng chứng thì khỏi tốn token hỏi LLM
             return Verdict(False, issues, stage="evidence")
+        if add:  # LLM thấy đúng bộ trích dẫn sau khi bổ sung
+            p = Proposal(p.app_id, p.decision, p.reason, [*p.cited_docs, *add], p.reason_codes)
 
         messages = [
             {"role": "system", "content": self._system_prompt()},
@@ -270,7 +281,9 @@ class Critic:
                 last_err = f"{type(e).__name__}: {e}"
         if data is None:
             return Verdict(False, [f"Critic không xác minh được quyết định ({last_err})."], stage="error")
-        return self._judge(p, ev, data)
+        verdict = self._judge(p, ev, data)
+        verdict.cited_add = add
+        return verdict
 
     @staticmethod
     def _judge(p: Proposal, ev: SessionEvidence, data: dict[str, Any]) -> Verdict:
