@@ -1,0 +1,66 @@
+{
+  "questions": 37,
+  "passed": 15,
+  "pass_rate": 40.5,
+  "run_success_rate": 45.9,
+  "decision_accuracy": 17.4,
+  "root_cause_accuracy": 13.0,
+  "read_after_write_rate": 17.4,
+  "numbers_accuracy": 52.2,
+  "correct_refusal_rate": 75.0,
+  "false_refusal_rate": 0.0,
+  "faithfulness_rule_rate": 100.0,
+  "tool_error_rate": 0.0,
+  "avg_tool_calls": 1.68,
+  "avg_llm_calls": 2.0,
+  "total_prompt_tokens": 214786,
+  "total_completion_tokens": 18751,
+  "max_prompt_tokens": 6966,
+  "by_type": {
+    "tra cứu": {
+      "n": 2,
+      "passed": 2
+    },
+    "tổng hợp": {
+      "n": 2,
+      "passed": 2
+    },
+    "phiên bản": {
+      "n": 2,
+      "passed": 2
+    },
+    "tính toán": {
+      "n": 2,
+      "passed": 2
+    },
+    "thiếu dữ liệu": {
+      "n": 2,
+      "passed": 2
+    },
+    "no_answer": {
+      "n": 4,
+      "passed": 3
+    },
+    "hành động": {
+      "n": 2,
+      "passed": 1
+    },
+    "hồ sơ": {
+      "n": 21,
+      "passed": 1
+    }
+  },
+  "log_file": "C:\\RAG_VDP\\logs\\eval_20261014_202454.jsonl",
+  "model": "openai/gpt-oss-120b",
+  "generated_at": "2026-10-14T21:01:01",
+  "verifier": {
+    "total_cases": 5,
+    "pass_count": 3,
+    "overall_pass_rate": 60.0,
+    "decision_accuracy": 80.0,
+    "root_cause_accuracy": 60.0,
+    "citation_recall_avg": 76.6,
+    "trace_valid_rate": 80.0,
+    "math_valid_rate": 80.0
+  }
+}
