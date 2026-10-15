@@ -1,13 +1,5 @@
-"""Critic-agent: agent thứ hai, độc lập, đứng ở cổng submit_decision (nâng cấp của Mẫu 2).
-
-Khác `critic.Critic` (một lần gọi LLM đọc bằng chứng của Actor):
-  - có vòng lặp riêng (tối đa `max_steps` bước) và prompt riêng (prompts/critic_agent.txt);
-  - có tool riêng, CHỈ ĐỌC: get_application, search_policy, calc_dti (không có tool ghi);
-  - KHÔNG nhận bằng chứng của Actor, chỉ nhận đề xuất; tự tra cứu rồi tự suy ra quyết định đúng;
-  - kho bằng chứng riêng, không đụng trạng thái phiên của Actor (_ACTIVE_APP_ID, DTI đã tính...).
-
-Giữ nguyên hợp đồng `review(p, ev, app) -> Verdict` nên thay thế trực tiếp qua `tools.set_critic`.
-Tầng 1 (kiểm tra bằng chứng của Actor, 0 token) và luật "phản đối phải trích nguyên văn" dùng lại từ critic.py.
+"""
+Handoff và State theo chuẩn Production-grade (Kỹ thuật phần mềm thực chiến) --> Tool-Mediated Handoff
 """
 
 import json

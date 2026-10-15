@@ -1,0 +1,13 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+T02,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,3107,358,1916,,
+V01,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,3138,468,1945,,
+C02,tính toán,APP-014,False,True,,,,,True,False,False,False,True,False,3,0,4,6957,542,2311,,thiếu ý: 6417491
+N01,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,3057,529,1870,,
+N04,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,3085,353,1892,,
+APP-001,hồ sơ,APP-001,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,33348,2368,6345,,
+APP-004,hồ sơ,APP-004,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,16019,1192,4261,,
+APP-007,hồ sơ,APP-007,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,11410,654,3488,,
+APP-010,hồ sơ,APP-010,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,15720,917,4105,,
+APP-013,hồ sơ,APP-013,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,11455,917,3532,,
+APP-016,hồ sơ,APP-016,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,32613,2529,6351,,
+APP-019,hồ sơ,APP-019,False,True,True,True,True,True,False,,False,False,True,True,7,0,7,26021,1939,5154,,Thiếu luật trích dẫn (Recall: 0.75 < 0.8)
