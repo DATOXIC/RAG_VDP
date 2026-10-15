@@ -6,14 +6,21 @@ Thành phần: RAG (dense + hybrid BM25, lọc theo ngày hiệu lực) · vòng
 
 ## Chạy nhanh
 
+**Lệnh chạy duy nhất để tái lập demo** (từ máy sạch, sau khi điền `.env`):
+
+```bash
+make all        # = make setup + make demo
+make eval       # tái lập kết quả đánh giá: 37 ca (16 câu hỏi + 21 hồ sơ), chấm tự động
+```
+
 Yêu cầu: Python 3.11+, có mạng ở lần đầu (tải mô hình embedding `BAAI/bge-m3`, ~2 GB), khóa API LLM của một endpoint tương thích OpenAI (mặc định Groq; xem mục "Mô hình và endpoint").
 
 ```bash
 cp .env.example .env        # điền GROQ_API_KEY (hoặc OPENAI_API_KEY + OPENAI_BASE_URL)
-make setup && make demo
+make all                    # tương đương: make setup && make demo
 ```
 
-Không có `make` (Windows): dùng thẳng `python run.py`.
+Không có `make` (Windows): `python run.py all` (demo) và `python run.py eval` (37 ca) là hai lệnh tương đương.
 
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt   # Linux/macOS: .venv/bin/python
@@ -24,13 +31,20 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 | Lệnh | Việc làm |
 |---|---|
 | `make setup` | tạo venv, cài thư viện, tạo DB hồ sơ, tải/nạp mô hình embedding, kiểm tra khóa API |
+| `make all` | `make setup` rồi `make demo`: một lệnh tái lập demo từ máy sạch |
 | `make demo` | thẩm định APP-014 và APP-015 (cùng số liệu, khác ngày nộp → v1 duyệt, v2 từ chối) + một câu hỏi ngoài tài liệu; in bảng chấm. Đổi hồ sơ: `make demo APPS="APP-003 APP-018"` |
 | `make run` | REPL tương tác: `list`, `APP-xxx`, `ask <câu hỏi>`, `history`, `audit <mã>` |
-| `make eval` | chạy `tests/testset.jsonl` (16 câu, 4 `no_answer`), ghi `logs/eval_*.jsonl` và `eval/out/*` |
-| `make eval ARGS="--apps"` | thêm cả 21 hồ sơ, so với `tests/expected_decisions.json` |
+| `make eval` | chạy đủ **37 ca**: `tests/testset.jsonl` (16 câu, 4 `no_answer`) + 21 hồ sơ so với `tests/expected_decisions.json`; ghi `logs/eval_*.jsonl` và `eval/out/*` |
+| `make eval ARGS=""` | chỉ 16 câu hỏi, không chạy hồ sơ |
+| `make interop` | host thứ hai: client JSON-RPC thuần gọi MCP server (không cần khóa API) |
 | `make eval-score LOG=logs/eval_X.jsonl` | chấm lại một log đã có, **không gọi LLM** |
 | `make retrieval-eval` | đo riêng tầng truy xuất (recall@k, MRR), không cần khóa API |
+| `make check` | gộp phần **không cần khóa API**: `test` + `retrieval-eval` + `interop` + chấm lại log chính (`CHECK_LOG=logs/...`) |
 | `make test` | toàn bộ test offline (agent giả, chấm điểm, MCP, truy xuất): không tốn lượt gọi LLM |
+
+### Chấm lại kết quả đã nộp, không cần khóa API
+
+`logs/eval_*.jsonl` là log của các lần chạy thật (mỗi dòng một bước: tool, tham số, kết quả, USAGE). Muốn kiểm tra điểm số mà không gọi LLM: `make eval-score LOG=logs/eval_<thời gian>.jsonl` dựng lại bảng chấm và `eval/out/*` từ log đó bằng code. `make eval` (gọi LLM thật) chỉ cần khi chạy lại từ đầu; kết quả có thể lệch vài ca giữa các lần vì LLM không tất định.
 
 Giới hạn tốc độ của API: `make eval ARGS="--pace 8"` nghỉ 8 giây giữa các câu; log được ghi ngay sau mỗi câu nên bị ngắt giữa chừng vẫn chạy tiếp được bằng `ARGS="--resume logs/eval_X.jsonl"`.
 
@@ -86,6 +100,7 @@ RAG: chunk theo mục `##` của Markdown (một mục = một điều kiện ho
 
 ## Log và kết quả
 
+- **Chỉ mục toàn bộ log (cấu hình, vai trò, cách chấm lại): `logs/README.md`.**
 - `logs/run_<run_id>.jsonl`: mỗi lượt REPL một file. `logs/eval_<thời gian>.jsonl` và `logs/demo_<thời gian>.jsonl`: gộp nhiều câu.
 - Mỗi dòng: `ts, run_id, question_id, step, tool, args, result, usage{calls, prompt_tokens, completion_tokens, max_prompt}, cache_hit`. `usage` là mức dùng **tích lũy tại bước đó**. Dòng cuối mỗi câu có `tool = "__answer__"` chứa câu trả lời và USAGE của cả câu (kể cả câu không gọi tool nào).
 - `eval/out/per_question.csv`, `eval/out/summary.json`, `eval/out/summary.png`: kết quả từng câu và tổng hợp (độ đúng quyết định, đúng mã lý do, tỷ lệ từ chối đúng/nhầm, faithfulness theo luật, token).

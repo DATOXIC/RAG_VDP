@@ -2,8 +2,9 @@
 
     python run.py setup                 # tạo DB hồ sơ, tải mô hình embedding, kiểm tra khóa API
     python run.py demo [APP-ID ...]     # chạy thẩm định mẫu + một câu hỏi ngoài tài liệu, in bảng chấm
+    python run.py all                   # = setup + demo (một lệnh tái lập demo)
     python run.py                       # REPL tương tác (chat)
-    python run.py eval [tham số ...]    # = python eval/run_eval.py (xem --help)
+    python run.py eval [tham số ...]    # = python eval/run_eval.py; không tham số = đủ 37 ca (--apps)
 """
 
 from __future__ import annotations
@@ -101,10 +102,13 @@ def main(argv: list[str]) -> int:
         return cmd_setup()
     if cmd == "demo":
         return cmd_demo([a.upper() for a in rest] or DEFAULT_DEMO_APPS)
+    if cmd == "all":
+        code = cmd_setup()
+        return code if code else cmd_demo(DEFAULT_DEMO_APPS)
     if cmd == "eval":
         from eval.run_eval import main as eval_main
 
-        return eval_main(rest)
+        return eval_main(rest or ["--apps"])
     if cmd in ("chat", "run"):
         from finco.chat import main as chat_main
 

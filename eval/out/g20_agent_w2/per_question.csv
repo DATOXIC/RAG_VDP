@@ -1,0 +1,10 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+T02,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,2835,303,1644,,
+V02,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,3084,386,1884,,
+M02,thiếu dữ liệu,APP-004,True,True,,,,,True,True,False,False,True,True,7,1,8,25222,2243,4150,,
+N04,no_answer,,True,True,,,,,,,True,True,True,False,4,0,5,10436,569,3012,,
+APP-002,hồ sơ,APP-002,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,27886,1939,5110,,
+APP-006,hồ sơ,APP-006,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33353,2398,5648,,
+APP-010,hồ sơ,APP-010,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,14358,969,3565,,
+APP-014,hồ sơ,APP-014,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33573,2536,5560,,
+APP-018,hồ sơ,APP-018,False,True,True,False,True,True,True,,False,False,True,True,13,2,13,58448,3372,7135,,Sai mã lý do (AI: ['ESCALATE_MANAGER'] != Chuẩn: ['ESCALATE_EMPLOYEE'])

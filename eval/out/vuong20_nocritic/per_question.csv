@@ -1,0 +1,38 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+T01,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,2822,465,1657,,
+T02,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,2796,349,1629,,
+S01,tổng hợp,,False,True,,,,,False,False,False,False,True,False,1,0,2,2895,588,1711,,"thiếu ý: CCCD, DKKD, SK_TK_6T; trích dẫn chưa đủ: có ['CP-03@v1', 'CP-16@v1'], cần ['CP-03', 'CP-02']"
+S02,tổng hợp,,False,True,,,,,False,True,False,False,True,False,1,0,2,2916,509,1742,,"trích dẫn chưa đủ: có ['CP-15@v1', 'CP-16@v1'], cần ['CP-06', 'CP-04']"
+V01,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,2921,430,1752,,
+V02,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,2760,286,1584,,
+C01,tính toán,APP-001,False,True,,,,,False,True,False,False,True,False,3,0,4,6410,311,2071,,"trích dẫn chưa đủ: có ['CP-05@v1'], cần ['CP-03', 'CP-05']"
+C02,tính toán,APP-014,False,True,,,,,True,False,False,False,True,False,3,0,4,6446,1153,2086,,thiếu ý: 6417491
+M01,thiếu dữ liệu,APP-021,True,True,,,,,True,True,False,False,True,True,7,1,8,25081,1859,4051,,
+M02,thiếu dữ liệu,APP-004,True,True,,,,,True,True,False,False,True,True,4,0,5,13541,1613,3224,,
+N01,no_answer,,False,True,,,,,,,True,False,True,False,1,0,2,2983,765,1820,,không từ chối dù tài liệu không có thông tin
+N02,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2666,1253,1505,,
+N03,no_answer,,True,True,,,,,,,True,True,True,False,2,0,3,4969,699,2145,,
+N04,no_answer,,True,True,,,,,,,True,True,True,False,3,0,4,7594,463,2644,,
+A01,hành động,APP-015,True,True,True,True,True,True,True,,False,False,True,True,11,0,11,43565,1711,5963,,
+A02,hành động,APP-018,False,True,True,False,True,True,True,,False,False,True,True,11,0,11,44477,1950,6231,,Sai mã lý do (AI: ['ESCALATE_COUNCIL'] != Chuẩn: ['ESCALATE_EMPLOYEE'])
+APP-001,hồ sơ,APP-001,True,True,True,True,True,True,True,,False,False,True,True,10,0,10,38149,1698,5791,,
+APP-002,hồ sơ,APP-002,True,True,True,True,True,True,True,,False,False,True,True,12,1,12,48385,2026,6440,,
+APP-003,hồ sơ,APP-003,False,False,False,False,False,False,False,,False,False,True,False,4,0,4,10630,348,3147,"Lỗi gọi LLM: EmptyResponseError: LLM trả về nội dung rỗng, finish_reason='stop'.",Sai quyết định (AI: 'none' != Chuẩn: 'reject'); Sai mã lý do (AI: không có != Chuẩn: ['DTI_EXCEEDED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.6304); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.17)
+APP-004,hồ sơ,APP-004,True,True,True,True,True,True,True,,False,False,True,True,10,0,10,36561,1535,5600,,
+APP-005,hồ sơ,APP-005,False,True,True,True,True,True,False,,False,False,True,True,9,0,9,33046,1118,5391,,Thiếu luật trích dẫn (Recall: 0.50 < 0.8)
+APP-006,hồ sơ,APP-006,False,False,False,False,False,False,False,,False,False,True,False,5,0,5,14279,381,3628,"Lỗi gọi LLM: EmptyResponseError: LLM trả về nội dung rỗng, finish_reason='stop'.",Sai quyết định (AI: 'none' != Chuẩn: 'approve'); Sai mã lý do (AI: không có != Chuẩn: ['APPROVED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.2473); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.17)
+APP-007,hồ sơ,APP-007,False,False,False,False,False,True,False,,False,False,True,False,4,0,4,10612,309,3137,"Lỗi gọi LLM: RuntimeError: Gọi LLM thất bại sau 4 lần thử lại do lỗi InternalServerError (HTTP 500): Error code: 500 - {'error': {'message': 'error parsing tool call: raw=\'Need CP-03 for interest rate.{""as_of_date"":""2025-04-20"",""query"":""Biểu lãi suất và phí sản phẩm FinCo Easy: lãi suất theo kỳ hạn vay"",""thought"":""Need CP-03 for interest rate.""}\', err=invalid character \'N\' looking for beginning of value', 'type': 'api_error', 'param': None, 'code': None}}",Sai quyết định (AI: 'none' != Chuẩn: 'reject'); Sai mã lý do (AI: không có != Chuẩn: ['AGE']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision
+APP-008,hồ sơ,APP-008,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33394,1200,5497,,
+APP-009,hồ sơ,APP-009,False,False,False,False,False,False,False,,False,False,True,False,4,0,4,10627,342,3146,"Lỗi gọi LLM: EmptyResponseError: LLM trả về nội dung rỗng, finish_reason='stop'.",Sai quyết định (AI: 'none' != Chuẩn: 'approve'); Sai mã lý do (AI: không có != Chuẩn: ['APPROVED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.1964); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.155)
+APP-010,hồ sơ,APP-010,True,True,True,True,True,True,True,,False,False,True,True,10,1,10,35397,1504,5048,,
+APP-011,hồ sơ,APP-011,True,True,True,True,True,True,True,,False,False,True,True,11,0,11,43386,1972,6054,,
+APP-012,hồ sơ,APP-012,False,False,False,False,False,True,False,,False,False,True,False,15,1,15,75880,1872,9335,Vượt quá MAX_STEPS (15) mà chưa có câu trả lời cuối.,Sai quyết định (AI: 'none' != Chuẩn: 'escalate'); Sai mã lý do (AI: không có != Chuẩn: ['ESCALATE_COUNCIL']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision
+APP-013,hồ sơ,APP-013,True,True,True,True,True,True,True,,False,False,True,True,11,0,11,44111,1279,5939,,
+APP-014,hồ sơ,APP-014,True,True,True,True,True,True,True,,False,False,True,True,10,0,10,38434,1635,5805,,
+APP-015,hồ sơ,APP-015,False,False,False,False,False,False,False,,False,False,True,False,8,0,8,27168,578,4906,"Lỗi gọi LLM: EmptyResponseError: LLM trả về nội dung rỗng, finish_reason='stop'.",Sai quyết định (AI: 'none' != Chuẩn: 'reject'); Sai mã lý do (AI: không có != Chuẩn: ['DTI_EXCEEDED']); Thiếu luật trích dẫn (Recall: 0.00 < 0.8); Lỗi quy trình: chưa gọi submit_decision; Sai DTI (AI: None != Chuẩn: 0.4709); Thiếu thông tin lãi suất sử dụng (Chuẩn: 0.17)
+APP-016,hồ sơ,APP-016,True,True,True,True,True,True,True,,False,False,True,True,12,1,12,46885,1792,6233,,
+APP-017,hồ sơ,APP-017,True,True,True,True,True,True,True,,False,False,True,True,10,1,10,35594,1175,5266,,
+APP-018,hồ sơ,APP-018,False,True,True,False,True,True,True,,False,False,True,True,10,0,10,37826,1797,5646,,Sai mã lý do (AI: ['ESCALATE_COUNCIL'] != Chuẩn: ['ESCALATE_EMPLOYEE'])
+APP-019,hồ sơ,APP-019,True,True,True,True,True,True,True,,False,False,True,True,11,1,11,40718,1619,5522,,
+APP-020,hồ sơ,APP-020,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,32728,1028,5408,,
+APP-021,hồ sơ,APP-021,True,True,True,True,True,True,True,,False,False,True,True,7,1,7,21360,993,3933,,

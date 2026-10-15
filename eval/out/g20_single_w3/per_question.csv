@@ -1,0 +1,10 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+S01,tổng hợp,,False,True,,,,,False,False,False,False,True,False,2,0,3,5278,881,2336,,"thiếu ý: CCCD, DKKD, SK_TK_6T; trích dẫn chưa đủ: có ['CP-03@v1', 'CP-16@v1'], cần ['CP-03', 'CP-02']"
+C01,tính toán,APP-001,False,True,,,,,False,True,False,False,True,False,3,0,4,6306,559,1998,,"trích dẫn chưa đủ: có ['CP-05@v1'], cần ['CP-03', 'CP-05']"
+N01,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2860,581,1673,,
+A01,hành động,APP-015,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33481,2167,5464,,
+APP-003,hồ sơ,APP-003,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33538,2055,5477,,
+APP-007,hồ sơ,APP-007,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,10846,778,3244,,
+APP-011,hồ sơ,APP-011,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,33282,2090,5547,,
+APP-015,hồ sơ,APP-015,True,True,True,True,True,True,True,,False,False,True,True,10,1,10,38366,2415,5513,,
+APP-019,hồ sơ,APP-019,True,True,True,True,True,True,True,,False,False,True,True,7,0,7,22625,1347,4284,,
