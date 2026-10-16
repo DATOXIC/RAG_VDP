@@ -6,14 +6,16 @@ from finco.rag.retriever import retrieve_hits
 from finco.store import db
 from finco.types import REASON_CODES, REASON_CODES_BY_DECISION, Decision
 
-
+# Kéo dài mỗi lượt Chat
 _CURRENT_APP_DATE: dict[str, str] = {}  # {app_id: submitted_date}
 _ACTIVE_APP_ID: Optional[str] = None
-_CRITIC: Optional[critic_mod.Critic] = None  # None = không chốt chặn (mặc định khi gọi tools trực tiếp)
+
+# Kéo dài khi hết chương trình
+_CRITIC: Optional[critic_mod.Critic] = None 
 
 
 def set_critic(c: Optional[critic_mod.Critic]) -> None:
-    """Bật/tắt Critic nhúng trong submit_decision. MCP server bật lúc khởi động."""
+    """Bật/tắt Critic trong submit_decision. MCP server bật lúc khởi động."""
     global _CRITIC
     _CRITIC = c
 
@@ -30,17 +32,20 @@ def reset_session_state() -> None:
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
     actual_k = max(1, min(int(top_k or 3), 5))
     clean_date = str(as_of_date).strip() if as_of_date is not None else ""
+
     if clean_date.lower() in ("none", "null", "undefined", ""):
         clean_date = _CURRENT_APP_DATE.get(_ACTIVE_APP_ID or "", "")
+
     as_of = clean_date or None
     text, hits = retrieve_hits(query=query, as_of_date=as_of, top_k=actual_k)
+
     if hits:
         critic_mod.record_retrieval(_ACTIVE_APP_ID, hits, as_of)
     return text
 
 
 def render_application(app) -> str:
-    """Định dạng hồ sơ thành văn bản cho LLM (dùng chung cho get_application và critic-agent)."""
+    """Định dạng hồ sơ thành văn bản cho LLM."""
     if app.existing_debt_monthly is None:
         debt = "Chưa khai báo (None)"
     else:
@@ -177,6 +182,7 @@ def calc_dti(app_id: str, annual_rate: str) -> str:
         app = db.get_application(app_id)
 
         text = compute_dti(app, annual_rate)
+        
         if not text.startswith("Error:"):
             _DTI_DONE.add(app_id)
             critic_mod.record_dti(app_id, text)

@@ -20,7 +20,9 @@ Chi tiết cấu hình và số liệu: `docs/ket-qua-danh-gia.md`.
 | D | Qwen2.5-7B | critic một lần gọi, bản đã sửa (v2) | `eval_local_critic_v2_merged.jsonl` | gộp 3 shard 18:05 ngày 15/10 và lần chạy lại |
 | E | Qwen2.5-14B (vLLM, Colab) | không | `eval_qwen2.5-14b_full.jsonl` | gộp từ 3 file 20:45–20:52 ngày 13/10 |
 | F | gpt-oss-20b (Groq) | không | `eval_gptoss_final.jsonl` | chỉ 16 câu testset (một phần) |
-| G, H, I | gpt-oss-20b | không / single / agent | (đang chạy ngày 16/10) | sẽ thêm khi xong |
+| G | gpt-oss:20b (Ollama) | không | `eval_20261016_011437.jsonl` | 23/37 |
+| H | gpt-oss-20b (Groq) | không | `eval_20261016_021534`, `_021539`, `_021544`, `_021549` | 4 shard đã `--resume`; 33/37 |
+| I, J | gpt-oss-20b (Groq) | single (I) / agent (J), Gemini | `eval_20261016_014856`, `_014901`, `_014906`, `_014911` | **hai cấu hình ghi chung** vào các file này (trùng tên); điểm tính từ `eval/out/g20_single_w*` và `g20_agent_w*`: 32/37 mỗi cấu hình |
 
 ## 2. Các lần chạy lịch sử đủ 37 ca (không dùng làm số liệu chính)
 

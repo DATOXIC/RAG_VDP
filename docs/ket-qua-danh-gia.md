@@ -19,6 +19,10 @@ Các model và cấu hình đã chạy, cùng prompt, cùng RAG, cùng bộ côn
 | D | `Qwen/Qwen2.5-7B-Instruct-AWQ` | critic một lần gọi (chính nó), bản đã sửa | như C | `logs/eval_local_critic_v2_merged.jsonl` |
 | E | `Qwen/Qwen2.5-14B-Instruct-AWQ` | không | như C | `logs/eval_qwen2.5-14b_full.jsonl` |
 | F | `openai/gpt-oss-20b` | không | Groq (chỉ 16 câu testset) | `logs/eval_gptoss_final.jsonl` |
+| G | `gpt-oss:20b` | không | Ollama (máy riêng của đồng đội, 16/10) | `logs/eval_20261016_011437.jsonl` |
+| H | `openai/gpt-oss-20b` | không | Groq | `logs/eval_20261016_0215{34,39,44,49}.jsonl` (4 shard, đã `--resume`) |
+| I | `openai/gpt-oss-20b` | critic một lần gọi `gemini-3.1-flash-lite` | Groq + Google AI Studio | `logs/eval_20261016_0148{56,01,06,11}.jsonl` (lẫn với J) |
+| J | `openai/gpt-oss-20b` | critic-agent `gemini-3.1-flash-lite` | như I | như I |
 
 Critic là một chốt chặn nhúng trong tool `submit_decision` (xem `src/finco/critic.py`, `src/finco/critic_agent.py`): Tầng 1 kiểm tra bằng chứng bằng code (không tốn token); Tầng 2 là LLM tự suy ra quyết định đúng rồi code so sánh, và mọi phản đối phải trích dẫn nguyên văn từ bằng chứng thì mới được chặn. Critic-agent là bản nâng cấp: một agent thứ hai có vòng lặp riêng và ba tool chỉ-đọc (`get_application`, `search_policy`, `calc_dti`), tự tra cứu độc lập chứ không đọc bằng chứng của Actor, và bị ép tự tính DTI trước khi kết luận nếu quyết định phụ thuộc DTI. Sau 2 lần bị chặn, Actor chỉ còn được ghi `escalate`.
 
@@ -97,6 +101,26 @@ Hoạt động của critic-agent trong 32 lần thẩm tra:
 
 Ba chỉnh sửa (không chặn vì quên trích dẫn mà tự bổ sung, giới hạn nội dung phản hồi, và không phạt Actor khi critic chỉ lỗi hạ tầng) đưa critic từ gây hại rõ ràng về gần mức không critic, nhưng chưa vượt.
 
+### 2.3. Actor yếu hơn: gpt-oss-20b (G, H, I, J)
+
+Mục đích: kiểm tra critic trên một Actor còn dư địa sai (120b đã đúng quyết định 21/21 nên không có chỗ để critic cải thiện). Cả bốn cấu hình chạy đủ 37 ca.
+
+| Cấu hình | Nơi chạy | Critic | Đạt toàn diện | Chạy xong | Prompt + completion token của Actor |
+|---|---|---|---|---|---|
+| G | Ollama | không | 23/37 (62,2%) | 31/37 | 930.617 |
+| **H** | Groq | không | **33/37** | 37/37 | 704.410 |
+| I | Groq | một lần gọi (Gemini) | 32/37 | 37/37 | 750.222 |
+| J | Groq | critic-agent (Gemini) | 32/37 | 36/37 | 759.339 |
+
+Đọc kết quả:
+
+- **Critic không cải thiện.** So với H (cùng model, cùng nơi chạy, chỉ khác critic): I và J mỗi cấu hình hơn **0** ca và làm hỏng **1** ca (S01). S01 là câu hỏi đáp **không đi qua critic**, nên chênh lệch này là nhiễu chứ không phải tác động của critic. Chênh lệch tổng 33 so với 32 nằm trong sai số (±3 ca).
+- **Thứ tạo khác biệt lớn là môi trường chạy.** Cùng một model 20b, G (Ollama) chỉ đạt 23/37, còn H (Groq) đạt 33/37, chênh 10 ca; G trượt 14 ca, H trượt 4 ca (A02, APP-018, C01, C02). Nguyên nhân chưa được tách rõ (lượng tử hóa, mẫu chat, ngữ cảnh), nên **không nên so G với I, J để kết luận về critic**: chênh lệch 23 so với 32 gần như hoàn toàn do nơi chạy. Đây chính là lý do phải có cấu hình H làm mốc đối chứng cùng nền tảng.
+- Critic chỉ làm tăng nhẹ token của Actor (+6,5% cho một lần gọi, +7,8% cho critic-agent); chưa tính token của Gemini cho critic.
+- Critic-agent trên 20b hoạt động đúng thiết kế (25 lần đồng ý, 3 lần chặn) nhưng ba lần chặn vẫn không biến ca sai thành đúng.
+- Kết quả của H có hai ca đầu bị lỗi hạ tầng "hết hạn mức token/ngày" (APP-016, APP-019), đã chạy lại riêng hai ca đó bằng `--resume` trên key khác; các ca đã xong không bị chạy lại. Các key Groq dùng chung hạn mức token của tổ chức, nên thêm key không tăng thông lượng.
+- Log của I và J **ghi chung vào các file** `eval_20261016_0148xx.jsonl` do hai lần chạy khởi động cùng giây và trùng tên file. Điểm số không bị ảnh hưởng (mỗi tiến trình tự chấm và ghi CSV riêng ở `eval/out/g20_single_w*`, `eval/out/g20_agent_w*`), nhưng `make eval-score` trên các file này sẽ lẫn hai cấu hình.
+
 ## 3. Phân tích lỗi
 
 ### 3.1. Model nhỏ: lỗi tuân thủ quy trình
@@ -136,7 +160,7 @@ Quan sát có kiểm chứng: critic-agent thật sự độc lập (tự đọc
 ## 4. Hạn chế
 
 - **Một lần chạy mỗi cấu hình**, nên chưa đo được độ biến thiên. Với 37 mẫu, khoảng sai số 95% của một tỉ lệ khoảng ±13 điểm phần trăm; các chênh lệch 1 đến 3 ca (như 34 so với 32) nằm trong nhiễu và không có ý nghĩa thống kê. Kết luận A/B chỉ nên đọc là "không thấy cải thiện", không phải "critic có hại".
-- **Chưa có kết quả hồ sơ đủ cho `gpt-oss-20b`.** Lần chạy 21 hồ sơ bị giới hạn token của gói miễn phí (HTTP 429), nên số liệu của model này chỉ có trên 16 câu testset. Nhánh critic một lần gọi trên `gpt-oss-120b` cũng chưa chạy đủ vì cùng lý do.
+- **Kết quả gpt-oss-20b phụ thuộc môi trường chạy:** cùng model nhưng Ollama (G) đạt 23/37 còn Groq (H) đạt 33/37 (xem mục 2.3). Cấu hình critic của 20b chỉ so sánh được với H, không so với G.
 - **Giới hạn hạ tầng ảnh hưởng kết quả:** HTTP 413 do request vượt 8.000 token mỗi phút (gói `on_demand`) làm hỏng ca dài như APP-011, APP-016, APP-018; HTTP 429 và hết hạn mức token/ngày làm kéo dài thời gian. Đây là lỗi hạ tầng, không phải lỗi model, nhưng có thể làm lệch số liệu giữa các nhánh.
 - **Các model chạy trên các nền tảng khác nhau** (Groq, Colab T4), nên so sánh theo kích thước chỉ mang tính định hướng; chưa có "thang kích thước" cùng họ trên cùng nền tảng.
 - **Critic và Actor dùng model khác họ ở cấu hình B** nên chỉ giảm được một phần lỗi tương quan; ở cấu hình D thì dùng chung model nên lỗi có thể tương quan.
@@ -148,7 +172,7 @@ Quan sát có kiểm chứng: critic-agent thật sự độc lập (tự đọc
 Hệ thống vận hành đúng từ đầu đến cuối trên model thật (MCP, tra cứu, ghi và đọc lại, log có USAGE, chấm điểm tự động). Kết luận chính:
 
 1. **Chất lượng model quyết định kết quả.** gpt-oss-120b đạt 92%, Qwen nhỏ đạt 22 đến 27%; lỗi của model nhỏ là lỗi tuân thủ quy trình, không phải thiếu kiến thức chính sách.
-2. **Critic chưa cho thấy lợi ích đo được.** Cả critic một lần gọi lẫn critic-agent đều không vượt nhánh không critic, và critic-agent tốn thêm khoảng 61% prompt token. Với Actor yếu, critic cũng không cứu được vì lỗi nằm ở bước hành động; với Actor mạnh, không còn chỗ để cải thiện.
+2. **Critic chưa cho thấy lợi ích đo được, trên cả Actor mạnh lẫn Actor vừa.** Trên gpt-oss-20b (Groq), không critic đạt 33/37, critic một lần gọi và critic-agent cùng đạt 32/37 (mục 2.3). Cả critic một lần gọi lẫn critic-agent đều không vượt nhánh không critic, và critic-agent tốn thêm khoảng 61% prompt token. Với Actor yếu, critic cũng không cứu được vì lỗi nằm ở bước hành động; với Actor mạnh, không còn chỗ để cải thiện.
 3. **Cấu hình mặc định nên là không critic** (`FINCO_CRITIC=0`) cho đến khi có bằng chứng ngược lại; critic-agent giữ lại như một cấu hình thí nghiệm có tài liệu (`FINCO_CRITIC_MODE=agent`, `FINCO_CRITIC_PROVIDER=gemini`).
 
 Hướng tiếp theo, theo thứ tự đáng làm: (a) chạy lặp lại cấu hình A và B đủ nhiều lần để đo độ biến thiên thật; (b) sửa gốc lỗi mã lý do của nhánh nhân viên (APP-018, A02) bằng quy tắc rõ trong prompt và đo lại; (c) thử critic mạnh hơn hoặc cùng họ với Actor, và cho critic xác minh riêng mã lý do thay vì chỉ quyết định; (d) làm thang kích thước cùng họ trên cùng nền tảng (ví dụ `gpt-oss-20b` và `120b`, hoặc Llama 8B và 70B) để kết luận đúng về ảnh hưởng của số tham số.

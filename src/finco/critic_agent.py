@@ -70,7 +70,7 @@ TOOL_SPECS: tuple[ToolSpec, ...] = (
 )
 
 
-# --------------------------------------------------------------------------- Tool chạy trong tiến trình
+# Tool chạy trong tiến trình
 @dataclass
 class Toolbox:
     """Ba tool đọc. Tiêm giả khi test; mặc định dùng DB + retriever thật nhưng KHÔNG ghi bằng chứng của Actor."""
@@ -104,7 +104,7 @@ def local_toolbox() -> Toolbox:
     return Toolbox(get_app, search, dti)
 
 
-# --------------------------------------------------------------------------- Agent
+# Agent
 StepFn = Callable[[list[dict[str, Any]], Optional[list[dict[str, Any]]]], Any]  # -> llm.ChatTurn
 
 

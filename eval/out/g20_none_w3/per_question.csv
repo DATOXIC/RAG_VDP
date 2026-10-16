@@ -1,0 +1,10 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+S01,tổng hợp,,True,True,,,,,True,True,False,False,True,False,3,0,4,7434,964,2504,,
+C01,tính toán,APP-001,False,True,,,,,False,True,False,False,True,False,3,0,4,6489,545,2088,,"trích dẫn chưa đủ: có ['CP-05@v1'], cần ['CP-03', 'CP-05']"
+N01,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2857,538,1670,,
+A01,hành động,APP-015,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,27633,1676,4823,,
+APP-003,hồ sơ,APP-003,True,True,True,True,True,True,True,,False,False,True,True,16,0,8,27784,1709,4920,,
+APP-007,hồ sơ,APP-007,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,10782,758,3180,,
+APP-011,hồ sơ,APP-011,True,True,True,True,True,True,True,,False,False,True,True,29,0,10,39559,3054,6229,,
+APP-015,hồ sơ,APP-015,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,27801,1608,4918,,
+APP-019,hồ sơ,APP-019,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,27939,2034,5036,,

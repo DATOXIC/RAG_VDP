@@ -106,14 +106,19 @@ def get_decision(app_id: str) -> str:
 if __name__ == "__main__":
     from finco.store import db
     db.init_db()
+    
     if os.getenv("FINCO_CRITIC", "1").strip() != "0":
+
         mode = os.getenv("FINCO_CRITIC_MODE", "single").strip().lower()
-        if mode == "agent":  # critic là agent thứ hai: vòng lặp + tool đọc riêng, tự tra cứu độc lập
+
+        if mode == "agent": 
             from finco.critic_agent import from_env
             tools.set_critic(from_env())
-        else:                # một lần gọi LLM đọc bằng chứng của Actor
+        else:                
             from finco.critic import Critic
             tools.set_critic(Critic(model=os.getenv("FINCO_CRITIC_MODEL") or None))
+
         logger.info(f"Critic chốt chặn submit_decision: BẬT, chế độ '{mode}' (FINCO_CRITIC=0 để tắt).")
+    
     logger.info("MCP Server FinCo đang khởi động qua stdio transport...")
     mcp.run(transport="stdio")

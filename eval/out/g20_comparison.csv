@@ -1,0 +1,39 @@
+﻿id,type,G_ollama_none_passed,G_ollama_none_decision_ok,G_ollama_none_tokens,H_groq_none_passed,H_groq_none_decision_ok,H_groq_none_tokens,I_groq_single_passed,I_groq_single_decision_ok,I_groq_single_tokens,J_groq_agent_passed,J_groq_agent_decision_ok,J_groq_agent_tokens
+T01,tra cứu,True,,3287,True,,3651,True,,3618,True,,3618
+T02,tra cứu,True,,3145,True,,3138,True,,3154,True,,3138
+S01,tổng hợp,False,,3483,True,,8398,False,,6159,False,,6304
+S02,tổng hợp,False,,3425,True,,3881,True,,3877,True,,3875
+V01,phiên bản,True,,3351,True,,3288,True,,3487,True,,3440
+V02,phiên bản,True,,3046,True,,3475,True,,3172,True,,3470
+C01,tính toán,False,,6721,False,,7034,False,,6865,False,,6884
+C02,tính toán,False,,7599,False,,7063,False,,7038,False,,7039
+M01,thiếu dữ liệu,True,,26940,True,,12441,True,,23572,True,,23758
+M02,thiếu dữ liệu,True,,15154,True,,15205,True,,23091,True,,27465
+N01,no_answer,False,,3748,True,,3395,True,,3441,True,,3397
+N02,no_answer,True,,3919,True,,3406,True,,3564,True,,3309
+N03,no_answer,True,,5668,True,,5986,True,,5987,True,,5987
+N04,no_answer,True,,8057,True,,13114,True,,13141,True,,11005
+A01,hành động,True,True,45276,True,True,29309,True,True,35648,True,True,29355
+A02,hành động,False,True,46427,False,False,35724,False,True,41557,False,False,35448
+APP-001,hồ sơ,True,True,39847,True,True,36246,True,True,35528,True,True,36167
+APP-002,hồ sơ,True,True,50411,True,True,35844,True,True,30125,True,True,29825
+APP-003,hồ sơ,False,False,10978,True,True,29493,True,True,35593,True,True,24292
+APP-004,hồ sơ,True,True,38096,True,True,15208,True,True,23610,True,True,19571
+APP-005,hồ sơ,False,True,34164,True,True,15340,True,True,19530,True,True,19376
+APP-006,hồ sơ,False,False,14660,True,True,42182,True,True,30281,True,True,35751
+APP-007,hồ sơ,False,False,10921,True,True,11540,True,True,11624,True,True,11578
+APP-008,hồ sơ,True,True,34594,True,True,11567,True,True,14983,True,True,14985
+APP-009,hồ sơ,False,False,10969,True,True,29778,True,True,29703,True,True,42448
+APP-010,hồ sơ,True,True,36901,True,True,15259,True,True,15532,True,True,15327
+APP-011,hồ sơ,True,True,45358,True,True,42613,True,True,35372,True,True,35601
+APP-012,hồ sơ,False,False,77752,True,True,35185,True,True,35657,True,True,35390
+APP-013,hồ sơ,True,True,45390,True,True,15319,True,True,11886,True,True,15262
+APP-014,hồ sơ,True,True,40069,True,True,30318,True,True,30158,True,True,36109
+APP-015,hồ sơ,False,False,27746,True,True,29409,True,True,40781,True,True,24115
+APP-016,hồ sơ,True,True,48677,True,True,29953,True,True,29944,True,True,29991
+APP-017,hồ sơ,True,True,36769,True,True,24154,True,True,29536,True,True,24220
+APP-018,hồ sơ,False,True,39623,False,False,35554,False,True,47937,False,True,61820
+APP-019,hồ sơ,True,True,42337,True,True,29973,True,True,23972,True,True,35026
+APP-020,hồ sơ,True,True,33756,True,True,11694,True,True,12003,True,True,15745
+APP-021,hồ sơ,True,True,22353,True,True,19273,True,True,19096,True,True,19248
+TỔNG,,23,17,930617,33,21,704410,32,23,750222,32,22,759339
