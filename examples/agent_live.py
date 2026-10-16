@@ -1,7 +1,6 @@
 """Kiểm thử chạy thật Agent với LLM (Groq API) và chấm điểm tự động bằng Verifier."""
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -66,27 +67,23 @@ def save_trace_to_jsonl(trace: list[LogLine], log_file: Path | str) -> Path:
     return path
 
 
-"""
-1. Khởi tạo Client MCP + Kết quả (AgentRunResult)
-2. Discovery danh sách tools từ Server
-3. Tạo tool schema (OpenAI format)
-------------------------------------------------------
-[VÒNG LẶP: for step in range(MAX_STEPS)]
-   4. Gọi API LLM -> Nhận ChatTurn
-      - NẾU KHÔNG CÓ TOOL CALL -> Lấy final_answer -> BREAK (Dừng vòng lặp)
-      - NẾU CÓ TOOL CALL -> Tiếp tục:
-   5. Lưu yêu cầu của AI vào message: messages.append(turn.to_assistant_message())
-   6. Thực hiện tool:
-      - Chạy tool qua MCP
-      - Ghi LogLine vào result.trace (để tí nữa chấm điểm)
-      - Nếu là 'submit_decision' -> Tự đọc lại bằng 'get_decision'
-   7. Đưa kết quả tool vào message: messages.append({"role": "tool", ...})
-8. Chuyển trace thành AgentSubmission để chấm điểm (result.to_submission())
-"""
+# Sơ đồ vòng lặp (Agent.run):
+# 1. Khởi tạo Client MCP + Kết quả (AgentRunResult)
+# 2. Discovery danh sách tools từ Server
+# 3. Tạo tool schema (OpenAI format)
+# ------------------------------------------------------
+# [VÒNG LẶP: for step in range(MAX_STEPS)]
+#    4. Gọi API LLM -> Nhận ChatTurn
+#       - NẾU KHÔNG CÓ TOOL CALL -> Lấy final_answer -> BREAK (Dừng vòng lặp)
+#       - NẾU CÓ TOOL CALL -> Tiếp tục:
+#    5. Lưu yêu cầu của AI vào message: messages.append(turn.to_assistant_message())
+#    6. Thực hiện tool:
+#       - Chạy tool qua MCP
+#       - Ghi LogLine vào result.trace (để tí nữa chấm điểm)
+#       - Nếu là 'submit_decision' -> Tự đọc lại bằng 'get_decision'
+#    7. Đưa kết quả tool vào message: messages.append({"role": "tool", ...})
+# 8. Chuyển trace thành AgentSubmission để chấm điểm (result.to_submission())
 
-
-import re
-from typing import Optional
 
 def is_underwrite_intent(app_id: Optional[str], question: Optional[str]) -> bool:
     """Xác định lượt chạy có phải là thẩm định hồ sơ cần ghi nhận quyết định hay không."""

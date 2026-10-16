@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
-from typing import Optional, Union
+from typing import Optional
 
 from finco.types import Chunk, SearchHit
 from finco.rag.filter import get_top_valid_indices, valid_mask

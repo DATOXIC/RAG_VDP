@@ -22,7 +22,7 @@ make all                    # tương đương: make setup && make demo
 
 Không có `make` (Windows): mọi lệnh đều có bản `python run.py <lệnh>` tương đương: `all`, `demo`, `eval`, `eval-quick`, `eval-score [LOG]`, `retrieval-eval`, `interop`, `test`, `check`.
 
-**Gợi ý cho người chấm** (từ nhẹ đến nặng): `make check` (không cần khóa) → `make all` (demo, 3 ca) → `make eval-quick` (6 ca) → `make eval` (đủ 37 ca, ~1–1,5 triệu token; gói miễn phí không chạy trọn được trong một ngày, dùng `ARGS="--pace 8"` và `--resume`). Số liệu chính dùng `LLM_MODEL=openai/gpt-oss-120b`; mặc định `gpt-oss-20b` cho kết quả khác.
+**Gợi ý cho người chấm** (từ nhẹ đến nặng): `make check` (không cần khóa) → `make all` (demo, 3 ca) → `make eval-quick` (6 ca) → `make eval` (đủ 37 ca, ~1–1,5 triệu token; gói miễn phí không chạy trọn được trong một ngày, dùng `ARGS="--pace 8"` và `--resume`). Mặc định là `openai/gpt-oss-120b`, đúng cấu hình của số liệu chính; đổi model bằng `LLM_MODEL` sẽ cho kết quả khác.
 
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt   # Linux/macOS: .venv/bin/python
@@ -57,7 +57,7 @@ Mọi lời gọi LLM đi qua SDK `openai` tới một endpoint tương thích O
 
 | Vai trò | Biến | Ghi chú |
 |---|---|---|
-| Actor (agent) | `GROQ_API_KEY` (+ `GROQ_BASE_URL`) hoặc `OPENAI_API_KEY` + `OPENAI_BASE_URL`; `LLM_MODEL` | mặc định `openai/gpt-oss-20b` trên Groq; `gpt-oss-120b` là cấu hình cho số liệu chính; Qwen2.5 7B/14B chạy trên vLLM (Colab T4) qua `OPENAI_BASE_URL` |
+| Actor (agent) | `GROQ_API_KEY` (+ `GROQ_BASE_URL`) hoặc `OPENAI_API_KEY` + `OPENAI_BASE_URL`; `LLM_MODEL` | mặc định `openai/gpt-oss-120b` trên Groq (cấu hình của số liệu chính); `gpt-oss-20b` dùng cho thí nghiệm Actor yếu; Qwen2.5 7B/14B chạy trên vLLM (Colab T4) qua `OPENAI_BASE_URL` |
 | Critic (tùy chọn) | `FINCO_CRITIC=0` tắt; `FINCO_CRITIC_MODE=single\|agent`; `FINCO_CRITIC_PROVIDER=gemini` + `GEMINI_API_KEY`, hoặc `FINCO_CRITIC_BASE_URL` + `FINCO_CRITIC_API_KEY` | code mặc định **bật** chế độ `single`; kết quả A/B chưa thấy critic cải thiện nên các số liệu "không critic" chạy với `FINCO_CRITIC=0` |
 | Giám khảo LLM | `JUDGE_MODEL` | chỉ `eval/judge.py`, nên khác Actor |
 
@@ -118,7 +118,8 @@ prompts/agent_system.txt  prompt hệ thống (tách khỏi code)
 src/finco/                llm, agent, mcp_server, mcp_client, tools, chat, audit, store/, rag/
 eval/                     run_eval.py (chạy), scoring.py (chấm), verifier.py, judge.py, sandbox_db.py, retrieval_eval.py
 tests/                    testset.jsonl, expected_decisions.json (chỉ cho eval), test_*.py
-logs/  report/            log chạy thật, báo cáo
+logs/                     log chạy thật (chỉ mục: logs/README.md)
+report.docx               báo cáo (nộp kèm, không nằm trong repo này)
 ```
 
 ## Giới hạn đã biết

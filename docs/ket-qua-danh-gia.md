@@ -18,7 +18,6 @@ Các model và cấu hình đã chạy, cùng prompt, cùng RAG, cùng bộ côn
 | C | `Qwen/Qwen2.5-7B-Instruct-AWQ` | không | vLLM trên Colab T4, `max-model-len 8192` | `logs/eval_20261015_133814.jsonl` |
 | D | `Qwen/Qwen2.5-7B-Instruct-AWQ` | critic một lần gọi (chính nó), bản đã sửa | như C | `logs/eval_local_critic_v2_merged.jsonl` |
 | E | `Qwen/Qwen2.5-14B-Instruct-AWQ` | không | như C | `logs/eval_qwen2.5-14b_full.jsonl` |
-| F | `openai/gpt-oss-20b` | không | Groq (chỉ 16 câu testset) | `logs/eval_gptoss_final.jsonl` |
 | G | `gpt-oss:20b` | không | Ollama (máy riêng của đồng đội, 16/10) | `logs/eval_20261016_011437.jsonl` |
 | H | `openai/gpt-oss-20b` | không | Groq | `logs/eval_20261016_0215{34,39,44,49}.jsonl` (4 shard, đã `--resume`) |
 | I | `openai/gpt-oss-20b` | critic một lần gọi `gemini-3.1-flash-lite` | Groq + Google AI Studio | `logs/eval_20261016_0148{56,01,06,11}.jsonl` (lẫn với J) |
@@ -39,7 +38,7 @@ Critic là một chốt chặn nhúng trong tool `submit_decision` (xem `src/fin
 | Prompt token (cả 37 ca) | 689.453 | 1.501.556 |
 | Lỗi gọi tool | 0 | 16 |
 
-Qwen2.5-14B (E) đạt 8/37 (21,6%), trong đó từ chối đúng `no_answer` 25%, tỉ lệ lời gọi tool lỗi 18,9%; `gpt-oss-20b` (F) đạt 11/16 trên testset (hồ sơ bị giới hạn token, xem mục 4).
+Qwen2.5-14B (E) đạt 8/37 (21,6%), trong đó từ chối đúng `no_answer` 25%, tỉ lệ lời gọi tool lỗi 18,9%. `gpt-oss-20b` trên Groq (H) đạt **33/37 (89,2%)**, đúng quyết định 21/21 hồ sơ, chỉ kém 120b một ca (mục 2.3).
 
 Theo loại câu (số câu đạt):
 

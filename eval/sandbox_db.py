@@ -1,8 +1,6 @@
 import os
-import shutil
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Iterator
 from finco.store import db
 
 ROOT = Path(__file__).parents[1]

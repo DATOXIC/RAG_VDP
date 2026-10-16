@@ -28,7 +28,7 @@ load_dotenv(REPO_ROOT / ".env")
 
 PROMPTS_DIR = REPO_ROOT / "prompts"
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
-DEFAULT_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
+DEFAULT_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
 DEFAULT_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2000"))  # hạ xuống khi server có ngữ cảnh nhỏ (vLLM 8k)
 DEFAULT_TIMEOUT = 60.0    # giây cho một lần gọi, để một lần treo không làm treo cả lượt
 MAX_RETRY_AFTER = 60.0    # Retry-After lớn hơn mức này thì chỉ chờ tối đa bằng mức này

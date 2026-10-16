@@ -207,7 +207,7 @@ Ràng buộc:
 - `calc_dti` **bắt buộc nhận `annual_rate`** → agent phải tự tra lãi suất từ chính sách, không bỏ qua RAG.
 - `submit_decision` trả `Error` nếu `cited_docs` rỗng, `app_id` không tồn tại, hoặc hồ sơ đã có quyết định.
 - **Mọi tool không bao giờ `raise`**; lỗi trả chuỗi bắt đầu bằng `"Error: ..."`.
-- **Chế độ truy vấn (`dense`/`hybrid`) KHÔNG phải tham số của tool** (giáo trình W7: mỗi tham số lộ ra là một lời hứa mà model phải đặt đúng, mà model không có cơ sở để chọn). Chế độ đặt bằng biến môi trường `RETRIEVAL_MODE` truyền cho server; `make eval-compare` chạy lại với từng giá trị.
+- **Chế độ truy vấn (`dense`/`hybrid`) KHÔNG phải tham số của tool** (giáo trình W7: mỗi tham số lộ ra là một lời hứa mà model phải đặt đúng). Chế độ đặt bằng biến môi trường `RETRIEVAL_MODE`; so sánh dense/hybrid chạy bằng `make retrieval-eval`.
 - Không lộ ra MCP: tham số đường dẫn, `threshold`, `batch_search`, hàm ghi index. Kết quả luôn có nguồn (`doc_id`) và bị chặn độ dài.
 - `as_of_date` sai định dạng → trả `"Error: ..."` (không đoán).
 - Tool ghi/đọc dùng dataclass/TypedDict trong `types.py`, **không dùng dict thô**.
@@ -252,7 +252,7 @@ Chỉ dùng văn bản tự viết, **một định dạng duy nhất** (`.md` +
 ## 8. RAG (A)
 
 - **Chunking:** theo mục `##` của Markdown; thêm dòng đầu chunk gồm tiêu đề tài liệu + version. *Viết 3–5 dòng giải thích lý do vào report.*
-- **Embedding chạy local (thực tế dùng `BAAI/bge-m3`, đa ngôn ngữ, ~2 GB; bản kế hoạch ban đầu ghi họ Jina):** đặt sau một hàm `embed(texts)`. Backend mặc định là **mô hình Jina mã nguồn mở chạy local** qua `sentence-transformers` (không cần key); `make setup` tải mô hình về cache một lần. Backend `JINA_API_KEY` chỉ là tùy chọn khi có key. **Tài liệu và truy vấn phải dùng cùng một mô hình**: file vector `.npy` lưu kèm `model_id`, lúc chạy so khớp, lệch thì báo lỗi rõ ràng (không âm thầm trộn hai không gian vector). Vector tài liệu tính sẵn và commit. Cần kiểm tra: mô hình Jina bạn chọn hỗ trợ tiếng Việt không, giấy phép (một số bản là phi thương mại, ổn cho bài tập), và có cần `trust_remote_code` không (ghim `revision` cụ thể).
+- **Embedding chạy local: `BAAI/bge-m3`** (đa ngôn ngữ, ~2 GB, không cần key), đặt sau một hàm `embed(texts)` qua `sentence-transformers`; `make setup` tải về cache một lần. **Tài liệu và truy vấn phải dùng cùng một mô hình**: file vector `.npy` lưu kèm `model_id` và `corpus_hash`, lúc chạy so khớp, lệch thì báo lỗi rõ ràng. Vector tài liệu tính sẵn và commit (`data/index/`).
 - **Không dùng vector DB** (giáo trình W3 dạy `VectorStore` tự viết, cosine bằng `numpy`; Chroma không nằm trong giáo trình): vài chục chunk, `numpy` là đủ.
 - **Hybrid theo W4:** điểm BM25 và điểm cosine **phải chuẩn hóa min–max trước khi trộn** (trộn điểm thô là lỗi kinh điển); trọng số khởi điểm 0.3 BM25 + 0.7 vector, chỉnh bằng thí nghiệm.
 - **Lọc metadata trước khi chấm điểm** (pre-filter theo `effective_date`, như W4), không lọc sau.
@@ -337,7 +337,7 @@ Hai phần này không có trong kế hoạch 10 ngày ban đầu; thêm theo g�
 | # | Việc làm thêm | Người | Bằng chứng nộp |
 |---|---|---|---|
 | 1 | **Metadata filter dùng thật** (`as_of_date`) | A | Trace cùng hồ sơ đổi ngày → đổi phiên bản; thí nghiệm bật/tắt filter |
-| 2 | **So sánh thêm 1 cấu hình** (dense vs hybrid; nếu còn thời gian thêm chunking) | A viết cờ, C chạy | `make eval-compare` + bảng trong report |
+| 2 | **So sánh thêm 1 cấu hình** (dense vs hybrid, có/không lọc ngày) | A viết cờ, C chạy | `make retrieval-eval` + `eval/out/retrieval_per_question*.csv` |
 | 3 | **MCP dùng được từ host thứ hai** | C | `examples/client2.py` (client dùng `mcp` SDK) **và** script probe JSON-RPC thô không dùng SDK, cùng gọi một server; `make interop` (chạy trên **bản sao DB**) |
 | 4 | **Đồ thị + CSV theo từng câu** | C | `eval/out/per_question.csv` + hình trong report |
 
@@ -380,7 +380,7 @@ Hai phần này không có trong kế hoạch 10 ngày ban đầu; thêm theo g�
 
 - [ ] `report.docx` 8–9 trang, đủ 9 mục (có ≥1 ca thất bại; ≥2 hạn chế trung thực; commit hash)
 - [x] Repo kèm `.git`, lịch sử thể hiện cả 3 người (3 tác giả: DATOXIC/TÔ PHƯƠNG ĐẠT, VuongVuiVe123, nphi)
-- [x] `logs/`: ≥3 file `.jsonl` chạy thật, có timestamp, bước, args/kết quả tool, USAGE từng câu *(còn phải chọn và ghi tên 3 file chính trong report; `logs/` đang lẫn nhiều file thử)*
+- [x] `logs/`: ≥3 file `.jsonl` chạy thật, có timestamp, bước, args/kết quả tool, USAGE từng câu *(3 file chính để nêu trong report: A, H, B, xem `logs/README.md`)*
 - [x] `tests/testset.jsonl`: ≥12 câu (kế hoạch 16), ≥4 `no_answer`
 - [ ] `ai-usage.md`: công cụ nào, phần nào, prompt chính, đoạn code do AI sinh *(còn mục "CHƯA KHAI BÁO"; chưa nhắc critic và các model đa nền tảng)*
 - [ ] `README.md`: `make setup && make demo`, `make eval`; **chạy được trên máy sạch** *(nội dung đã cập nhật; chưa thử cold start trên máy sạch)*
@@ -397,7 +397,7 @@ Hai phần này không có trong kế hoạch 10 ngày ban đầu; thêm theo g�
 - [x] `MAX_STEPS`; tool lỗi trả `"Error: ..."`; parse action an toàn
 - [x] ≥1 tool ghi + bước verify (`submit_decision` → `get_decision`)
 - [x] MCP: tự viết, ≥2 tool (≥1 ghi), stdio, stdout sạch, client discover động
-- [ ] Python 3.11+, chạy bằng đúng 1 lệnh *(chưa kiểm chứng trên máy sạch; còn 1 test `tests/test_llm.py` đang fail, `thought_signature`)*
+- [ ] Python 3.11+, chạy bằng đúng 1 lệnh *(`make all`; 220 test offline đã pass; còn phải kiểm chứng trên máy sạch)*
 
 ---
 
@@ -459,7 +459,7 @@ Hai phần này không có trong kế hoạch 10 ngày ban đầu; thêm theo g�
 - [ ] **Xác nhận với GV** SDK `openai` (và endpoint Gemini tương thích OpenAI dùng cho critic) có được dùng làm client gọi API không (danh sách thư viện của đề không nhắc đến client LLM). *Đã chốt phần kỹ thuật:* Actor chính là `gpt-oss-120b` trên Groq, so sánh với `gpt-oss-20b` và Qwen2.5 7B/14B (mục 9b).
 - [ ] GV: 2 điểm cộng còn lại (+6 vs 4 mục) tính cho việc gì?
 - [ ] File yêu cầu ghi "Nhóm: 2 SV" còn đề tài ghi 3 SV (nhóm đang có 3 người): xác nhận với GV.
-- [ ] Bản `mcp`: v1 hay v2 (xem mục 10)? `requirements.txt` đang ghim `mcp==2.2.0` (bản máy nhóm đang cài); nếu giáo trình dùng `FastMCP` v1 thì đổi sang `mcp==1.30.0` và báo người làm MCP. Chạy thử import trước ngày 3.
+- [x] Bản `mcp`: ghim `mcp==2.2.0` (đang chạy ổn, có test MCP server và `make interop`).
 - [ ] Còn giữ bài lab W3–W7 của mình không? Đó là điểm xuất phát nhanh nhất.
 - [ ] Đã lấy `w4/ex2_1_hybrid_search.py` và DOC0001–0006 của lớp chưa? (xem file hybrid để biết GV dùng embedding nào)
 - [ ] Chọn mô hình embedding local: thử 2 mô hình trên 10 câu rồi chọn.
@@ -468,30 +468,12 @@ Hai phần này không có trong kế hoạch 10 ngày ban đầu; thêm theo g�
 
 ---
 
-## 21. Trải nghiệm một lệnh cho giảng viên
+## 21. Trải nghiệm một lệnh cho giảng viên (đúng với mã hiện tại)
 
-**Mục tiêu:** GV gõ đúng một lệnh là tương tác được ngay.
+Từ máy sạch, sau khi `cp .env.example .env` và điền khóa: `make all` (= `make setup` + `make demo`). Không có `make`: `python run.py all`.
 
-```
-make run          # hoặc, nếu máy không có make:  python run.py
-```
+- `make check` chạy toàn bộ phần **không cần khóa API**: test offline, đo truy xuất, host thứ hai (`examples/client2.py`), chấm lại log chính.
+- `make eval-quick` (6 ca, khoảng 150k token) và `make eval` (37 ca) gọi LLM thật. Log mỗi lần chạy: `logs/eval_<thời gian>.jsonl`.
+- `make run` mở REPL: `list`, `APP-xxx`, `ask <câu hỏi>`, `history`, `audit <mã>`.
 
-Các bước (mỗi bước chạy lại vẫn an toàn): tạo venv và cài thư viện nếu thiếu → tải mô hình Jina nếu thiếu → kiểm tra vector (`model_id` khớp) → **sao chép DB gốc sang DB chạy** → xử lý API key → mở REPL.
-
-**API key:** dùng `OPENAI_API_KEY` từ môi trường hoặc `.env` nếu có; nếu không, hỏi một lần bằng `getpass`, chỉ giữ trong bộ nhớ, không ghi ra đâu. Nếu bỏ qua thì chuyển sang **chế độ replay**, ghi rõ trên màn hình, chỉ trả lời các câu testset đã ghi sẵn, câu khác thì nói thẳng cần key.
-
-**REPL (terminal, không thêm thư viện):** gõ câu hỏi tự do để agent chạy và in từng bước kèm nguồn. Lệnh phụ:
-
-| Lệnh | Việc làm |
-|---|---|
-| `/apps` | liệt kê hồ sơ vay mẫu |
-| `/policies` | liệt kê tài liệu chính sách, version, ngày hiệu lực |
-| `/decision <APP-ID>` | đọc trạng thái quyết định trực tiếp từ DB (GV tự kiểm chứng) |
-| `/trace` | chi tiết lượt vừa chạy, kể cả USAGE |
-| `/mode dense\|hybrid` | đổi chế độ truy vấn |
-| `/reset` | khôi phục DB ban đầu |
-| `/help`, `/quit` | trợ giúp, thoát |
-
-**Độ bền trên máy lạ:** lỗi in ngắn kèm cách sửa, không in traceback dài; spawn MCP server bằng `sys.executable` + đường dẫn tuyệt đối; mỗi phiên ghi log `.jsonl` vào `logs/`.
-
-**Việc phải thử:** chạy `make run` trên một máy sạch (hoặc thư mục + venv mới) trước ngày nộp.
+Chi tiết lệnh và biến môi trường: `README.md`. Việc còn lại: chạy `make all` trên máy/thư mục + venv sạch trước ngày nộp.

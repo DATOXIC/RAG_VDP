@@ -34,10 +34,6 @@ def valid_mask(chunks: list[Chunk], as_of_date: Optional[str] = None) -> np.ndar
     return np.array([is_valid_at(c, as_of_date) for c in chunks], dtype=bool)
 
 
-# Alias giữ lại tên bit_mask để tương thích
-bit_mask = valid_mask
-
-
 def get_top_valid_indices(
     scores: np.ndarray,
     chunks: list[Chunk],

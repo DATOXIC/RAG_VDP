@@ -96,7 +96,7 @@ async def main():
 
         # 3. GỌI THỬ TOOL
         mcp_result = await client.call_tool("calc_dti", {"app_id": "APP-003", "annual_rate": "0.155"})
-        print(f"\nKết quả thực hiện tool calc_dti:")
+        print("\nKết quả thực hiện tool calc_dti:")
         print(mcp_result.content[0].text)
 
 

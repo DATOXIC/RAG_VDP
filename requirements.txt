@@ -10,16 +10,14 @@ mcp==2.2.0
 # --- Đọc khóa API từ .env  ---
 python-dotenv==1.2.4
 
-# --- RAG: embedding cục bộ (Jina, không cần API key), BM25, vector ---
+# --- RAG: embedding cục bộ (BAAI/bge-m3, không cần API key), BM25, vector ---
 sentence-transformers==6.1.0   
 rank-bm25==0.2.2
 numpy==2.5.3
 tiktoken==0.14.0               
 
-# --- Đánh giá, biểu đồ (bonus), báo cáo ---
-pandas==3.0.6
+# --- Biểu đồ đánh giá (bonus) ---
 matplotlib==3.11.2
-python-docx==1.2.0
 
 # --- REPL (src/finco/chat.py) ---
 rich==15.0.0

@@ -26,7 +26,7 @@ Mỗi file là Markdown, phần đầu là front matter dạng `khóa: giá tr�
 | `status` | không | `active`, `superseded` (bị bản mới thay) hoặc `expired` (chương trình đã hết hạn) |
 | `language` | không | `vi` |
 
-**Chunk theo mục `## `.** Mỗi mục là một chunk. Khi nhúng, thêm một dòng đầu `[doc_id version | hiệu lực từ ...] tiêu đề – mục` để chunk giữa tài liệu vẫn biết nó thuộc đâu. Cả 18 tài liệu cho **88 chunk** (lõi 38 + nhiễu 30 + tài liệu dài 20). Các chunk của `CP-01..CP-14` dài 35–170 từ; `CP-15..CP-17` có chunk tới khoảng 630 từ để thử nhánh chia nhỏ theo điều khoản của chunker.
+**Chunk theo mục `## `.** Mỗi mục là một chunk. Khi nhúng, thêm một dòng đầu `[doc_id version | hiệu lực từ ...] tiêu đề – mục` để chunk giữa tài liệu vẫn biết nó thuộc đâu. Cả 18 tài liệu cho **112 chunk** (lõi `CP-01..07`: 35, nhiễu `CP-08..14`: 33, tài liệu dài `CP-15..17`: 44; các mục dài được tách thêm theo điều khoản). Các chunk của `CP-01..CP-14` dài 35–170 từ; `CP-15..CP-17` có chunk tới khoảng 630 từ để thử nhánh chia nhỏ theo điều khoản của chunker.
 
 **Tài liệu dài (`CP-15..CP-17`)** viết như văn bản thực tế: `CP-15` sổ tay thẩm định (thuật ngữ, quy trình từng bước, bảng ngưỡng theo phiên bản, 3 ví dụ giả định, sai sót thường gặp), `CP-16` hỏi đáp khách vay (nhắc lại số liệu theo hai phiên bản, nên có chunk trùng ý với `CP-01`), `CP-17` xử lý nợ quá hạn sau giải ngân (nhóm nợ, lãi phạt, nhắc nợ). Chúng chỉ nhắc lại hoặc bổ sung, không đổi số nào của `CP-01..CP-07`; `CP-15/16` là bản diễn giải nên khi mâu thuẫn thì chính sách gốc được ưu tiên.
 
