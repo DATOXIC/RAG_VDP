@@ -113,10 +113,10 @@ if __name__ == "__main__":
 
         if mode == "agent": 
             from finco.critic_agent import from_env
-            tools.set_critic(from_env())
+            tools.set_critic(from_env())   # <-- Bật chế độ CriticAgent
         else:                
             from finco.critic import Critic
-            tools.set_critic(Critic(model=os.getenv("FINCO_CRITIC_MODEL") or None))
+            tools.set_critic(Critic(model=os.getenv("FINCO_CRITIC_MODEL") or None)) # <-- Bật chế độ Critic thường (single)
 
         logger.info(f"Critic chốt chặn submit_decision: BẬT, chế độ '{mode}' (FINCO_CRITIC=0 để tắt).")
     

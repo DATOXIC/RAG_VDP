@@ -85,6 +85,9 @@ def local_toolbox() -> Toolbox:
     from finco.store import db
 
     def get_app(app_id: str) -> tuple[str, str]:
+        """
+        Trả về tuple (text, submitted_date)
+        """
         try:
             app = db.get_application(app_id.strip().upper())
         except db.AppNotFound:
@@ -92,9 +95,15 @@ def local_toolbox() -> Toolbox:
         return tools.render_application(app), app.submitted_date
 
     def search(query: str, as_of: str, top_k: int) -> tuple[str, list]:
+        """
+        Trả về (text, hits)
+        """
         return retrieve_hits(query=query, as_of_date=as_of or None, top_k=top_k)
 
     def dti(app_id: str, annual_rate: str) -> str:
+        """
+        Trả về (app_id, annual_rate)
+        """
         try:
             app = db.get_application(app_id.strip().upper())
         except db.AppNotFound:
@@ -123,8 +132,8 @@ class _NoDti(ValueError):
 class RunRecord:
     """Dấu vết một lượt thẩm tra của critic-agent (để đo token và đưa vào report)."""
     app_id: str
-    steps: list[dict[str, Any]] = field(default_factory=list)
-    calls: int = 0
+    steps: list[dict[str, Any]] = field(default_factory=list) # Tools và step
+    calls: int = 0 # Tổng lượt gọi trong lượt Critic
     prompt_tokens: int = 0
     completion_tokens: int = 0
     outcome: str = ""
@@ -151,12 +160,15 @@ class CriticAgent:
 
     # ---- hợp đồng với tools.submit_decision
     def review(self, p: Proposal, ev: SessionEvidence, app: Any) -> Verdict:
+
+        # TẦNG 1: KIỂM TRA CỨNG
         issues, add = cm.check_evidence(p, ev, app)
-        if issues:  # Actor chưa tự làm đủ quy trình thì khỏi tốn token của critic
+        if issues:  # Lỗi Actor nặng --> Return False
             return Verdict(False, issues, stage="evidence")
         if add:
             p = Proposal(p.app_id, p.decision, p.reason, [*p.cited_docs, *add], p.reason_codes)
 
+        # Kích hoạt Thanh tra ReAct độc lập
         rec = RunRecord(app_id=p.app_id)
         t0 = time.time()
         try:
@@ -190,6 +202,9 @@ class CriticAgent:
         return self._toolbox
 
     def _investigate(self, p: Proposal, rec: RunRecord) -> tuple[dict[str, Any], SessionEvidence]:
+        """
+
+        """
         own = SessionEvidence(app_id=p.app_id)
         specs = [s.to_openai() for s in TOOL_SPECS]
         messages: list[dict[str, Any]] = [
@@ -201,11 +216,13 @@ class CriticAgent:
                 f"cited_docs: {', '.join(p.cited_docs)}\nreason: {p.reason}"
             )},
         ]
-        seen_calls: set[str] = set()
+        seen_calls: set[str] = set() # Lưu lại tools đã thực hiện
+
         for step in range(self.max_steps):
             last = step == self.max_steps - 1
             if last:
                 messages.append({"role": "user", "content": "Hết lượt tra cứu. Trả ngay JSON kết quả cuối, không gọi công cụ."})
+            
             turn = self._step(messages, None if last else specs)
             u = getattr(turn, "usage", None)
             rec.calls += 1
@@ -289,6 +306,9 @@ class CriticAgent:
 
     # ---- ghi vết
     def _finish(self, rec: RunRecord, t0: float) -> None:
+        """
+        Ghi Log
+        """
         rec.seconds = round(time.time() - t0, 1)
         self.last_run = rec
         if self._log_path is None:
