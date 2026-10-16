@@ -187,3 +187,7 @@ scratch/
 # Phiên REPL (nhật ký kiểm toán cá nhân) và log lạc đường dẫn: không nộp. Log chạy thật trong logs/*.jsonl thì CÓ nộp.
 logs/sessions/
 src/logs/
+
+
+# Word temp files
+~$*
