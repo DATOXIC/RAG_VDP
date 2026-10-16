@@ -122,6 +122,39 @@ Mục đích: kiểm tra critic trên một Actor yếu hơn 120b (120b đã đ�
 - Kết quả của H có hai ca đầu bị lỗi hạ tầng "hết hạn mức token/ngày" (APP-016, APP-019), đã chạy lại riêng hai ca đó bằng `--resume` trên key khác; các ca đã xong không bị chạy lại. Các key Groq dùng chung hạn mức token của tổ chức, nên thêm key không tăng thông lượng.
 - Log của I và J **ghi chung vào các file** `eval_20261016_0148xx.jsonl` do hai lần chạy khởi động cùng giây và trùng tên file. Điểm số không bị ảnh hưởng (mỗi tiến trình tự chấm và ghi CSV riêng ở `eval/out/g20_single_w*`, `eval/out/g20_agent_w*`), nhưng `make eval-score` trên các file này sẽ lẫn hai cấu hình.
 
+### 2.4. Đánh giá bổ sung bằng RAGAS
+
+Ngoài chấm bằng code (mục 1), nhóm chạy thư viện RAGAS (`eval/ragas_eval.py`, `make ragas`) trên **log có sẵn của cấu hình A**, không chạy lại Actor. Giám khảo là `gemini-3.5-flash-lite`, embedding là `BAAI/bge-m3` cục bộ. Ngữ cảnh của mỗi câu gồm kết quả của `search_policy`, `get_application` và `calc_dti` (số liệu tính toán đến từ hai tool sau; nếu chỉ lấy `search_policy`, câu trả lời đúng vẫn bị coi là thiếu căn cứ). Câu `no_answer` **không** chấm RAGAS vì Answer Relevancy phạt câu từ chối đúng; nhóm này chỉ xét từ chối đúng bằng code (N01, N02, N04 đúng, N03 sai, khớp mục 2.1).
+
+Trung bình 12 câu có đáp án (một lần chạy, kết quả ở `eval/out/ragas/`):
+
+| Faithfulness | Answer Relevancy | Answer Correctness | Context Precision | Context Recall |
+|---|---|---|---|---|
+| 0,94 | 0,81 | 0,60 | 0,80 | 1,00 |
+
+Điểm từng câu:
+
+| Câu | Loại | Faith. | Relev. | Correct. | Ctx Prec. | Ctx Rec. |
+|---|---|---|---|---|---|---|
+| T01 | tra cứu | 1,00 | 0,98 | 0,94 | 1,00 | 1,00 |
+| T02 | tra cứu | 1,00 | 0,77 | 0,95 | 1,00 | 1,00 |
+| S01 | tổng hợp | 1,00 | 0,91 | 0,92 | 0,00 | 1,00 |
+| S02 | tổng hợp | 0,75 | 0,79 | 0,54 | 1,00 | 1,00 |
+| V01 | phiên bản | 1,00 | 1,00 | 0,37 | 1,00 | 1,00 |
+| V02 | phiên bản | 1,00 | 0,76 | 0,66 | 1,00 | 1,00 |
+| C01 | tính toán | 1,00 | 0,81 | 0,49 | 0,33 | 1,00 |
+| C02 | tính toán | 1,00 | 0,87 | 0,41 | 0,58 | 1,00 |
+| M01 | thiếu dữ liệu | 0,78 | 0,90 | 0,33 | 0,83 | 1,00 |
+| M02 | thiếu dữ liệu | 1,00 | 0,87 | 0,57 | 1,00 | 1,00 |
+| A01 | hành động | 0,92 | 0,49 | 0,47 | 0,87 | 1,00 |
+| A02 | hành động | 0,88 | 0,58 | 0,51 | 1,00 | 1,00 |
+
+Đọc kết quả:
+- **Câu trả lời bám sát căn cứ:** Faithfulness 0,94 và Context Recall 1,00, tức mọi ý cần có đều nằm trong ngữ cảnh mà Agent đã tra cứu; phần còn thiếu của hệ thống không nằm ở truy xuất.
+- **Context Precision thấp ở vài câu** (S01 0,00; C01 0,33) vì truy vấn kéo thêm đoạn nhiễu (ví dụ CP-09 thẻ tín dụng), khớp hạn chế về nhạy cảm của truy vấn ở mục 4.
+- **Answer Correctness chỉ khoảng 0,6 không có nghĩa là sai 40%.** Chỉ số so khớp ngữ nghĩa với đáp án chuẩn dài và có định dạng, nên câu đúng hẳn như V01 (tuổi tối đa 60) vẫn chỉ đạt 0,37. Answer Relevancy của câu hành động (A01, A02) thấp vì câu trả lời là bản ghi quyết định, không phải một câu trả lời cho câu hỏi.
+- **Giám khảo nhiễu:** lần chạy đầu (khi ngữ cảnh mới chỉ gồm `search_policy`) cho V02 Faithfulness 0,0 dù câu trả lời trích đúng "45%", lần chạy sau cho 1,00. Vì vậy RAGAS chỉ là **số liệu bổ sung**: 12 câu, một giám khảo bản nhẹ, một lần chạy; kết luận về chất lượng dựa vào chấm bằng code ở mục 2.1.
+
 ## 3. Phân tích lỗi
 
 ### 3.1. Model nhỏ: lỗi tuân thủ quy trình

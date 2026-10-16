@@ -16,6 +16,7 @@ Mỗi thư mục chứa `per_question.csv`/`agent_eval_results.csv`, `summary.js
 | `g20_single_w1..w4` | **I**: 20b + critic một lần gọi Gemini (4 shard: 32) | 32 |
 | `g20_agent_w1..w4` | **J**: 20b + critic-agent Gemini (4 shard: 32) | 32 |
 | `g20_comparison.csv` | bảng từng ca của G, H, I, J | |
+| `ragas/` | RAGAS bổ sung trên log của A (12 câu có đáp án): điểm từng câu và checkpoint |
 | `retrieval_per_question*.csv` | đo tầng truy xuất, có và không lọc ngày (bonus) | |
 
 ## Lần chạy đầu và thử nghiệm sớm (giữ để truy vết, không dùng làm số liệu)

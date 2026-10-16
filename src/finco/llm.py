@@ -118,7 +118,7 @@ class ChatTurn:
 _CRITIC_CLIENT: Optional[OpenAI] = None
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-GEMINI_DEFAULT_MODEL = "gemini-3.1-flash-lite"
+GEMINI_DEFAULT_MODEL = "gemini-3.5-flash"
 
 
 def critic_endpoint() -> Optional[tuple[str, str]]:
