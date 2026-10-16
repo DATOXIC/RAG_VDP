@@ -7,4 +7,4 @@ KEY=$(python -c "from dotenv import dotenv_values;print(dotenv_values('.env').ge
 export GROQ_API_KEY="$KEY"
 export GROQ_BASE_URL="https://openrouter.ai/api/v1"
 export LLM_MODEL="nvidia/nemotron-3-super-120b-a12b:free"
-python eval/run_eval.py --apps --ids "$@" --resume logs/eval_20261014_170836.jsonl --pace 5 --out-dir eval/out/openrouter
+python eval/run_eval.py --apps --ids "$@" --resume logs/eval_20261014_170836.jsonl --pace 5 --out-dir eval/out/archive/openrouter

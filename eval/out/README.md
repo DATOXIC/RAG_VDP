@@ -19,9 +19,9 @@ Mỗi thư mục chứa `per_question.csv`/`agent_eval_results.csv`, `summary.js
 | `ragas/` | RAGAS bổ sung trên log của A (12 câu có đáp án): điểm từng câu và checkpoint |
 | `retrieval_per_question*.csv` | đo tầng truy xuất, có và không lọc ngày (bonus) | |
 
-## Lần chạy đầu và thử nghiệm sớm (giữ để truy vết, không dùng làm số liệu)
+## `archive/` (lần chạy đầu và thử nghiệm sớm, giữ để truy vết, không dùng làm số liệu)
 
-| Thư mục | Là gì |
+| Thư mục trong `archive/` | Là gì |
 |---|---|
 | `ab_critic` | critic bản đầu trên 120b: 20/37, **đã bị thay** bởi critic đã sửa và critic-agent (B) |
 | `local_critic` | critic bản đầu trên Qwen 7B: 8/37, đã thay bằng `local_critic_v2` |
