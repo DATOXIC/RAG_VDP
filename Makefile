@@ -9,7 +9,7 @@ else
   PY := $(VENV)/bin/python
 endif
 
-.PHONY: all setup demo run eval eval-score test retrieval-eval interop check clean
+.PHONY: all setup demo run eval eval-quick eval-score test retrieval-eval interop check clean
 
 # Lệnh duy nhất tái lập demo từ máy sạch:  make all   (= setup + demo)
 # Tái lập kết quả đánh giá:               make eval  (37 ca: 16 câu hỏi + 21 hồ sơ)
@@ -38,9 +38,13 @@ ARGS ?= --apps
 eval:
 	$(PY) eval/run_eval.py $(ARGS)
 
-# Chấm lại một log đã có, KHÔNG gọi LLM:  make eval-score LOG=logs/eval_XXXX.jsonl
+# Bộ nhanh: 6 ca đại diện (T01, V01, N01, APP-001, APP-014, APP-003), ~150k token, ghi eval/out/quick.
+eval-quick:
+	$(PY) run.py eval-quick $(ARGS_QUICK)
+
+# Chấm lại một log đã có, KHÔNG gọi LLM:  make eval-score LOG=logs/eval_XXXX.jsonl  (mặc định: log cấu hình chính)
 eval-score:
-	$(PY) eval/run_eval.py --score-only $(LOG)
+	$(PY) run.py eval-score $(LOG)
 
 # Đo riêng tầng truy xuất (không cần khóa API)
 retrieval-eval:

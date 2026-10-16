@@ -18,7 +18,7 @@ MAX_TOOL_RESULT_CHARS = 2500   # giữ ngữ cảnh nhỏ cho model yếu (8k to
 DEFAULT_TOP_K = 3
 
 
-# --------------------------------------------------------------------------- Schema tool (typed)
+# Schema tool (typed)
 @dataclass(frozen=True)
 class ToolSpec:
     name: str
@@ -261,10 +261,13 @@ class CriticAgent:
         raise ValueError(f"critic-agent hết {self.max_steps} bước mà chưa có kết luận")
 
     def _run_tool(self, tc: Any, p: Proposal, own: SessionEvidence, seen: set[str]) -> str:
+        
         if tc.error:
             return tc.error
+        
         if tc.name not in READ_ONLY_TOOLS:
             return f"Error: Công cụ '{tc.name}' không tồn tại. Chỉ có: {', '.join(READ_ONLY_TOOLS)}."
+        
         key = tc.name + json.dumps(tc.args, sort_keys=True, ensure_ascii=False)
         if key in seen:
             return "Lời gọi này đã thực hiện, kết quả đã có ở trên. Hãy dùng kết quả đó hoặc trả kết luận."
@@ -275,31 +278,37 @@ class CriticAgent:
         if tc.name in ("get_application", "calc_dti") and app_arg != p.app_id:
             return f"Error: Bạn chỉ được thẩm tra hồ sơ {p.app_id}."
 
+        # Critic Agent tự thu thập dữ liệu riêng
         box = self._tools()
         try:
             if tc.name == "get_application":
                 text, date = box.get_application(p.app_id)
                 if not text.startswith("Error:"):
                     own.app_data_raw, own.submitted_date = text, date
+
             elif tc.name == "search_policy":
                 query = str(args.get("query", "")).strip()
                 if not query:
                     return "Error: query không được để trống."
                 if not own.submitted_date:
                     return "Error: Hãy gọi get_application trước để biết ngày nộp hồ sơ (quyết định phiên bản chính sách)."
+                
                 try:
                     k = max(1, min(int(args.get("top_k") or DEFAULT_TOP_K), 5))
                 except (TypeError, ValueError):
                     k = DEFAULT_TOP_K
+
                 text, hits = box.search_policy(query, own.submitted_date, k)
                 for h in hits:
                     c = h.chunk
                     own.retrievals.append(Retrieval(c.doc_id.upper(), c.version, own.submitted_date, c.text))
+            
             else:  # calc_dti
                 text = box.calc_dti(p.app_id, str(args.get("annual_rate", "")))
                 if not text.startswith("Error:"):
                     own.dti_result_raw = text
                     own.retrievals.append(Retrieval("CP-05", "v1", None, text, trusted=True))
+        
         except Exception as e:  # tool lỗi trả chuỗi, không làm chết vòng lặp
             return f"Error: {type(e).__name__}: {e}"
         return text if len(text) <= MAX_TOOL_RESULT_CHARS else text[:MAX_TOOL_RESULT_CHARS] + "\n...(cắt bớt)"

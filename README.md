@@ -20,7 +20,9 @@ cp .env.example .env        # điền GROQ_API_KEY (hoặc OPENAI_API_KEY + OPEN
 make all                    # tương đương: make setup && make demo
 ```
 
-Không có `make` (Windows): `python run.py all` (demo) và `python run.py eval` (37 ca) là hai lệnh tương đương.
+Không có `make` (Windows): mọi lệnh đều có bản `python run.py <lệnh>` tương đương: `all`, `demo`, `eval`, `eval-quick`, `eval-score [LOG]`, `retrieval-eval`, `interop`, `test`, `check`.
+
+**Gợi ý cho người chấm** (từ nhẹ đến nặng): `make check` (không cần khóa) → `make all` (demo, 3 ca) → `make eval-quick` (6 ca) → `make eval` (đủ 37 ca, ~1–1,5 triệu token; gói miễn phí không chạy trọn được trong một ngày, dùng `ARGS="--pace 8"` và `--resume`). Số liệu chính dùng `LLM_MODEL=openai/gpt-oss-120b`; mặc định `gpt-oss-20b` cho kết quả khác.
 
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt   # Linux/macOS: .venv/bin/python
@@ -37,6 +39,7 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 | `make eval` | chạy đủ **37 ca**: `tests/testset.jsonl` (16 câu, 4 `no_answer`) + 21 hồ sơ so với `tests/expected_decisions.json`; ghi `logs/eval_*.jsonl` và `eval/out/*` |
 | `make eval ARGS=""` | chỉ 16 câu hỏi, không chạy hồ sơ |
 | `make interop` | host thứ hai: client JSON-RPC thuần gọi MCP server (không cần khóa API) |
+| `make eval-quick` | **bộ nhanh 6 ca đại diện** (T01, V01, N01, APP-001, APP-014, APP-003), khoảng 150k token, ghi `eval/out/quick`: đủ để thấy quy trình chạy thật với một khóa miễn phí |
 | `make eval-score LOG=logs/eval_X.jsonl` | chấm lại một log đã có, **không gọi LLM** |
 | `make retrieval-eval` | đo riêng tầng truy xuất (recall@k, MRR), không cần khóa API |
 | `make check` | gộp phần **không cần khóa API**: `test` + `retrieval-eval` + `interop` + chấm lại log chính (`CHECK_LOG=logs/...`) |

@@ -5,6 +5,12 @@
     python run.py all                   # = setup + demo (một lệnh tái lập demo)
     python run.py                       # REPL tương tác (chat)
     python run.py eval [tham số ...]    # = python eval/run_eval.py; không tham số = đủ 37 ca (--apps)
+    python run.py eval-quick            # 6 ca đại diện (~150k token), đủ để thấy quy trình chạy thật
+    python run.py eval-score [LOG]      # chấm lại một log đã có, KHÔNG gọi LLM (mặc định: log cấu hình chính)
+    python run.py retrieval-eval        # đo tầng truy xuất (recall@k, MRR), không cần khóa API
+    python run.py interop               # host thứ hai: client JSON-RPC thuần gọi MCP server, không cần khóa API
+    python run.py test                  # toàn bộ test offline
+    python run.py check                 # test + retrieval-eval + interop + eval-score (không cần khóa API)
 """
 
 from __future__ import annotations
@@ -21,6 +27,9 @@ for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
 
 DEFAULT_DEMO_APPS = ["APP-014", "APP-015"]  # cùng số liệu, khác ngày nộp: v1 duyệt, v2 từ chối
+# Bộ nhanh: tra cứu, phiên bản, no_answer + 3 hồ sơ (duyệt, v1/v2 theo ngày nộp, DTI). Khoảng 150k token.
+QUICK_IDS = ["T01", "V01", "N01", "APP-001", "APP-014", "APP-003"]
+DEFAULT_SCORE_LOG = "logs/eval_20261014_202454.jsonl"  # cấu hình chính (A): gpt-oss-120b, không critic
 DEMO_REFUSAL_QUESTION = "FinCo có cho vay mua ô tô trả góp không, kỳ hạn tối đa bao nhiêu tháng?"
 
 
@@ -95,6 +104,36 @@ def cmd_demo(app_ids: list[str]) -> int:
     return 0 if all(v.is_overall_pass for v in verdicts) else 1
 
 
+def _run(*args: str) -> int:
+    """Chạy một lệnh Python con (cùng thông dịch viên) và trả mã thoát."""
+    import subprocess
+
+    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")  # tiến trình con in tiếng Việt được trên Windows
+    return subprocess.call([sys.executable, *args], cwd=ROOT, env=env)
+
+
+def cmd_score(log: str | None = None, out_dir: str | None = None) -> int:
+    args = ["eval/run_eval.py", "--score-only", log or DEFAULT_SCORE_LOG, "--apps"]
+    return _run(*args, *(["--out-dir", out_dir] if out_dir else []))
+
+
+def cmd_check() -> int:
+    steps = [
+        ("test offline", lambda: _run("-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py")),
+        ("đo truy xuất", lambda: _run("eval/retrieval_eval.py")),
+        ("host thứ hai (interop)", lambda: _run("examples/client2.py")),
+        # mã thoát 1 = có ca không đạt trong log (kết quả thật của cấu hình chính), không phải lỗi chạy
+        ("chấm lại log chính", lambda: 0 if cmd_score(out_dir="eval/out/check") in (0, 1) else 2),
+    ]
+    failed = []
+    for name, fn in steps:
+        print("\n" + "=" * 78 + f"\n CHECK: {name}\n" + "=" * 78, flush=True)
+        if fn() != 0:
+            failed.append(name)
+    print("\n" + ("CHECK OK" if not failed else "CHECK LỖI: " + ", ".join(failed)))
+    return 1 if failed else 0
+
+
 def main(argv: list[str]) -> int:
     cmd = argv[0] if argv else "chat"
     rest = argv[1:]
@@ -109,6 +148,20 @@ def main(argv: list[str]) -> int:
         from eval.run_eval import main as eval_main
 
         return eval_main(rest or ["--apps"])
+    if cmd == "eval-quick":
+        from eval.run_eval import main as eval_main
+
+        return eval_main(["--ids", *QUICK_IDS, "--out-dir", "eval/out/quick", *rest])
+    if cmd == "eval-score":
+        return cmd_score(rest[0] if rest else None)
+    if cmd == "retrieval-eval":
+        return _run("eval/retrieval_eval.py", *rest)
+    if cmd == "interop":
+        return _run("examples/client2.py", *rest)
+    if cmd == "test":
+        return _run("-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py")
+    if cmd == "check":
+        return cmd_check()
     if cmd in ("chat", "run"):
         from finco.chat import main as chat_main
 
