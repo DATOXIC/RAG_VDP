@@ -212,11 +212,6 @@ def get_decision(app_id: str) -> Decision:
     )
 
 
-def reset_decisions() -> None:
-    """Xóa toàn bộ quyết định (lệnh /reset). Hồ sơ vay giữ nguyên."""
-    with _connect() as conn:
-        conn.execute("DELETE FROM decisions")
-
 if __name__ == "__main__":
     init_db()
     added = load_applications()

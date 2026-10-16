@@ -9,13 +9,11 @@ Thẩm định định tính trường `reason` trong quyết định của Agen
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 import json
 import os
 
-from finco.store import db
 from finco.types import Application
-from eval.verifier import ExpectedDecision, AgentSubmission, EXPECTED_PATH
+from eval.verifier import ExpectedDecision, AgentSubmission
 import re
 from finco.llm import call_llm
 

@@ -1,9 +1,7 @@
-import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 from finco.rag.dense import VectorStore
 from finco.rag.bm25 import BM25Index
-from finco.rag.hybrid import HybridSearcher
 from finco.rag.chunker import chunk_all
 from finco.rag.loader import load_all_policies
 
@@ -18,7 +16,7 @@ Cơ chế: Sử dụng biến GLOBAL để cố định trong RAM
 """
 _STORE: Optional[VectorStore] = None
 _BM25: Optional[BM25Index] = None
-_HYBRID: Optional[HybridSearcher] = None 
+
 
 def get_vector_store() -> VectorStore:
     global _STORE
@@ -36,22 +34,3 @@ def get_bm25() -> BM25Index:
         store = get_vector_store()
         _BM25 = BM25Index(store.chunks)
     return _BM25
-
-def get_searcher() -> Union[HybridSearcher, VectorStore]:
-    """Trả về bộ tìm kiếm dựa theo biến môi trường RETRIEVAL_MODE ('dense' hoặc 'hybrid')."""
-    global _HYBRID
-    mode = os.environ.get("RETRIEVAL_MODE", "hybrid").lower()
-    
-    if mode == "dense":
-        return get_vector_store()
-    
-    if _HYBRID is None:
-        _HYBRID = HybridSearcher(get_vector_store(), get_bm25())
-    return _HYBRID
-
-def reset_engines():
-    """Hàm dọn dẹp"""
-    global _STORE, _BM25, _HYBRID
-    _STORE = None
-    _BM25 = None
-    _HYBRID = None

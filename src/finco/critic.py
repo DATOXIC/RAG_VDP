@@ -38,15 +38,6 @@ class SessionEvidence:
             if r.trusted or (self.submitted_date and r.as_of == self.submitted_date)
         ]
 
-    @property
-    def retrieved_docs(self) -> set[str]:
-        """Tập mã tài liệu ĐÃ THỰC SỰ THẤY đúng phiên bản (vd: {"CP-01 v1", "CP-05 v1"})."""
-        return {f"{r.doc_id} {r.version}" for r in self.valid_retrievals()}
-
-    @property
-    def has_searched_cp01(self) -> bool:
-        return any(r.doc_id == "CP-01" for r in self.valid_retrievals())
-
 
 _EVIDENCE: dict[str, SessionEvidence] = {}
 _UNATTACHED = ""  # search_policy gọi trước get_application: chưa biết hồ sơ nào

@@ -138,21 +138,6 @@ class SearchHit:
 
 
 @dataclass
-class DtiResult:
-    """Kết quả tool calc_dti.
-    Attributes:
-        monthly_payment: Khoản trả hàng tháng của khoản vay mới (VNĐ, làm tròn).
-        qualified_income: Thu nhập đủ điều kiện theo CP-05 (VNĐ).
-        dti: Tỷ lệ nợ trên thu nhập, dạng số thập phân (0.4709 = 47,09%).
-        formula: Chuỗi mô tả cách tính, để agent trích dẫn và verifier đối chiếu.
-    """
-    monthly_payment: int
-    qualified_income: int
-    dti: float
-    formula: str
-
-
-@dataclass
 class Usage:
     """Mức dùng LLM của một câu hỏi (yêu cầu USAGE trong logs).
     Attributes:

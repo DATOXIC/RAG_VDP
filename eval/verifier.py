@@ -428,40 +428,6 @@ def verify_decision_record(actual: AgentSubmission, expect: ExpectedDecision) ->
         error_message="; ".join(errors),
     )
 
-def verify_all_decisions(
-    submissions: list[AgentSubmission], 
-    expected_path: Path = EXPECTED_PATH
-) -> list[VerifyResult]:
-
-    with open(expected_path, encoding="utf-8") as f:
-        raw_data = json.load(f)
-
-    expected_map = {
-        item["app_id"]: ExpectedDecision.from_dict(item) 
-        for item in raw_data
-    }
-
-    results: list[VerifyResult] = []
-
-    for actual in submissions:
-        app_id = actual.app_id
-        if app_id in expected_map:
-            expect = expected_map[app_id]
-            results.append(verify_decision_record(actual, expect))
-        else:
-            # Ghi nhận bài thi có mã hồ sơ không hợp lệ
-            results.append(
-                VerifyResult(
-                    app_id=app_id,
-                    actual_decision=actual.decision,
-                    actual_dti=actual.calculated_dti,
-                    error_message=f"Mã hồ sơ {app_id} không tồn tại trong bộ đề thi",
-                )
-            )
-    return results
-
-
-
 # ========================AI-USAGE =================================
 
 def calculate_summary_metrics(results: list[VerifyResult]) -> dict[str, float]:

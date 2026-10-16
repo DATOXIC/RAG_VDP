@@ -157,7 +157,7 @@ def compute_dti(app, annual_rate: str) -> str:
         f"- Tổng nghĩa vụ nợ hàng tháng: {total_monthly_debt:,} VNĐ",
         f"- Tỷ lệ nợ trên thu nhập (DTI): {dti} ({dti_percent}%)",
         f"- Diễn giải công thức: {formula}",
-        f"- Căn cứ chính sách: CP-05 v1 (Quy định cách tính thu nhập đủ điều kiện và tỷ lệ DTI)",
+        "- Căn cứ chính sách: CP-05 v1 (Quy định cách tính thu nhập đủ điều kiện và tỷ lệ DTI)",
     ]
     text = "\n".join(result_text)
     return text

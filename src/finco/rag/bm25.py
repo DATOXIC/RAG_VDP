@@ -20,7 +20,7 @@ from typing import Optional
 import numpy as np
 from rank_bm25 import BM25Okapi
 
-from finco.rag.filter import is_valid_at, valid_mask
+from finco.rag.filter import is_valid_at, valid_mask  # noqa: F401  (is_valid_at được nhập lại từ module này)
 from finco.types import Chunk, SearchHit
 
 
