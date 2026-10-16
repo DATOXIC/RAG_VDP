@@ -9,7 +9,7 @@ else
   PY := $(VENV)/bin/python
 endif
 
-.PHONY: all setup demo run eval eval-quick eval-score ragas test retrieval-eval interop check clean
+.PHONY: all setup demo run eval eval-quick eval-score compare ragas test retrieval-eval interop check clean
 
 # Lệnh duy nhất tái lập demo từ máy sạch:  make all   (= setup + demo)
 # Tái lập kết quả đánh giá:               make eval  (37 ca: 16 câu hỏi + 21 hồ sơ)
@@ -45,6 +45,10 @@ eval-quick:
 # Chấm lại một log đã có, KHÔNG gọi LLM:  make eval-score LOG=logs/eval_XXXX.jsonl  (mặc định: log cấu hình chính)
 eval-score:
 	$(PY) run.py eval-score $(LOG)
+
+# Đồ thị so sánh cấu hình (A, H, C) từ kết quả đã chấm, không gọi LLM. Chọn khác: make compare COMPARE_ARGS="--configs A H B"
+compare:
+	$(PY) eval/compare_chart.py $(COMPARE_ARGS)
 
 # Đánh giá bổ sung bằng RAGAS từ log có sẵn (không chạy lại Actor; cần GEMINI_API_KEY và requirements-eval.txt).
 # Ghi eval/out/ragas/. Dừng giữa chừng thì chạy lại, tự tiếp tục từ checkpoint.

@@ -1,0 +1,4 @@
+﻿config,label,n,passed,llm_calls,prompt_tokens,completion_tokens,tool_errors
+A,A: gpt-oss-120b,37,34,198,689453,54196,0
+H,H: gpt-oss-20b (Groq),37,33,209,655390,49020,0
+C,C: Qwen2.5-7B,37,10,353,1501556,50674,16
