@@ -1,11 +1,5 @@
-"""Host thứ hai cho MCP server FinCo: client JSON-RPC thuần stdlib, KHÔNG dùng SDK `mcp`,
-KHÔNG dùng agent/LLM của dự án (dựa trên probe_fetch_mcp.py của thầy).
-
-Chứng minh server chạy được với bất kỳ client nào biết giao thức:
-initialize -> notifications/initialized -> tools/list -> tools/call (đọc + ghi + đọc lại).
-Ghi vào BẢN SAO tạm của DB, không đụng data/finco.db. Không cần khóa API (FINCO_CRITIC=0).
-
-Chạy:  make interop     hoặc     python examples/client2.py
+"""
+HOST CLIENT THỨ 2
 """
 import json
 import os
