@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Optional
 
@@ -30,6 +31,9 @@ def reset_session_state() -> None:
 
 
 def search_policy(query: str, as_of_date: Optional[str] = None, top_k: int = 3) -> str:
+    # Công tắc thí nghiệm đối chứng không-RAG (eval/no_rag_experiment.py): tool vẫn gọi được nhưng không trả đoạn chính sách nào.
+    if os.environ.get("FINCO_NO_RAG", "0").strip() == "1":
+        return "Không tìm thấy đoạn chính sách nào phù hợp."
     actual_k = max(1, min(int(top_k or 3), 5))
     clean_date = str(as_of_date).strip() if as_of_date is not None else ""
 

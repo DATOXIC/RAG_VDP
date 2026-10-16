@@ -42,6 +42,7 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 | `make eval-quick` | **bộ nhanh 6 ca đại diện** (T01, V01, N01, APP-001, APP-014, APP-003), khoảng 150k token, ghi `eval/out/quick`: đủ để thấy quy trình chạy thật với một khóa miễn phí |
 | `make eval-score LOG=logs/eval_X.jsonl` | chấm lại một log đã có, **không gọi LLM** |
 | `make compare` | vẽ đồ thị so sánh các cấu hình (mặc định A, H, C) từ `eval/out/*/per_question.csv` có sẵn, không gọi LLM; ghi `eval/out/compare/compare.png` và `compare.csv`. Chọn khác: `make compare COMPARE_ARGS="--configs A H B"` |
+| `make policy-change` | thí nghiệm **đổi một con số trong chính sách** (trần DTI của CP-01 v1 từ 50% xuống 40%) trên bản sao tạm của dự án, dựng lại chỉ mục, chạy agent trên 7 ca và so với đáp án chuẩn tính lại; gọi LLM (cần khóa API, khoảng 200 nghìn token); ghi `eval/out/policy_change/`. Dữ liệu thật không bị sửa |
 | `make ragas` | đánh giá bổ sung bằng RAGAS (faithfulness, relevancy, correctness, context precision/recall) từ log có sẵn; cần `GEMINI_API_KEY`, cài `requirements-eval.txt`; ghi `eval/out/ragas/`. Câu `no_answer` không chấm RAGAS |
 | `make retrieval-eval` | đo riêng tầng truy xuất (recall@k, MRR), không cần khóa API |
 | `make check` | gộp phần **không cần khóa API**: `test` + `retrieval-eval` + `interop` + chấm lại log chính (`CHECK_LOG=logs/...`) |
@@ -122,7 +123,7 @@ data/policies/*.md        tài liệu chính sách (có front matter, 2 phiên b
 data/applications.json    21 hồ sơ vay giả lập      data/index/  vector đã tính sẵn (commit)
 prompts/agent_system.txt  prompt hệ thống (tách khỏi code)
 src/finco/                llm, agent, mcp_server, mcp_client, tools, chat, audit, store/, rag/
-eval/                     run_eval.py (chạy), scoring.py (chấm), verifier.py, judge.py, ragas_eval.py, sandbox_db.py, retrieval_eval.py, compare_chart.py
+eval/                     run_eval.py (chạy), scoring.py (chấm), verifier.py, judge.py, ragas_eval.py, sandbox_db.py, retrieval_eval.py, compare_chart.py, policy_change_experiment.py
 tests/                    testset.jsonl, expected_decisions.json (chỉ cho eval), test_*.py
 logs/                     log chạy thật (chỉ mục: logs/README.md)
 report.docx               báo cáo (nộp kèm, không nằm trong repo này)

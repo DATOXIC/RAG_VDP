@@ -8,6 +8,7 @@
     python run.py eval-quick            # 6 ca đại diện (~150k token), đủ để thấy quy trình chạy thật
     python run.py eval-score [LOG]      # chấm lại một log đã có, KHÔNG gọi LLM (mặc định: log cấu hình chính)
     python run.py compare [--configs A H B]  # đồ thị so sánh các cấu hình từ per_question.csv có sẵn, không gọi LLM
+    python run.py policy-change [--new 40]  # thí nghiệm đổi một con số trong chính sách (gọi LLM, bản sao tạm)
     python run.py retrieval-eval        # đo tầng truy xuất (recall@k, MRR), không cần khóa API
     python run.py interop               # host thứ hai: client JSON-RPC thuần gọi MCP server, không cần khóa API
     python run.py test                  # toàn bộ test offline
@@ -157,6 +158,8 @@ def main(argv: list[str]) -> int:
         return cmd_score(rest[0] if rest else None)
     if cmd == "compare":
         return _run("eval/compare_chart.py", *rest)
+    if cmd == "policy-change":
+        return _run("eval/policy_change_experiment.py", *rest)
     if cmd == "retrieval-eval":
         return _run("eval/retrieval_eval.py", *rest)
     if cmd == "interop":

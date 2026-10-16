@@ -155,6 +155,24 @@ Trung bình 12 câu có đáp án (một lần chạy, kết quả ở `eval/out
 - **Answer Correctness chỉ khoảng 0,6 không có nghĩa là sai 40%.** Chỉ số so khớp ngữ nghĩa với đáp án chuẩn dài và có định dạng, nên câu đúng hẳn như V01 (tuổi tối đa 60) vẫn chỉ đạt 0,37. Answer Relevancy của câu hành động (A01, A02) thấp vì câu trả lời là bản ghi quyết định, không phải một câu trả lời cho câu hỏi.
 - **Giám khảo nhiễu:** lần chạy đầu (khi ngữ cảnh mới chỉ gồm `search_policy`) cho V02 Faithfulness 0,0 dù câu trả lời trích đúng "45%", lần chạy sau cho 1,00. Vì vậy RAGAS chỉ là **số liệu bổ sung**: 12 câu, một giám khảo bản nhẹ, một lần chạy; kết luận về chất lượng dựa vào chấm bằng code ở mục 2.1.
 
+### 2.5. Thí nghiệm đổi một con số trong chính sách
+
+**Mục đích:** kiểm tra agent có dùng chính sách tra được (RAG) hay dựa vào trí nhớ của model. Nếu đổi một con số trong tài liệu mà quyết định đổi theo, thì quyết định đó đến từ tài liệu.
+
+**Cách làm** (`make policy-change`, `eval/policy_change_experiment.py`): trên **bản sao tạm** của dự án (dữ liệu thật không bị sửa), đổi trần DTI của CP-01 v1 từ 50% xuống 40% ở mọi chỗ tài liệu nêu con số này (CP-01 v1, CP-01 v2 mục 6.4, bảng so sánh trong CP-15), dựng lại chỉ mục vector, tính lại đáp án chuẩn (hồ sơ v1 có DTI trong khoảng 40% đến 50% đổi từ duyệt sang từ chối `DTI_EXCEEDED`), rồi chạy agent gpt-oss-120b không critic (cấu hình A) trên 7 ca. Kết quả ở `eval/out/policy_change/`.
+
+| Ca | Vai trò | Đáp án gốc | Đáp án sau khi đổi | Agent sau khi đổi |
+|---|---|---|---|---|
+| APP-014 (DTI 47,09%) | bị ảnh hưởng | duyệt | từ chối | **từ chối**, lý do ghi "47.09% > ngưỡng tối đa 40% theo CP-01 v1" |
+| APP-016 (DTI 48,48%) | bị ảnh hưởng | duyệt | từ chối | **từ chối** |
+| APP-001 (DTI 24,62%) | đối chứng, v1 DTI thấp | duyệt | duyệt | duyệt |
+| APP-012 (chuyển cấp) | đối chứng, v1 | chuyển cấp | chuyển cấp | chuyển cấp (quyết định, mã lý do, trích dẫn và số liệu đều đúng); **trượt vì lỗi hạ tầng HTTP 413** của Groq (giới hạn 8.000 token mỗi phút) ở bước trả lời cuối |
+| APP-019 (DTI 51,53%) | đối chứng, v1 đã bị từ chối | từ chối | từ chối | từ chối |
+| APP-015 (DTI 47,09%, v2) | đối chứng, cùng DTI với APP-014 nhưng áp dụng v2 | từ chối | từ chối | từ chối |
+| X01 (câu hỏi về trần DTI ngày 15/03/2025) | câu hỏi đáp | 50% | 40% | trước khi đổi trả lời **50%**, sau khi đổi trả lời **40%** |
+
+**Kết luận:** cả hai hồ sơ bị ảnh hưởng đổi từ duyệt sang từ chối đúng như đáp án mới, câu hỏi về trần DTI đổi từ 50% sang 40%, còn các hồ sơ đối chứng giữ nguyên. Như vậy quyết định của agent theo nội dung chính sách tra được, không theo trí nhớ của model. Giới hạn: chỉ 7 ca, một lần chạy, một model; APP-012 trượt do hạ tầng chứ không do thay đổi chính sách.
+
 ## 3. Phân tích lỗi
 
 ### 3.1. Model nhỏ: lỗi tuân thủ quy trình
@@ -199,7 +217,7 @@ Quan sát có kiểm chứng: critic-agent thật sự độc lập (tự đọc
 - **Các model chạy trên các nền tảng khác nhau** (Groq, Colab T4), nên so sánh theo kích thước chỉ mang tính định hướng; chưa có "thang kích thước" cùng họ trên cùng nền tảng.
 - **Critic và Actor dùng model khác họ ở cấu hình B** nên chỉ giảm được một phần lỗi tương quan; ở cấu hình D thì dùng chung model nên lỗi có thể tương quan.
 - Bộ chấm yêu cầu trích dẫn xuất hiện trong văn bản trả lời của câu hỏi đáp; một câu trả lời đúng nhưng không nêu mã tài liệu bị tính là trượt (ví dụ C02).
-- Chưa có đối chứng không-RAG và kiểm tra bằng cách đổi số.
+- Đã làm thí nghiệm đổi một con số (mục 2.5) nhưng chỉ trên 7 ca và một model. **Chưa có** đối chứng không dùng RAG.
 
 ## 5. Kết luận và hướng tiếp theo
 
