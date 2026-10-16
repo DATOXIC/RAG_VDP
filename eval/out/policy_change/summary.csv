@@ -1,0 +1,8 @@
+﻿id,loai,dap_an_goc,dap_an_moi,agent_truoc_khi_doi,agent_sau_khi_doi,dat
+APP-014,bị ảnh hưởng,approve,reject,(log cấu hình A),reject,đạt
+APP-016,bị ảnh hưởng,approve,reject,(log cấu hình A),reject,đạt
+APP-001,đối chứng,approve,approve,(log cấu hình A),approve,đạt
+APP-012,đối chứng,escalate,escalate,(log cấu hình A),escalate,trượt
+APP-019,đối chứng,reject,reject,(log cấu hình A),reject,đạt
+APP-015,đối chứng,reject,reject,(log cấu hình A),reject,đạt
+X01,câu hỏi trần DTI,50%,40%,đạt,đạt,

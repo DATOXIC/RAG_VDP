@@ -1,0 +1,42 @@
+{
+  "questions": 7,
+  "passed": 6,
+  "pass_rate": 85.7,
+  "run_success_rate": 85.7,
+  "decision_accuracy": 100.0,
+  "root_cause_accuracy": 100.0,
+  "read_after_write_rate": 100.0,
+  "numbers_accuracy": 100.0,
+  "correct_refusal_rate": null,
+  "false_refusal_rate": 0.0,
+  "faithfulness_rule_rate": 100.0,
+  "tool_error_rate": 0.0,
+  "avg_tool_calls": 6.86,
+  "avg_llm_calls": 6.86,
+  "total_prompt_tokens": 188186,
+  "total_completion_tokens": 14168,
+  "max_prompt_tokens": 7278,
+  "by_type": {
+    "tra cứu": {
+      "n": 1,
+      "passed": 1
+    },
+    "hồ sơ": {
+      "n": 6,
+      "passed": 5
+    }
+  },
+  "log_file": "C:\\Users\\To Phuong Dat\\AppData\\Local\\Temp\\finco_policy_change_yzescik9\\after\\logs\\eval_20261016_202113.jsonl",
+  "model": "openai/gpt-oss-120b",
+  "generated_at": "2026-10-16T20:45:33",
+  "verifier": {
+    "total_cases": 6,
+    "pass_count": 6,
+    "overall_pass_rate": 100.0,
+    "decision_accuracy": 100.0,
+    "root_cause_accuracy": 100.0,
+    "citation_recall_avg": 100.0,
+    "trace_valid_rate": 100.0,
+    "math_valid_rate": 100.0
+  }
+}

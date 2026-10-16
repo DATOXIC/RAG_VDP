@@ -1,0 +1,2 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+X01,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,3171,438,1974,,
