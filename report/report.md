@@ -274,9 +274,9 @@ Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất b
 
 | Thành viên | Vai trò phụ trách chính | Nội dung công việc cụ thể đã hoàn thành | Commit Hash minh chứng |
 | :--- | :--- | :--- | :--- |
-| **Tô Phương Đạt** *(DATOXIC)* | **Kỹ sư Dữ liệu & RAG** *(Thành viên A)* | Xây dựng 17 văn bản chính sách, nạp 21 hồ sơ; cài đặt Semantic Chunker, Hybrid Retrieval (BGE-M3 + BM25), Metadata Filter `as_of_date`. | `2133b3b`, `c2b9a98`, `61b3617` |
-| **Vương Vui Vẻ** *(VuongVuiVe123)* | **Kỹ sư Tác nhân AI** *(Thành viên B)* | Thiết kế `llm.py` (retry, backoff), vòng lặp Agent handwritten loop, Prompt System, Safe Action Parser, cơ chế nhắc Nudge. | `0c309af`, `d5abbbf`, `eb55179` |
-| **Nguyễn Phi** *(nphi)* | **Kiến trúc sư MCP & Đánh giá** *(Thành viên C)* | Phát triển MCP Server/Client qua `stdio`, 5 công cụ nghiệp vụ, bộ kiểm thử `run_eval.py`, Verifier, RAGAS Benchmark, Makefile. | `354c767`, `393e536`, `ba54b16` |
+| **Tô Phương Đạt** *(DATOXIC)* | **Trưởng nhóm, Kỹ sư Tác nhân & Đánh giá** *(Lead Agent & Evaluation)* | Thiết kế kiến trúc Agent phản biện (Multi-Agent Critic Loop), mô-đun LLM resilient, Verifier chốt chặn rủi ro, toàn bộ framework đánh giá (RAGAS, Gold Evaluation 21 hồ sơ), Báo cáo tổng kết. | `b4ed9ef`, `eb55bfd`, `d23d1e6` |
+| **Đặng Minh Vương** *(VuongVuiVe123)* | **Kỹ sư Hệ thống MCP & Công cụ** *(MCP Systems & Tools)* | Hiện thực hóa giao thức MCP Server và MCP Client chuẩn stdio, xây dựng 5 công cụ thẩm định nghiệp vụ (`tools.py`), tầng lưu trữ SQLite (`store/`), tự động hóa quy trình (`Makefile`, `run.py`, `client2.py`). | `b03268f`, `b210c48`, `e057b08` |
+| **Trương Khắc Nhật Phi** *(nphi)* | **Kỹ sư Tri thức & Thuật toán RAG** *(Knowledge Base & RAG Engine)* | Xây dựng 17 văn bản chính sách tín dụng (`CP-01` đến `CP-17`), bộ dữ liệu hồ sơ vay mẫu (`applications.json`), bộ chia nhỏ ngữ nghĩa (Semantic Chunker), thuật toán Hybrid Retrieval (BGE-M3 Dense + BM25 Sparse), bộ lọc hiệu lực thời gian (`as_of_date`). | `906403c`, `df7fa5a`, `d393020` |
 
 *Cam kết liêm chính học thuật:* Mọi thành viên đều nắm vững kiến trúc toàn hệ thống và giải thích được từng dòng mã nguồn trong phạm vi phân công khi Giảng viên vấn đáp trực tiếp.
 
