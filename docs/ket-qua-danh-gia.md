@@ -29,29 +29,31 @@ Critic là một chốt chặn nhúng trong tool `submit_decision` (xem `src/fin
 
 ### 2.1. Ảnh hưởng của model (không critic)
 
-| Chỉ số | gpt-oss-120b (A) | Qwen2.5-7B (C) |
-|---|---|---|
-| Đạt toàn diện | **34/37 (92%)** | 10/37 (27%) |
-| Chạy xong không lỗi | 37/37 | 30/37 |
-| Đúng quyết định, 21 hồ sơ | **21/21** | 6/21 |
-| Lượt gọi LLM (cả 37 ca) | 198 | 353 |
-| Prompt token (cả 37 ca) | 689.453 | 1.501.556 |
-| Lỗi gọi tool | 0 | 16 |
+| Chỉ số | gpt-oss-120b (A) | gpt-oss-20b (H) | Qwen2.5-7B (C) |
+|---|---|---|---|
+| Đạt toàn diện | **34/37 (92%)** | 33/37 (89%) | 10/37 (27%) |
+| Chạy xong không lỗi | 37/37 | 37/37 | 30/37 |
+| Đúng quyết định, 21 hồ sơ | **21/21** | 20/21 | 6/21 |
+| Lượt gọi LLM (cả 37 ca) | 198 | 209 | 353 |
+| Prompt token (cả 37 ca) | 689.453 | 655.390 | 1.501.556 |
+| Lỗi gọi tool | 0 | 0 | 16 |
 
-Qwen2.5-14B (E) đạt 8/37 (21,6%), trong đó từ chối đúng `no_answer` 25%, tỉ lệ lời gọi tool lỗi 18,9%. `gpt-oss-20b` trên Groq (H) đạt **33/37 (89,2%)**, đúng quyết định 21/21 hồ sơ, chỉ kém 120b một ca (mục 2.3).
+Qwen2.5-14B (E) đạt 8/37 (21,6%), trong đó từ chối đúng `no_answer` 25%, tỉ lệ lời gọi tool lỗi 18,9%. `gpt-oss-20b` trên Groq (H) đạt **33/37 (89,2%)**, đúng quyết định 20/21 hồ sơ (sai APP-018), chỉ kém 120b một ca (mục 2.3).
 
 Theo loại câu (số câu đạt):
 
-| Loại câu | gpt-oss-120b | Qwen2.5-7B |
-|---|---|---|
-| Tra cứu (2) | 2 | 0 |
-| Tổng hợp (2) | 2 | 0 |
-| Phiên bản chính sách (2) | 2 | 1 |
-| Tính toán (2) | 2 | 0 |
-| Thiếu dữ liệu (2) | 2 | 2 |
-| `no_answer` (4) | 3 | 4 |
-| Hành động (2) | 1 | 0 |
-| Hồ sơ (21) | 20 | 3 |
+| Loại câu | gpt-oss-120b | gpt-oss-20b (H) | Qwen2.5-7B |
+|---|---|---|---|
+| Tra cứu (2) | 2 | 2 | 0 |
+| Tổng hợp (2) | 2 | 2 | 0 |
+| Phiên bản chính sách (2) | 2 | 2 | 1 |
+| Tính toán (2) | 2 | 0 | 0 |
+| Thiếu dữ liệu (2) | 2 | 2 | 2 |
+| `no_answer` (4) | 3 | 4 | 4 |
+| Hành động (2) | 1 | 1 | 0 |
+| Hồ sơ (21) | 20 | 20 | 3 |
+
+Cột H cho thấy gpt-oss-20b gần như ngang 120b (33 so với 34 ca); khác biệt nằm ở hai câu tính toán C01, C02 (0/2 so với 2/2), còn 20b lại từ chối đúng đủ 4/4 câu `no_answer`. Về quyết định hồ sơ, 120b không sai ca nào còn 20b sai một (APP-018), nên Actor 20b cũng có rất ít dư địa để critic cải thiện.
 
 Kết luận về kích thước: chênh lệch giữa họ model là rất lớn (92% so với 22 đến 27%), nhưng **kích thước đơn thuần không giải thích được**: Qwen 14B không tốt hơn Qwen 7B (8 và 10 ca). Hai họ model còn khác nền tảng phục vụ, độ dài ngữ cảnh và cách gọi tool, và gpt-oss là MoE (chỉ khoảng 5B tham số kích hoạt mỗi token).
 
@@ -102,7 +104,7 @@ Ba chỉnh sửa (không chặn vì quên trích dẫn mà tự bổ sung, giớ
 
 ### 2.3. Actor yếu hơn: gpt-oss-20b (G, H, I, J)
 
-Mục đích: kiểm tra critic trên một Actor còn dư địa sai (120b đã đúng quyết định 21/21 nên không có chỗ để critic cải thiện). Cả bốn cấu hình chạy đủ 37 ca.
+Mục đích: kiểm tra critic trên một Actor yếu hơn 120b (120b đã đúng quyết định 21/21 nên critic không có chỗ để cải thiện). Lưu ý về dư địa: trên Groq, 20b (H) chỉ sai 1 quyết định hồ sơ (APP-018), nên dư địa để critic cải thiện cũng rất nhỏ; chỉ môi trường Ollama (G, đúng 17/21 hồ sơ) có dư địa đáng kể. Vì vậy kết quả I, J cho thấy critic không gây hại và không giúp trong điều kiện ít lỗi, chưa chứng minh critic vô dụng trên một Actor sai nhiều. Cả bốn cấu hình chạy đủ 37 ca.
 
 | Cấu hình | Nơi chạy | Critic | Đạt toàn diện | Chạy xong | Prompt + completion token của Actor |
 |---|---|---|---|---|---|
@@ -171,7 +173,7 @@ Quan sát có kiểm chứng: critic-agent thật sự độc lập (tự đọc
 Hệ thống vận hành đúng từ đầu đến cuối trên model thật (MCP, tra cứu, ghi và đọc lại, log có USAGE, chấm điểm tự động). Kết luận chính:
 
 1. **Chất lượng model quyết định kết quả.** gpt-oss-120b đạt 92%, Qwen nhỏ đạt 22 đến 27%; lỗi của model nhỏ là lỗi tuân thủ quy trình, không phải thiếu kiến thức chính sách.
-2. **Critic chưa cho thấy lợi ích đo được, trên cả Actor mạnh lẫn Actor vừa.** Trên gpt-oss-20b (Groq), không critic đạt 33/37, critic một lần gọi và critic-agent cùng đạt 32/37 (mục 2.3). Cả critic một lần gọi lẫn critic-agent đều không vượt nhánh không critic, và critic-agent tốn thêm khoảng 61% prompt token. Với Actor yếu, critic cũng không cứu được vì lỗi nằm ở bước hành động; với Actor mạnh, không còn chỗ để cải thiện.
+2. **Critic chưa cho thấy lợi ích đo được, nhưng bằng chứng mới chỉ phủ các Actor ít lỗi.** Trên gpt-oss-120b (A so với B) và gpt-oss-20b trên Groq (H so với I, J: 33/37 so với 32/37 và 32/37, mục 2.3), critic không vượt nhánh không critic, và critic-agent tốn thêm khoảng 61% prompt token (trên 120b). Cả hai Actor này gần như không còn quyết định sai (120b: 0/21, 20b: 1/21) nên critic không có chỗ để cải thiện; với Qwen 7B, critic tự chấm cũng không giúp (mục 2.2). **Chưa thử** critic mạnh (Gemini) trên một Actor sai nhiều quyết định, ví dụ gpt-oss:20b chạy Ollama (G, đúng 17/21 hồ sơ); đây là thí nghiệm còn thiếu và nên ghi trong hướng tiếp theo.
 3. **Cấu hình mặc định nên là không critic** (`FINCO_CRITIC=0`) cho đến khi có bằng chứng ngược lại; critic-agent giữ lại như một cấu hình thí nghiệm có tài liệu (`FINCO_CRITIC_MODE=agent`, `FINCO_CRITIC_PROVIDER=gemini`).
 
-Hướng tiếp theo, theo thứ tự đáng làm: (a) chạy lặp lại cấu hình A và B đủ nhiều lần để đo độ biến thiên thật; (b) sửa gốc lỗi mã lý do của nhánh nhân viên (APP-018, A02) bằng quy tắc rõ trong prompt và đo lại; (c) thử critic mạnh hơn hoặc cùng họ với Actor, và cho critic xác minh riêng mã lý do thay vì chỉ quyết định; (d) làm thang kích thước cùng họ trên cùng nền tảng (ví dụ `gpt-oss-20b` và `120b`, hoặc Llama 8B và 70B) để kết luận đúng về ảnh hưởng của số tham số.
+Hướng tiếp theo, theo thứ tự đáng làm: (a) chạy lặp lại cấu hình A và B đủ nhiều lần để đo độ biến thiên thật; (b) sửa gốc lỗi mã lý do của nhánh nhân viên (APP-018, A02) bằng quy tắc rõ trong prompt và đo lại; (c) chạy critic Gemini trên Actor sai nhiều quyết định (gpt-oss:20b qua Ollama, G), rồi thử critic mạnh hơn hoặc cùng họ với Actor, và cho critic xác minh riêng mã lý do thay vì chỉ quyết định; (d) làm thang kích thước cùng họ trên cùng nền tảng (ví dụ `gpt-oss-20b` và `120b`, hoặc Llama 8B và 70B) để kết luận đúng về ảnh hưởng của số tham số.
