@@ -1,0 +1,7 @@
+# Chỉ cần cho eval/ragas_eval.py (đánh giá bổ sung bằng RAGAS). Cài thêm sau requirements.txt:
+#   .venv/Scripts/python -m pip install -r requirements-eval.txt
+# Không cần cho make setup / demo / eval / check. Giám khảo là Gemini (GEMINI_API_KEY trong .env).
+ragas==0.3.1
+datasets==5.1.0
+langchain-core==1.6.11
+langchain-openai==1.7.2
