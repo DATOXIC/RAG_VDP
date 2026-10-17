@@ -1,19 +1,4 @@
-"""Đo chất lượng truy xuất: dense, BM25, hybrid trên tests/retrieval_testset.jsonl.
-
-Chạy từ thư mục gốc repo:
-    python eval/retrieval_eval.py                    # cả 3 chế độ, có lọc ngày
-    python eval/retrieval_eval.py --no-date-filter   # tắt lọc ngày (thí nghiệm bonus #1)
-    python eval/retrieval_eval.py --modes dense hybrid --k 5
-
-Cách chấm:
-- Một chunk "trúng" khi (doc_id, version, số mục) khớp một mục trong `gold` hoặc `alt`.
-  So theo MỤC chứ không theo chunk_id, vì một mục có thể bị tách thành nhiều chunk.
-- rank_gold: hạng đầu tiên của chunk thuộc `gold`. rank_any: thuộc `gold` hoặc `alt`.
-- Câu no_answer (gold rỗng) không tính recall/MRR; chỉ ghi điểm hạng 1 để tham khảo.
-- wrong_version: số chunk trong top-k KHÔNG còn hiệu lực tại as_of_date của câu hỏi.
-
-Ra: bảng tóm tắt trên màn hình và eval/out/retrieval_per_question[_nofilter].csv.
-"""
+"""Đo lường độc lập chất lượng tầng RAG (Recall@k, MRR, lọc phiên bản)."""
 
 import argparse
 import csv

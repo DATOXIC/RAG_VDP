@@ -238,7 +238,7 @@ def evaluate_sequentially_with_checkpoint(
                 ar_score = merged.get("answer_relevancy", 0.0) or 0.0
                 ac_score = merged.get("answer_correctness", 0.0) or 0.0
                 console.print(
-                    f"      [green]✓ Xong {qid}:[/green] "
+                    f"      [green] Xong {qid}:[/green] "
                     f"Faithfulness: [bold]{f_score:.1%}[/bold] | "
                     f"Relevancy: [bold]{ar_score:.1%}[/bold] | "
                     f"Correctness: [bold]{ac_score:.1%}[/bold]"
@@ -277,12 +277,12 @@ def evaluate_sequentially_with_checkpoint(
 
                     reason = "503 Máy chủ Google quá tải (High Demand)" if is_server_busy else "429 Chạm giới hạn Quota"
                     console.print(
-                        f"      [yellow]⚠ {reason} ở câu {qid}. "
+                        f"      [yellow]{reason} ở câu {qid}. "
                         f"Tự động ngủ {wait_s:.0f}s để đợi máy chủ hồi (lần thử {attempt}/{max_retries})...[/yellow]"
                     )
                     time.sleep(wait_s)
                 else:
-                    console.print(f"      [red]⚠ Lỗi không phải quota/server ở câu {qid}: {e}[/red]")
+                    console.print(f"      [red]Lỗi không phải quota/server ở câu {qid}: {e}[/red]")
                     if attempt == max_retries:
                         checkpoint[qid] = {**item, "error": str(e)}
                         with open(checkpoint_file, "w", encoding="utf-8") as f:
