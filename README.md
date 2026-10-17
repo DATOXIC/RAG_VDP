@@ -49,7 +49,7 @@ Tự động tạo môi trường ảo `.venv`, cài đặt thư viện, khởi 
 | **4. Tái lập toàn bộ Benchmark** | `make eval`<br>`python run.py eval` | Chạy đầy đủ 37 ca (16 câu hỏi + 21 hồ sơ). Nên dùng kèm `ARGS="--pace 8"` để tránh chạm Rate Limit của Groq. |
 
 <details>
-<summary><b>🛠️ Danh mục toàn bộ lệnh tra cứu nâng cao (Bấm vào để mở rộng)</b></summary>
+<summary><b>Danh mục toàn bộ lệnh tra cứu nâng cao (Bấm vào để mở rộng)</b></summary>
 
 | Lệnh Make | Lệnh Python tương đương | Chức năng cụ thể |
 | :--- | :--- | :--- |
