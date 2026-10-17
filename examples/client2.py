@@ -9,6 +9,12 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Đảm bảo UTF-8 cho Windows console
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 ROOT = Path(__file__).resolve().parents[1]
 APP = sys.argv[1] if len(sys.argv) > 1 else "APP-001"
 

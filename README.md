@@ -143,7 +143,7 @@ Ngoài 37 ca kiểm thử nghiệp vụ, hệ thống tích hợp sẵn script �
 ├── logs/                      # Nhật ký kiểm toán JSONL từng bước chạy thực tế (chỉ mục: logs/README.md)
 ├── Makefile                   # Tập lệnh chuẩn hóa cho môi trường Linux / macOS
 ├── run.py                     # Task Runner tương đương thuần Python cho môi trường Windows
-└── report/report.md           # Toàn văn báo cáo khoa học 9 mục chuẩn mực
+└── report/report.docx           # Toàn văn báo cáo khoa học 9 mục chuẩn mực
 ```
 
 ---
