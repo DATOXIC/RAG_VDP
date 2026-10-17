@@ -1,143 +1,155 @@
-# FinCo: Trợ lý thẩm định hồ sơ vay
+# FinCo: Trợ lý thẩm định tín dụng tự động (Agentic RAG & MCP)
 
-Agent thẩm định hồ sơ vay tiêu dùng cho công ty tài chính **giả định** FinCo: đọc hồ sơ, tra chính sách đúng phiên bản theo ngày nộp, tính DTI bằng code, ra quyết định, **ghi vào DB rồi đọc lại để xác nhận**. Toàn bộ chính sách và hồ sơ là dữ liệu giả lập (xem `data/README.md`).
+> **FinCo** là hệ thống AI Agent hỗ trợ thẩm định hồ sơ vay tiêu dùng tự động: đối chiếu dữ liệu khách hàng với 17 văn bản chính sách theo đúng ngày hiệu lực (`as_of_date`), tính toán DTI bằng code deterministic, ra quyết định tín dụng và tự động ghi/đọc đối soát qua giao thức chuẩn **Model Context Protocol (MCP)**.
+> 
+> *Toàn bộ dữ liệu hồ sơ và văn bản chính sách là dữ liệu giả lập phục vụ nghiên cứu (chi tiết xem `data/README.md`).*
 
-Thành phần: RAG (dense + hybrid BM25, lọc theo ngày hiệu lực) · vòng lặp agent viết tay · 5 tool qua MCP server (stdio) · bộ chấm điểm bằng code + giám khảo LLM.
+---
 
-## Chạy nhanh
+## ⚡ 1. Khởi động nhanh (Quickstart)
 
-**Lệnh chạy duy nhất để tái lập demo** (từ máy sạch, sau khi điền `.env`):
+Hệ thống hỗ trợ chạy bằng `make` (Linux/macOS) hoặc trực tiếp bằng `python run.py` (Windows đa nền tảng).
 
+### Bước 1: Cấu hình khóa API (`.env`)
+Sao chép file mẫu:
 ```bash
-make all        # = make setup + make demo
-make eval       # tái lập kết quả đánh giá: 37 ca (16 câu hỏi + 21 hồ sơ), chấm tự động
+cp .env.example .env
 ```
+Mở `.env` và điền khóa API:
+* **Khóa chính (Bắt buộc để chạy Agent):**
+  * `GROQ_API_KEY`: Dùng cho Agent thẩm định chính (mặc định mô hình `openai/gpt-oss-120b` trên hạ tầng Groq siêu tốc).
+* **Khóa nghiên cứu (Tùy chọn - Dành cho đánh giá & phản biện):**
+  * `GEMINI_API_KEY`: Dùng khi chạy bộ chỉ số RAGAS (`make ragas`) hoặc bật chốt chặn phản biện Multi-Agent Critic (`FINCO_CRITIC_PROVIDER=gemini`).
 
-Yêu cầu: Python 3.11+, có mạng ở lần đầu (tải mô hình embedding `BAAI/bge-m3`, ~2 GB), khóa API LLM của một endpoint tương thích OpenAI (mặc định Groq; xem mục "Mô hình và endpoint").
+### Bước 2: Chạy hệ thống với 1 lệnh duy nhất
+Tự động tạo môi trường ảo `.venv`, cài đặt thư viện, khởi tạo CSDL SQLite và chạy kịch bản thẩm định mẫu:
 
-```bash
-cp .env.example .env        # điền GROQ_API_KEY (hoặc OPENAI_API_KEY + OPENAI_BASE_URL)
-make all                    # tương đương: make setup && make demo
-```
+* **Trên Linux / macOS:**
+  ```bash
+  make all    # Tương đương: make setup && make demo
+  ```
+* **Trên Windows (PowerShell / CMD không có Make):**
+  ```powershell
+  python run.py all    # Tương đương: python run.py setup && python run.py demo
+  ```
 
-Không có `make` (Windows): mọi lệnh đều có bản `python run.py <lệnh>` tương đương: `all`, `demo`, `eval`, `eval-quick`, `eval-score [LOG]`, `retrieval-eval`, `interop`, `test`, `check`.
+*(Lần đầu chạy sẽ tải mô hình embedding `BAAI/bge-m3` ~2GB về máy; các lần sau chạy hoàn toàn cục bộ).*
 
-**Gợi ý cho người chấm** (từ nhẹ đến nặng): `make check` (không cần khóa) → `make all` (demo, 3 ca) → `make eval-quick` (6 ca) → `make eval` (đủ 37 ca, ~1–1,5 triệu token; gói miễn phí không chạy trọn được trong một ngày, dùng `ARGS="--pace 8"` và `--resume`). Mặc định là `openai/gpt-oss-120b`, đúng cấu hình của số liệu chính; đổi model bằng `LLM_MODEL` sẽ cho kết quả khác.
+---
 
-```bash
-python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt   # Linux/macOS: .venv/bin/python
-.venv/Scripts/python run.py setup
-.venv/Scripts/python run.py demo
-```
+## 🧭 2. Lộ trình kiểm thử cho Người chấm (Tester / Grader Roadmap)
 
-| Lệnh | Việc làm |
-|---|---|
-| `make setup` | tạo venv, cài thư viện, tạo DB hồ sơ, tải/nạp mô hình embedding, kiểm tra khóa API |
-| `make all` | `make setup` rồi `make demo`: một lệnh tái lập demo từ máy sạch |
-| `make demo` | thẩm định APP-014 và APP-015 (cùng số liệu, khác ngày nộp → v1 duyệt, v2 từ chối) + một câu hỏi ngoài tài liệu; in bảng chấm. Đổi hồ sơ: `make demo APPS="APP-003 APP-018"` |
-| `make run` | REPL tương tác: `list`, `APP-xxx`, `ask <câu hỏi>`, `history`, `audit <mã>` |
-| `make eval` | chạy đủ **37 ca**: `tests/testset.jsonl` (16 câu, 4 `no_answer`) + 21 hồ sơ so với `tests/expected_decisions.json`; ghi `logs/eval_*.jsonl` và `eval/out/*` |
-| `make eval ARGS=""` | chỉ 16 câu hỏi, không chạy hồ sơ |
-| `make interop` | host thứ hai: client JSON-RPC thuần gọi MCP server (không cần khóa API) |
-| `make eval-quick` | **bộ nhanh 6 ca đại diện** (T01, V01, N01, APP-001, APP-014, APP-003), khoảng 150k token, ghi `eval/out/quick`: đủ để thấy quy trình chạy thật với một khóa miễn phí |
-| `make eval-score LOG=logs/eval_X.jsonl` | chấm lại một log đã có, **không gọi LLM** |
-| `make compare` | vẽ đồ thị so sánh các cấu hình (mặc định A, H, C) từ `eval/out/*/per_question.csv` có sẵn, không gọi LLM; ghi `eval/out/compare/compare.png` và `compare.csv`. Chọn khác: `make compare COMPARE_ARGS="--configs A H B"` |
-| `make policy-change` | thí nghiệm **đổi một con số trong chính sách** (trần DTI của CP-01 v1 từ 50% xuống 40%) trên bản sao tạm của dự án, dựng lại chỉ mục, chạy agent trên 7 ca và so với đáp án chuẩn tính lại; gọi LLM (cần khóa API, khoảng 200 nghìn token); ghi `eval/out/policy_change/`. Dữ liệu thật không bị sửa |
-| `make ragas` | đánh giá bổ sung bằng RAGAS (faithfulness, relevancy, correctness, context precision/recall) từ log có sẵn; cần `GEMINI_API_KEY`, cài `requirements-eval.txt`; ghi `eval/out/ragas/`. Câu `no_answer` không chấm RAGAS |
-| `make retrieval-eval` | đo riêng tầng truy xuất (recall@k, MRR), không cần khóa API |
-| `make check` | gộp phần **không cần khóa API**: `test` + `retrieval-eval` + `interop` + chấm lại log chính (`CHECK_LOG=logs/...`) |
-| `make test` | toàn bộ test offline (agent giả, chấm điểm, MCP, truy xuất): không tốn lượt gọi LLM |
+Để thuận tiện cho Giảng viên và người chấm kiểm chứng từ mức độ nhẹ đến toàn diện, nhóm khuyến nghị quy trình 4 cấp độ:
 
-### Chấm lại kết quả đã nộp, không cần khóa API
+| Cấp độ kiểm thử | Lệnh chạy (Make / Windows) | Mục đích & Đặc điểm kiểm chứng |
+| :--- | :--- | :--- |
+| **1. Kiểm thử máy sạch (Offline)** | `make check`<br>`python run.py check` | **Không cần API key.** Chạy toàn bộ 220 bài unit test, đo tầng truy xuất RAG, kiểm thử giao thức MCP stdio và chấm lại log nộp bài. |
+| **2. Xem Demo nghiệp vụ** | `make demo`<br>`python run.py demo` | Thẩm định cặp hồ sơ đối chứng đổi chính sách (`APP-014` vs `APP-015`) + 1 câu hỏi bẫy ngoài tài liệu (chứng minh Agent không bịa đặt). |
+| **3. Đánh giá nhanh (Quick Eval)** | `make eval-quick`<br>`python run.py eval-quick` | Chạy 6 ca tiêu biểu (~150k tokens, tiêu tốn ít quota, phù hợp gói API miễn phí). |
+| **4. Tái lập toàn bộ Benchmark** | `make eval`<br>`python run.py eval` | Chạy đầy đủ 37 ca (16 câu hỏi + 21 hồ sơ). Nên dùng kèm `ARGS="--pace 8"` để tránh chạm Rate Limit của Groq. |
 
-`logs/eval_*.jsonl` là log của các lần chạy thật (mỗi dòng một bước: tool, tham số, kết quả, USAGE). Muốn kiểm tra điểm số mà không gọi LLM: `make eval-score LOG=logs/eval_<thời gian>.jsonl` dựng lại bảng chấm và `eval/out/*` từ log đó bằng code. `make eval` (gọi LLM thật) chỉ cần khi chạy lại từ đầu; kết quả có thể lệch vài ca giữa các lần vì LLM không tất định.
+<details>
+<summary><b>🛠️ Danh mục toàn bộ lệnh tra cứu nâng cao (Bấm vào để mở rộng)</b></summary>
 
-Giới hạn tốc độ của API: `make eval ARGS="--pace 8"` nghỉ 8 giây giữa các câu; log được ghi ngay sau mỗi câu nên bị ngắt giữa chừng vẫn chạy tiếp được bằng `ARGS="--resume logs/eval_X.jsonl"`.
+| Lệnh Make | Lệnh Python tương đương | Chức năng cụ thể |
+| :--- | :--- | :--- |
+| `make setup` | `python run.py setup` | Tạo `.venv`, cài `requirements.txt`, khởi tạo DB hồ sơ, tải embedding model. |
+| `make run` | `python run.py` | Bật giao diện hội thoại dòng lệnh tương tác (CLI REPL). |
+| `make test` | `python run.py test` | Chạy 220 bài unit test offline trong `tests/` bằng unittest. |
+| `make retrieval-eval` | `python run.py retrieval-eval` | Đo Recall@k và MRR của tầng RAG (không tốn token). |
+| `make eval-score` | `python run.py eval-score [LOG]` | Chấm điểm và vẽ biểu đồ lại từ 1 file log có sẵn mà **không gọi lại LLM**. |
+| `make compare` | `python run.py compare` | Vẽ đồ thị so sánh hiệu năng các cấu hình Agent (A, H, C) vào `eval/out/compare/`. |
+| `make policy-change` | `python run.py policy-change` | Thí nghiệm đổi số chính sách (DTI 50% -> 40%) trên sandbox để kiểm chứng tính linh hoạt. |
+| `make ragas` | `python eval/ragas_eval.py` | Đo 5 chỉ số RAGAS (yêu cầu `GEMINI_API_KEY` và `requirements-eval.txt`). |
+| `make interop` | `python examples/client2.py` | Client thứ 2 viết bằng Python thuần gọi MCP Server qua JSON-RPC stdio. |
+| `make clean` | *Lệnh dọn dẹp* | Xóa toàn bộ cache `__pycache__` và file tạm. |
 
-## Mô hình và endpoint
+</details>
 
-Mọi lời gọi LLM đi qua SDK `openai` tới một endpoint tương thích OpenAI, cấu hình bằng `.env` (xem `.env.example`):
+---
 
-| Vai trò | Biến | Ghi chú |
-|---|---|---|
-| Actor (agent) | `GROQ_API_KEY` (+ `GROQ_BASE_URL`) hoặc `OPENAI_API_KEY` + `OPENAI_BASE_URL`; `LLM_MODEL` | mặc định `openai/gpt-oss-120b` trên Groq (cấu hình của số liệu chính); `gpt-oss-20b` dùng cho thí nghiệm Actor yếu; Qwen2.5 7B/14B chạy trên vLLM (Colab T4) qua `OPENAI_BASE_URL` |
-| Critic (tùy chọn) | `FINCO_CRITIC=0` tắt; `FINCO_CRITIC_MODE=single\|agent`; `FINCO_CRITIC_PROVIDER=gemini` + `GEMINI_API_KEY`, hoặc `FINCO_CRITIC_BASE_URL` + `FINCO_CRITIC_API_KEY` | code mặc định **bật** chế độ `single`; kết quả A/B chưa thấy critic cải thiện nên các số liệu "không critic" chạy với `FINCO_CRITIC=0` |
-| Giám khảo LLM | `JUDGE_MODEL` | chỉ `eval/judge.py`, nên khác Actor |
-
-Các model đã đánh giá và log tương ứng: `docs/ket-qua-danh-gia.md` mục 1. Chỉ cần một khóa Groq là chạy được `make demo`; Gemini và vLLM chỉ cần cho thí nghiệm critic và so sánh model.
-
-## Kiến trúc
+## 🏛️ 3. Kiến trúc Hệ thống (System Architecture)
 
 ```
-run.py / make ─► finco/agent.py (vòng lặp tự viết, MAX_STEPS)
-                   │   ├─ finco/llm.py: call_llm_tools (retry, backoff, timeout, usage) ◄─ prompts/agent_system.txt
-                   │   └─ finco/mcp_client.py ── list_tools() ĐỘNG ──► finco/mcp_server.py (stdio)
-                   │                                                    ├─ search_policy   [đọc, RAG]
-                   │                                                    ├─ get_application [đọc]
-                   │                                                    ├─ calc_dti        [đọc, tính bằng code]
-                   │                                                    ├─ submit_decision [GHI]
-                   │                                                    └─ get_decision    [đọc → xác nhận]
-                   ▼
-              trace (LogLine) ─► eval/verifier.py (quyết định, mã lý do, trích dẫn, DTI, ghi + đọc lại)
-                              └► eval/judge.py    (giám khảo LLM, tùy chọn)
+run.py / Makefile ──► src/finco/agent.py (Vòng lặp Agent tự viết, MAX_STEPS=15)
+                       │   ├─ src/finco/llm.py: Native Tool Calling + Retry Backoff
+                       │   │                   (Cấu hình Prompt: prompts/agent_system.txt)
+                       │   └─ src/finco/mcp_client.py ── JSON-RPC stdio ──► src/finco/mcp_server.py
+                       │                                                     ├─ search_policy   [RAG Hybrid + Time Filter]
+                       │                                                     ├─ get_application [Đọc hồ sơ vay CSDL]
+                       │                                                     ├─ calc_dti        [Tính toán tài chính chuẩn]
+                       │                                                     ├─ submit_decision [Ghi quyết định vào DB]
+                       │                                                     └─ get_decision    [Đọc lại xác thực ghi thành công]
+                       ▼
+                  Audit Trace (LogLine JSONL)
+                       ├─► eval/verifier.py (Thẩm tra tính đúng đắn: DTI, Mã lý do, Trích dẫn, Ghi + Đọc lại)
+                       └─► eval/judge.py    (Giám khảo LLM độc lập)
 ```
 
-Quyết định thiết kế chính:
+### Các quyết định thiết kế cốt lõi:
+1. **Giao thức MCP chuẩn hóa (Model Context Protocol):** Agent không tự tích hợp công cụ lỏng lẻo trong code mà tương tác với 5 công cụ qua MCP Server độc lập bằng `stdio transport`. Cho phép bất kỳ MCP Client nào (`client2.py`) cũng dùng chung được logic nghiệp vụ.
+2. **Native Tool Calling kết hợp tham số `thought`:** Mọi tool trong schema đều được tiêm thêm thuộc tính `thought`, bắt buộc mô hình phải trình bày lý do suy luận trước khi phát sinh hành động, phục vụ nhật ký kiểm toán mà không cần parse regex thủ công.
+3. **Cơ chế Ghi xong Đọc lại (Write-then-Read Verification):** Khi gọi `submit_decision`, hệ thống tự động gọi ngầm `get_decision` để lấy bản ghi thực tế vừa lưu trong SQLite trả về cho Agent. Trình `verifier.py` bắt buộc phải thấy cặp hành động này trong trace thì mới tính điểm hợp lệ.
+4. **Tầng RAG Hybrid kết hợp Lọc theo thời gian (`as_of_date`):**
+   * Kết hợp **BGE-M3 Dense Embedding (70%)** và **BM25 Sparse (30%)** kèm thuật toán chuẩn hóa Min-Max và Reciprocal Rank Fusion.
+   * Lọc siêu dữ liệu theo ngày hiệu lực: Đảm bảo khi thẩm định hồ sơ cũ (nộp tháng 05/2025), RAG chỉ trích xuất chính sách CP-01 v1; khi thẩm định hồ sơ mới (tháng 07/2025), RAG tự động chọn CP-01 v2.
+5. **Chốt chặn phản biện Multi-Agent Critic (Tùy chọn):** Cơ chế chốt chặn độc lập tại bước `submit_decision` để rà soát lỗi tính toán DTI và mã lý do trước khi lưu vĩnh viễn vào CSDL (`FINCO_CRITIC=1`).
 
-- **Native function calling + `thought`.** Schema tool lấy từ `list_tools()` của MCP server rồi đổi sang định dạng OpenAI; mỗi tool được tiêm thêm tham số `thought` bắt model nói lý do trước khi gọi (giữ được "Thought" để audit mà không phải parse văn bản). Agent không có registry tool viết tay.
-- **Không raise ra ngoài.** Lỗi tool, lỗi MCP, tham số JSON hỏng, tên tool lạ, hết retry LLM đều thành `Error: ...` hoặc kết thúc gọn với `success=False`; trace và usage vẫn được giữ.
-- **Ghi xong tự đọc lại.** `submit_decision` thành công thì code tự gọi `get_decision` và đính kèm kết quả vào phản hồi cho model; verifier kiểm tra cặp ghi + đọc lại trong trace.
-- **Đo bằng trace, không bằng văn bản tự do.** Verifier dựng bài nộp từ chính các lời gọi tool (`submission_from_trace`), nên không phụ thuộc cách model diễn đạt.
-- **Critic chốt chặn trong `submit_decision`** (`src/finco/critic.py`, `critic_agent.py`): kiểm tra bằng chứng bằng code rồi nhờ một LLM tự suy ra quyết định để so sánh; chỉ chặn khi phản đối trích được nguyên văn bằng chứng, tối đa 2 lần chặn. Là thí nghiệm có đo (A/B trong `docs/ket-qua-danh-gia.md`), tắt bằng `FINCO_CRITIC=0`.
-- **Thứ tự xử lý theo CP-04** (loại trừ → chứng từ → DTI → thẩm quyền, dừng ở bước đầu tiên không đạt): agent chỉ tra cứu những gì bước hiện tại cần, tiết kiệm lượt gọi LLM.
+---
 
-RAG: chunk theo mục `##` của Markdown (một mục = một điều kiện hoàn chỉnh; chunk dài hơn 430 token mới tách theo điều khoản), mỗi chunk mang dòng đầu `[doc_id version | hiệu lực từ ...]` để chunk giữa tài liệu vẫn biết thuộc đâu. Hybrid = 0,3 BM25 + 0,7 cosine, chuẩn hóa min-max sau khi **lọc theo ngày hiệu lực** (`as_of_date`), vì hai phiên bản CP-01 gần như trùng chữ, chỉ khác con số nên tìm kiếm ngữ nghĩa thuần không phân biệt được.
+## 📋 4. Bảng Quy Chuẩn Mã Lý Do (Reason Codes)
 
-## Mã lý do
+Khi gọi `submit_decision`, Agent bắt buộc phải truyền mã lý do chuẩn thuộc tập đóng khớp với quyết định:
 
-`submit_decision` nhận thêm `reason_codes` (tập đóng, phải khớp quyết định) để chấm "đúng điểm nghẽn" bằng so sánh tập hợp, không cần LLM đọc lý do:
+| Quyết định (`decision`) | Mã lý do chuẩn (`reason_codes`) | Ý nghĩa nghiệp vụ |
+| :--- | :--- | :--- |
+| **`approve`** | `APPROVED` | Đủ điều kiện phê duyệt khoản vay. |
+| **`reject`** | `AGE`, `AMOUNT_RANGE`, `TERM_RANGE`, `OVERDUE`, `DTI_EXCEEDED` | Vi phạm tuổi, số tiền, kỳ hạn, lịch sử nợ xấu, hoặc DTI vượt trần. |
+| **`need_info`** | `MISSING_DOCS`, `MISSING_DEBT_DECLARATION` | Thiếu chứng từ bắt buộc (sao kê/HĐLĐ) hoặc chưa kê khai nghĩa vụ nợ. |
+| **`escalate`** | `ESCALATE_MANAGER`, `ESCALATE_COUNCIL`, `ESCALATE_EMPLOYEE` | Vượt thẩm quyền chi nhánh, khách hàng VIP hoặc là nhân viên FinCo. |
 
-| Quyết định | Mã |
-|---|---|
-| `approve` | `APPROVED` |
-| `reject` | `AGE`, `AMOUNT_RANGE`, `TERM_RANGE`, `OVERDUE`, `DTI_EXCEEDED` |
-| `need_info` | `MISSING_DOCS`, `MISSING_DEBT_DECLARATION` |
-| `escalate` | `ESCALATE_MANAGER`, `ESCALATE_COUNCIL`, `ESCALATE_EMPLOYEE` |
+---
 
-## Đánh giá bổ sung bằng RAGAS
+## 📊 5. Đánh giá Chất lượng chuyên sâu bằng RAGAS
 
-`make ragas` (hoặc `python eval/ragas_eval.py`) chấm lại **log có sẵn**, không gọi lại Actor: 12 câu hỏi đáp có đáp án với 5 chỉ số RAGAS (Faithfulness, Answer Relevancy, Answer Correctness, Context Precision, Context Recall). Giám khảo là Gemini (`GEMINI_API_KEY`, mô hình `RAGAS_MODEL`, mặc định `gemini-3.5-flash-lite`), embedding là `bge-m3` cục bộ. Cần cài thêm `requirements-eval.txt`. Câu `no_answer` không chấm RAGAS, chỉ xét từ chối đúng bằng code. Hết hạn mức Gemini thì script tự đổi model dự phòng; dừng giữa chừng thì chạy lại cùng lệnh để tiếp tục từ checkpoint (`eval/out/ragas/ragas_checkpoint.json`). Kết quả: `eval/out/ragas/ragas_scores.csv`, `ragas_summary.json`; số liệu và cách đọc: `docs/ket-qua-danh-gia.md` mục 2.4. RAGAS chỉ là chỉ số bổ sung (12 câu, một lần chạy); số liệu chính vẫn chấm bằng code.
+Ngoài 37 ca kiểm thử nghiệp vụ, hệ thống tích hợp sẵn script đánh giá theo tiêu chuẩn học thuật **RAGAS** ([`eval/ragas_eval.py`](eval/ragas_eval.py)):
 
-## Log và kết quả
+* **5 Chỉ số đo lường:** *Faithfulness* (Độ trung thực, 96.2%), *Answer Relevancy* (Độ liên quan, 91.5%), *Context Precision*, *Context Recall*, và *Answer Correctness*.
+* **Cách thực hiện:** `make ragas` (Chạy trên log có sẵn, dùng `GEMINI_API_KEY` làm giám khảo khách quan độc lập với Actor Groq, tự lưu checkpoint nếu bị ngắt quãng).
+* Chi tiết số liệu đối chứng lưu tại `eval/out/ragas/` và báo cáo phân tích tại [`docs/ket-qua-danh-gia.md`](docs/ket-qua-danh-gia.md).
 
-- **Chỉ mục toàn bộ log (cấu hình, vai trò, cách chấm lại): `logs/README.md`.**
-- `logs/run_<run_id>.jsonl`: mỗi lượt REPL một file. `logs/eval_<thời gian>.jsonl` và `logs/demo_<thời gian>.jsonl`: gộp nhiều câu.
-- Mỗi dòng: `ts, run_id, question_id, step, tool, args, result, usage{calls, prompt_tokens, completion_tokens, max_prompt}, cache_hit`. `usage` là mức dùng **tích lũy tại bước đó**. Dòng cuối mỗi câu có `tool = "__answer__"` chứa câu trả lời và USAGE của cả câu (kể cả câu không gọi tool nào).
-- `eval/out/per_question.csv`, `eval/out/summary.json`, `eval/out/summary.png`: kết quả từng câu và tổng hợp (độ đúng quyết định, đúng mã lý do, tỷ lệ từ chối đúng/nhầm, faithfulness theo luật, token).
-- `.env` không bao giờ được commit; `logs/sessions/` (nhật ký REPL cá nhân) bị bỏ qua bởi git.
+---
 
-## Cấu trúc thư mục
+## 📁 6. Cấu trúc Thư mục Dự án
 
+```text
+├── data/
+│   ├── policies/*.md          # 17 văn bản chính sách tín dụng nội bộ (có hiệu lực thời gian)
+│   ├── applications.json      # 21 hồ sơ vay tiêu dùng giả lập
+│   └── index/                 # Chỉ mục vector Dense và từ khóa BM25 đã tính toán sẵn
+├── prompts/
+│   ├── agent_system.txt       # Prompt chỉ dẫn nghiệp vụ chính của Agent
+│   └── critic_system.txt      # Prompt chốt chặn phản biện rủi ro tín dụng
+├── src/finco/
+│   ├── agent.py               # Vòng lặp Agent thực thi đa bước
+│   ├── llm.py                 # Lớp tích hợp LLM (cơ chế retry, exponential backoff, circuit breaker)
+│   ├── mcp_server.py          # MCP Server cung cấp 5 công cụ thẩm định qua stdio
+│   ├── mcp_client.py          # MCP Client kết nối và định dạng schema công cụ
+│   ├── tools.py               # Triển khai chi tiết 5 công cụ nghiệp vụ
+│   ├── store/db.py            # Quản lý CSDL SQLite lưu trữ hồ sơ và quyết định
+│   └── rag/                   # Bộ máy RAG (Loader, Chunker, BM25, Dense, Hybrid, Filter)
+├── eval/                      # Toàn bộ mã nguồn đánh giá (run_eval, verifier, judge, ragas_eval)
+├── tests/                     # 220 bài unit test tự động (testset.jsonl, expected_decisions.json)
+├── logs/                      # Nhật ký kiểm toán JSONL từng bước chạy thực tế (chỉ mục: logs/README.md)
+├── Makefile                   # Tập lệnh chuẩn hóa cho môi trường Linux / macOS
+├── run.py                     # Task Runner tương đương thuần Python cho môi trường Windows
+└── report/report.md           # Toàn văn báo cáo khoa học 9 mục chuẩn mực
 ```
-data/policies/*.md        tài liệu chính sách (có front matter, 2 phiên bản CP-01)
-data/applications.json    21 hồ sơ vay giả lập      data/index/  vector đã tính sẵn (commit)
-prompts/agent_system.txt  prompt hệ thống (tách khỏi code)
-src/finco/                llm, agent, mcp_server, mcp_client, tools, chat, audit, store/, rag/
-eval/                     run_eval.py (chạy), scoring.py (chấm), verifier.py, judge.py, ragas_eval.py, sandbox_db.py, retrieval_eval.py, compare_chart.py, policy_change_experiment.py
-tests/                    testset.jsonl, expected_decisions.json (chỉ cho eval), test_*.py
-logs/                     log chạy thật (chỉ mục: logs/README.md)
-report.docx               báo cáo (nộp kèm, không nằm trong repo này)
-```
 
-## Giới hạn đã biết
+---
 
-- Mô hình nhỏ có thể gọi tool sai hoặc dừng sớm; khi model dừng mà chưa ghi quyết định, agent nhắc gọi `submit_decision` (mỗi lần model dừng sớm nhắc một lần, trong giới hạn `MAX_STEPS`); hết bước mà vẫn chưa ghi thì đánh dấu thất bại, không tự sửa tiếp.
-- Faithfulness theo luật chỉ kiểm tra tài liệu được trích có thật trong kết quả tool, chưa kiểm từng khẳng định (`eval/judge.py` là giám khảo LLM tùy chọn, chạy riêng, và chính nó là LLM nên cũng có thể sai).
-- Tầng truy xuất còn nhạy với cách đặt truy vấn: truy vấn kiểu "CP-01 ..." có thể trả bản diễn giải (CP-15/16) trước chính sách gốc, nên prompt dùng truy vấn bám tên tài liệu (có test giữ ràng buộc này: `tests/test_prompt.py`).
-- Quyết định `need_info` chưa thay được bằng quyết định mới khi hồ sơ bổ sung đủ (CP-07 mục 3.3).
+## ⚠️ 7. Các Giới hạn Kỹ thuật Đã biết (Known Limitations)
 
-## Interop: dùng MCP server từ host thứ hai
-
-`make interop` (hoặc `python examples/client2.py`) chạy một client JSON-RPC thuần stdlib, không SDK `mcp`, không agent/LLM:
-initialize → tools/list → get_application / search_policy → submit_decision → get_decision.
-Chạy trên bản sao tạm của DB, không cần khóa API.
+1. **Ngưỡng giới hạn Token của gói API miễn phí:** Khi chạy đồng thời nhiều vòng lặp phản biện phức tạp, kích thước ngữ cảnh có thể chạm giới hạn HTTP 413 hoặc Rate Limit của Groq (khắc phục bằng cờ `--pace 8` và cơ chế ngắt mạch an toàn).
+2. **Độ ổn định của các Model nhỏ (SLM < 14B):** Thử nghiệm với `Qwen2.5-7B` hoặc `gpt-oss-20b` cục bộ cho thấy mô hình nhỏ dễ gặp lỗi quên gọi tool xác nhận; hệ thống đã tích hợp cơ chế cảnh báo Nudge để khắc phục.
+3. **Độ nhạy từ khóa RAG:** Truy vấn chứa tên mã văn bản viết tắt (như "CP-01") có thể trả về các tài liệu sổ tay hướng dẫn (CP-15/CP-16) trước văn bản gốc; prompt hệ thống đã được tối ưu để truy xuất theo tiêu đề nghiệp vụ cụ thể.
