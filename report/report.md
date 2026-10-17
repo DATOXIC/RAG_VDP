@@ -23,7 +23,7 @@ Trong hoạt động tín dụng tiêu dùng, thẩm định hồ sơ vay (Credi
 
 ### 1.3. Ranh giới hệ thống: Hệ thống KHÔNG làm gì (Negative Boundary)
 1. **KHÔNG phải là Chatbot tư vấn đại chúng**: Không tương tác với khách hàng vay ngoài đời, không giải đáp phiếm, không tư vấn tiếp thị.
-2. **KHÔNG dùng dữ liệu người thật và không tra cứu CIC thật**: 100% kho chính sách (CP-01 đến CP-17) và 21 hồ sơ vay (`APP-001` đến `APP-021`) là dữ liệu giả lập (synthetic data); không kết nối API bên thứ ba.
+2. **KHÔNG dùng dữ liệu người thật và không tra cứu CIC thật**: 100% kho chính sách gồm 18 file, 17 mã (CP-01 đến CP-17; CP-01 có v1 và v2) và 21 hồ sơ vay (`APP-001` đến `APP-021`) là dữ liệu giả lập (synthetic data); không kết nối API bên thứ ba.
 3. **KHÔNG tự ý vượt thẩm quyền phê duyệt**: Tuyệt đối không tự duyệt hồ sơ trên 200 triệu đồng hoặc hồ sơ của nhân viên FinCo (theo CP-06), bắt buộc phải chuyển cấp (`escalate`).
 4. **KHÔNG để LLM tự làm tính nhẩm số học**: LLM không tự sinh số DTI hay PMT mò; mọi phép tính chuyển giao cho công cụ mã Python độc lập (`calc_dti`).
 5. **KHÔNG tự suy diễn ngoài tài liệu**: Khi gặp câu hỏi về sản phẩm ngoài danh mục (vay mua ô tô, thế chấp nhà, bảo lãnh), hệ thống bắt buộc **từ chối theo mẫu quy định** thay vì bịa đặt (hallucination).
@@ -53,7 +53,7 @@ Trong hoạt động tín dụng tiêu dùng, thẩm định hồ sơ vay (Credi
                ▼ (stdio / JSON-RPC Protocol)
 ┌─────────────────────────────────────────────────────────────┐
 │ 2. TẦNG GIAO THỨC MCP SERVER (src/finco/mcp_server.py)      │
-│    • FastMCP Server chạy qua stdio, stdout tuyệt đối sạch   │
+│    • MCPServer chạy qua stdio, stdout tuyệt đối sạch   │
 │    • Dynamic Tool Discovery (Không hard-code registry)      │
 └──────────────┬──────────────────────────────────────────────┘
                │ (Gọi trực tiếp hàm nghiệp vụ thuần)
@@ -78,7 +78,7 @@ Trong hoạt động tín dụng tiêu dùng, thẩm định hồ sơ vay (Credi
 ### 2.2. Luồng xử lý một tình huống mẫu (Trace Walkthrough: Hồ sơ APP-014)
 1. **Bước 1 (Nhận yêu cầu)**: Chuyên viên yêu cầu thẩm định hồ sơ `APP-014` (Phan Thị Phượng, 36 tuổi, vay 180 triệu, 36 tháng, nộp ngày 20/03/2025).
 2. **Bước 2 (Đọc hồ sơ)**: Agent gọi `get_application(app_id="APP-014")`, trích xuất thu nhập chính 20 triệu, nợ hiện tại 3 triệu/tháng, đủ chứng từ CCCD, HDLD, SK_LUONG_3T.
-3. **Bước 3 (Tra cứu chính sách)**: Agent gọi `search_policy(query="lãi suất kỳ hạn 36 tháng", as_of_date="2025-03-20")`. Nhờ `as_of_date`, RAG trả về CP-03 v1: kỳ hạn 36 tháng có lãi suất cố định $17.0\%/\text{năm}$.
+3. **Bước 3 (Tra cứu chính sách)**: Agent gọi `search_policy` 5 lần để tra CP-01, CP-02, CP-03, CP-04 và CP-06 với `as_of_date="2025-03-20"`. RAG trả về CP-01 v1 (trần DTI 50%) và CP-03 v1: kỳ hạn 36 tháng có lãi suất cố định $17.0\%/\text{năm}$.
 4. **Bước 4 (Tính toán tài chính)**: Agent gọi `calc_dti(app_id="APP-014", annual_rate="0.17")`. Tool tính ra PMT = 6.417.491 VNĐ, tổng nợ = 9.417.491 VNĐ, DTI = $47.09\%$.
 5. **Bước 5 (Ghi nhận quyết định)**: Vì nộp ngày 20/03/2025 (trước 01/04/2025), áp dụng CP-01 v1 (trần DTI $50\%$) $\rightarrow$ Đủ điều kiện duyệt. Agent gọi `submit_decision(app_id="APP-014", decision="approve", cited_docs=["CP-01 v1", "CP-03 v1", "CP-05 v1"])`.
 6. **Bước 6 (Read-after-Write)**: Tool tự động kích hoạt `get_decision("APP-014")` đọc lại bản ghi vừa chèn vào SQLite để đối soát và xác nhận thành công.
@@ -88,9 +88,9 @@ Trong hoạt động tín dụng tiêu dùng, thẩm định hồ sơ vay (Credi
 ## MỤC 3: THIẾT KẾ RAG (Dung lượng: ~1.5 trang)
 
 ### 3.1. Chiến lược Semantic Header Chunking và Lý do lựa chọn
-* **Phương pháp**: Phân đoạn tài liệu theo tiêu đề đề mục cấp 2 (`##`) của cấu trúc Markdown, thay vì chia theo kích thước ký tự cố định (Fixed-size Chunking).
+* **Phương pháp**: Phân đoạn tài liệu theo tiêu đề đề mục cấp 2 (`##`) của cấu trúc Markdown, chia nhỏ thêm theo điều khoản khi mục dài; tối đa 430 token/chunk (`tiktoken`, `cl100k_base`). Kết quả: 112 chunk từ 18 file chính sách.
 * **Tiêm ngữ cảnh phiên bản**: Ở đầu mỗi chunk, parser tự động tiêm một dòng định danh:
-  `[doc_id vX · effective_date] Tiêu đề tài liệu > Tiêu đề đề mục`
+  tiêu đề tài liệu và phiên bản. Khi trả kết quả tra cứu, tool bổ sung nhãn `[doc_id vX · effective_date]`.
 * **Lý do kỹ thuật (Viết 3–5 dòng theo yêu cầu đề bài)**:
   1. *Bảo toàn tính toàn vẹn điều khoản*: Văn bản pháp lý có tính ràng buộc theo từng điều khoản nguyên vẹn; ngắt cố định (ví dụ 500 ký tự) sẽ làm đứt đôi bảng tra cứu lãi suất hoặc tách rời điều kiện loại trừ khỏi mức phạt.
   2. *Chống trôi ngữ cảnh phiên bản*: Việc tiêm Front-matter trực tiếp vào chunk giúp mô hình Embedding nhận biết chính xác phiên bản tài liệu ngay cả khi chunk nằm ở cuối văn bản.
@@ -100,8 +100,8 @@ Trong hoạt động tín dụng tiêu dùng, thẩm định hồ sơ vay (Credi
 * **Cơ chế Hybrid Search (Tái dùng `w4/ex2_1_hybrid_search.py`)**:
   * Dense retrieval: Tính toán độ tương đồng Cosine giữa query vector và document vector.
   * Sparse retrieval: Dùng thuật toán BM25 (`rank_bm25`) để bắt chính xác các từ khóa chuyên ngành ngân hàng (`DTI`, `SK_LUONG_3T`, `HDLD`, `DKKD`).
-  * Công thức chuẩn hóa điểm số Min-Max và kết hợp theo trọng số $\alpha = 0.5$:
-    $$\text{Score}_{\text{hybrid}} = 0.5 \times \frac{S_{\text{dense}} - S_{\min}}{S_{\max} - S_{\min}} + 0.5 \times \frac{S_{\text{bm25}} - B_{\min}}{B_{\max} - B_{\min}}$$
+  * Công thức chuẩn hóa điểm số Min-Max và kết hợp theo trọng số 0,7 dense và 0,3 BM25:
+    $$\text{Score}_{\text{hybrid}} = 0.7 \times \frac{S_{\text{dense}} - S_{\min}}{S_{\max} - S_{\min}} + 0.3 \times \frac{S_{\text{bm25}} - B_{\min}}{B_{\max} - B_{\min}}$$
 
 ### 3.3. Cơ chế Lọc siêu dữ liệu theo ngày hiệu lực (Metadata Filter `as_of_date` – Điểm cộng Bonus #1)
 Hệ thống cài đặt bộ lọc thời gian trực tiếp trong pipeline truy xuất:
@@ -111,11 +111,14 @@ Hệ thống cài đặt bộ lọc thời gian trực tiếp trong pipeline tru
 ### 3.4. So sánh Thực nghiệm Cấu hình Truy xuất (Điểm cộng Bonus #2)
 Trích xuất từ kết quả đo lường tự động qua `make retrieval-eval`:
 
-| Cấu hình truy xuất | Recall@3 | Gold Document Recall@3 | MRR@3 | Nhận xét chuyên môn |
-| :--- | :---: | :---: | :---: | :--- |
-| **Dense Only (BGE-M3)** | 87.5% | 81.2% | 0.812 | Dễ bỏ sót các mã chứng từ viết tắt chính xác. |
-| **Hybrid (Dense + BM25)** | **100.0%** | **93.8%** | **0.938** | Bắt trọn vẹn cả ngữ nghĩa lẫn từ khóa mã chứng từ. |
-| **Hybrid + Filter `as_of_date`** | **100.0%** | **100.0%** | **1.000** | Loại bỏ 100% chunk lỗi thời của phiên bản cũ. |
+| Cấu hình truy xuất | Có tài liệu vàng trong top-3 | Tài liệu vàng ở hạng 1 | Số truy vấn có phiên bản sai |
+| :--- | :---: | :---: | :---: |
+| **BM25 + lọc ngày** | 12/20 (60%) | 6/20 | 0 |
+| **Dense Only + lọc ngày** | 15/20 (75%) | 9/20 | 0 |
+| **Hybrid + lọc ngày** | **18/20 (90%)** | **10/20** | **0** |
+| **Hybrid, tắt lọc ngày** | 18/20 (90%) | 10/20 | 4 |
+
+Đo trên 22 truy vấn, trong đó 20 truy vấn có tài liệu vàng. Nguồn: `eval/out/retrieval_per_question.csv` và `retrieval_per_question_nofilter.csv`. Khi tắt lọc ngày, 4 truy vấn có tổng cộng 7 kết quả sai phiên bản trong top-k.
 
 ---
 
@@ -162,30 +165,33 @@ class Decision:
 * Khi có sự cố (tham số thiếu, sai kiểu, không tìm thấy hồ sơ), hệ thống không raise Exception làm crash chương trình mà trả về thông điệp dạng: `"Error: <chi tiết lỗi>"`. LLM quan sát lỗi và tự động điều chỉnh hành vi ở bước lặp tiếp theo.
 
 ### 4.4. Side-effect và Cơ chế Bắt buộc Xác thực (Read-after-Write)
-Tuân thủ nghiêm ngặt yêu cầu W7: Công cụ ghi `submit_decision` sau khi thực thi câu lệnh SQL `INSERT OR REPLACE` vào bảng `decisions` sẽ **tự động gọi hàm `get_decision`** để đọc lại chính bản ghi đó từ CSDL và đính kèm vào kết quả phản hồi. Trình xác thực (`eval/verifier.py`) kiểm tra sự hiện diện của cặp bước này trong trace.
+Tuân thủ nghiêm ngặt yêu cầu W7: Công cụ ghi `submit_decision` sau khi thực thi câu lệnh SQL `INSERT INTO` vào bảng `decisions` sẽ **tự động gọi hàm `get_decision`** để đọc lại chính bản ghi đó từ CSDL và đính kèm vào kết quả phản hồi. Trình xác thực (`eval/verifier.py`) kiểm tra sự hiện diện của cặp bước này trong trace. Nếu hồ sơ đã có quyết định, tool trả `Error` thay vì ghi đè.
 
-### 4.5. Trace thực tế một câu hỏi kiểm thử phức tạp (Ca M01: Hồ sơ APP-021 thiếu dữ liệu)
+### 4.5. Trace thực tế một câu hỏi kiểm thử phức tạp (Hồ sơ APP-014)
 
-```json
-[
-  {"step": 1, "tool": "get_application", "args": {"app_id": "APP-021"}, 
-   "result": "Mã HS: APP-021, Nợ hiện tại: Chưa khai báo (None), Tuổi: 29..."},
-  {"step": 2, "tool": "search_policy", "args": {"query": "khai báo nghĩa vụ nợ hiện tại CP-02"}, 
-   "result": "[CP-02 v1] Hồ sơ không có khai báo nghĩa vụ nợ (để trống) coi là chưa đủ thông tin để tính DTI..."},
-  {"step": 3, "tool": "submit_decision", "args": {"app_id": "APP-021", "decision": "need_info", "reason": "Chưa khai báo nghĩa vụ nợ hiện tại"}, 
-   "result": "Thành công: Đã ghi nhận quyết định 'need_info' cho hồ sơ APP-021."},
-  {"step": 4, "tool": "get_decision", "args": {"app_id": "APP-021"}, 
-   "result": "=== QUYẾT ĐỊNH ĐANG LƯU CHO HỒ SƠ APP-021: NEED_INFO ==="},
-  {"step": 5, "tool": "__answer__", "result": "Quyết định: need_info. Cần bổ sung khai báo nghĩa vụ nợ theo CP-02 v1."}
-]
-```
+Trace từ `logs/eval_20261014_202454.jsonl`, cấu hình A (gpt-oss-120b, không critic); kết quả rút gọn:
+
+| Bước | Tool | Tham số chính | Kết quả (rút gọn) | Prompt token lũy kế |
+|---|---|---|---|---|
+| 1 | `get_application` | `APP-014` | Phan Thị Phượng, 36 tuổi, vay 180 triệu, 36 tháng, lương 20 triệu | 2.258 |
+| 2 | `search_policy` | `as_of_date=2025-03-20`, điều kiện/DTI | `[CP-01 v1]` DTI tối đa **50%** | 4.788 |
+| 3 | `search_policy` | chứng từ nhóm hưởng lương | `[CP-02 v1]` | 7.944 |
+| 4 | `search_policy` | lãi suất theo kỳ hạn | `[CP-03 v1]` 25–36 tháng: **17%** | 11.790 |
+| 5 | `search_policy` | phân cấp phê duyệt | `[CP-04 v1]` ≤200 triệu: chuyên viên | 16.152 |
+| 6 | `search_policy` | ngoại lệ, nợ quá hạn | `[CP-06 v1]` | 21.430 |
+| 7 | `calc_dti` | `annual_rate=17%` | PMT **6.417.491** đ, nợ cũ 3.000.000 đ; DTI = (6.417.491 + 3.000.000) / 20.000.000 = **47,09%** | 27.273 |
+| 8 | `submit_decision` | `approve`, trích CP-01..05 v1 | "Đã ghi nhận quyết định" | 33.458 |
+| 8 | `get_decision` (tự động) | `APP-014` | `APPROVE`, mã `APPROVED`, đã lưu lúc 2026-10-15T10:50:58 | 33.458 |
+| — | câu trả lời cuối | | quyết định + lý do, mỗi ý kèm `[CP-xx v1]` | **40.467** (9 lần gọi LLM) |
+
+Tổng cộng 9 lần gọi LLM, 40.467 prompt token và 2.698 completion token; prompt lớn nhất 7.009 token.
 
 ---
 
 ## MỤC 5: GIAO THỨC MCP SERVER (Dung lượng: ~1.0 trang)
 
 ### 5.1. Danh sách 5 Công cụ và Hợp đồng Giao tiếp (Tool Contract)
-Hệ thống triển khai 5 công cụ qua MCP Server ([src/finco/mcp_server.py](file:///c:/RAG_VDP/src/finco/mcp_server.py)):
+Hệ thống triển khai 5 công cụ qua `MCPServer` của MCP SDK ([src/finco/mcp_server.py](file:///c:/RAG_VDP/src/finco/mcp_server.py)):
 
 | Tên Tool | Loại | Tham số đầu vào | Kết quả trả về (Hợp đồng dữ liệu) |
 | :--- | :---: | :--- | :--- |
@@ -203,7 +209,7 @@ Hệ thống triển khai 5 công cụ qua MCP Server ([src/finco/mcp_server.py]
 Agent Client không bao giờ định nghĩa sẵn danh sách tool dạng hard-code. Khi khởi tạo phiên làm việc, Client chủ động gửi yêu cầu `tools/list` tới MCP Server. Server trả về danh sách công cụ và JSON Schema tương ứng; Client chuyển hóa động danh sách này thành định nghĩa Function Calling gửi tới LLM.
 
 ### 5.4. Khả năng Tương tác từ Host thứ hai (Điểm cộng Bonus #3)
-Minh chứng tính độc lập của MCP Server: Nhóm xây dựng thêm client Python thứ hai độc lập ([`examples/client2.py`](file:///c:/RAG_VDP/examples/client2.py)) sử dụng trực tiếp MCP SDK để kết nối tới server, khám phá công cụ và thực thi quy trình thẩm định trên CSDL sandbox riêng biệt (`make interop`), đảm bảo tính tương tác mở (Interoperability).
+Minh chứng tính độc lập của MCP Server: Nhóm xây dựng thêm client Python thứ hai độc lập ([`examples/client2.py`](file:///c:/RAG_VDP/examples/client2.py)) sử dụng JSON-RPC thuần (`initialize` → `tools/list` → `tools/call`), không dùng MCP SDK, để kết nối tới server, khám phá công cụ và thực thi quy trình thẩm định trên CSDL sandbox riêng biệt (`make interop`), đảm bảo tính tương tác mở (Interoperability).
 
 ---
 
@@ -221,7 +227,7 @@ Hệ thống được sát hạch trên tập dữ liệu chuẩn gồm **37 ca 
    Mô-đun `eval/ragas_eval.py` sử dụng Giám khảo Gemini Flash Lite kết hợp mô hình Embedding `BAAI/bge-m3` cục bộ để chấm 5 chỉ số chất lượng sinh ngôn ngữ: Faithfulness, Answer Relevancy, Answer Correctness, Context Precision, Context Recall.
 
 ### 6.3. Bảng Kết quả Tổng hợp và Chi phí Vận hành (Điểm cộng Bonus #4)
-Kết quả từ lần chạy chuẩn nghiệm thu ([eval/out/summary.json](file:///c:/RAG_VDP/eval/out/summary.json) và [eval/out/per_question.csv](file:///c:/RAG_VDP/eval/out/per_question.csv)):
+Kết quả cấu hình A: gpt-oss-120b, không critic (`FINCO_CRITIC=0`), từ `eval/out/ab_nocritic/summary.json` và `per_question.csv`. Code mặc định bật critic (`FINCO_CRITIC=1`), nên cần đặt rõ cấu hình khi tái lập:
 
 | Nhóm chỉ số đánh giá | Chỉ số cụ thể | Kết quả đạt được | Mục tiêu đề bài |
 | :--- | :--- | :---: | :---: |
@@ -233,15 +239,20 @@ Kết quả từ lần chạy chuẩn nghiệm thu ([eval/out/summary.json](file
 | **Phòng thủ & An toàn** | Từ chối câu hỏi ngoài tài liệu (Correct Refusal) | **75.0% (3/4 câu)** | $\ge 75\%$ |
 | | Từ chối nhầm câu có đáp án (False Refusal) | **0.0%** | $0\%$ |
 | **Hiệu năng & Tài nguyên**| Tỷ lệ lời gọi Tool bị lỗi (Tool Error Rate) | **0.0%** | $< 5\%$ |
-| | Trung bình số bước gọi Tool / câu | **2.69 bước** | $\le 5$ bước |
-| | Trung bình số lần gọi LLM / câu | **3.50 lần** | $\le 6$ lần |
-| | Chi phí Token trung bình (Prompt / Completion) | **3,897 / 369 tokens** | Ngân sách an toàn |
+| | Trung bình số bước gọi Tool / câu | **5.59 bước** | $\le 5$ bước |
+| | Trung bình số lần gọi LLM / câu | **5.35 lần** | $\le 6$ lần |
+| | Chi phí Token trung bình (Prompt / Completion) | **18.634 / 1.465 token** | Ngân sách an toàn |
+
+N03 là ca từ chối thất bại trong kết quả 3/4, phân tích ở mục 6.5. Tổng chi phí của A: 198 lượt gọi LLM, 689.453 prompt token và 54.196 completion token.
 
 ### 6.4. Kết quả Đánh giá Chất lượng Sinh bằng RAGAS Framework
-Đánh giá độc lập trên 16 câu hỏi tra cứu nghiệp vụ:
-* **Faithfulness (Độ trung thực)**: **96.2%** (Câu trả lời bám sát ngữ cảnh trích lục, loại bỏ hoàn toàn hiện tượng bịa đặt thông tin).
-* **Answer Relevancy (Độ liên quan)**: **91.5%** (Câu trả lời đi thẳng vào trọng tâm yêu cầu nghiệp vụ, không rườm rà).
-* **Context Precision & Recall**: Lần lượt đạt **94.0%** và **92.8%** (Khẳng định tầng RAG truy xuất chính xác các điều khoản chính sách trọng yếu).
+Đánh giá bổ sung trên 12 câu có đáp án của cấu hình A; không chấm các câu `no_answer` bằng RAGAS:
+* **Faithfulness (Độ trung thực)**: **0,94**.
+* **Answer Relevancy (Độ liên quan)**: **0,81**.
+* **Answer Correctness (Độ đúng so với đáp án chuẩn)**: **0,60**.
+* **Context Precision & Recall**: Lần lượt **0,80** và **1,00**.
+
+Kết quả tại `eval/out/ragas/`, giám khảo `gemini-3.5-flash-lite`, một lần chạy. Đây là số liệu bổ sung, không chứng minh hệ thống hoàn toàn không bịa đặt.
 
 ### 6.5. Phân tích Các Ca Thất Bại Thực Tế (Failure Case Analysis)
 Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất bại tiêu biểu trong quá trình thực nghiệm:
@@ -252,7 +263,7 @@ Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất b
    * *Phân tích gốc rễ*: Agent mắc lỗi Over-inference (suy luận logic đời thường thay vì tuân thủ nguyên tắc kiểm soát rủi ro ngân hàng: điều khoản chưa ban hành thì không được tự ý khẳng định).
 2. **Ca 2: Lỗi mã lý do ở câu A02 (Nhân viên FinCo vay 300 triệu)**:
    * *Hiện tượng*: Khi thẩm định hồ sơ nhân viên vay vốn, Agent chọn đúng quyết định `escalate` lên Hội đồng tín dụng, nhưng mã lý do lại ghi là `ESCALATE_COUNCIL` thay vì mã chuẩn nghiệp vụ là `ESCALATE_EMPLOYEE`.
-   * *Khắc phục bằng Multi-Agent Critic (W8)*: Khi tích hợp thêm chốt chặn Critic độc lập, Critic đã phát hiện sự sai lệch này và yêu cầu Agent sửa đổi thành công về mã chuẩn `ESCALATE_EMPLOYEE` trước khi lưu vào CSDL.
+   * *Kết quả Multi-Agent Critic*: A02 đạt ở cấu hình B nhưng chưa tách được tác động của critic khỏi nhiễu giữa hai lần chạy. Ở APP-018 (cùng nhánh nhân viên), cả 3 lần critic chặn đều đề xuất `approve`/`APPROVED`, không đúng đáp án `escalate`/`ESCALATE_EMPLOYEE`. B đạt 32/37 so với A đạt 34/37; chưa có bằng chứng critic sửa thành công lỗi này.
 
 ---
 
@@ -260,9 +271,9 @@ Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất b
 
 ### 7.1. Các Hạn chế Kỹ thuật Trung thực (Tuyệt đối không nêu "chưa có thời gian")
 1. **Hạn chế trần ngữ cảnh hạ tầng API (Rate Limits & Context Budget)**:
-   Gói API miễn phí của Groq giới hạn trần ngữ cảnh 8.000 tokens/request. Khi chạy các hồ sơ thẩm định phức tạp trải qua nhiều vòng đối thoại với Critic, kích thước prompt bị phình to dẫn tới lỗi HTTP 413 (Payload Too Large), buộc hệ thống phải kích hoạt cơ chế Circuit Breaker để bảo toàn tiến trình.
+   Gói API miễn phí của Groq giới hạn trần ngữ cảnh 8.000 tokens/request. Khi chạy các hồ sơ thẩm định phức tạp trải qua nhiều vòng đối thoại với Critic, kích thước prompt bị phình to dẫn tới lỗi HTTP 413 (Payload Too Large), làm ca chạy thất bại. Circuit Breaker trong `critic.py` giới hạn 2 lần chặn, sau đó chỉ cho ghi `escalate`; cơ chế này không khắc phục lỗi HTTP 413.
 2. **Độ ổn định suy luận của các Mô hình Ngôn ngữ Nhỏ (SLM)**:
-   Thử nghiệm đối chứng trên các mô hình mã nguồn mở dưới 14B tham số (`Qwen2.5-7B`, `gpt-oss-20b` cục bộ) cho thấy tỷ lệ hoàn thành tụt giảm rõ rệt ($27.0\% - 62.2\%$). Nguyên nhân không nằm ở năng lực RAG mà do mô hình nhỏ dễ mất tập trung trong việc tuân thủ quy trình gọi tool đa bước (quên bước verify hoặc rơi vào vòng lặp vô tận).
+   Qwen2.5-7B và Qwen2.5-14B đạt toàn diện lần lượt 10/37 (27,0%) và 8/37 (21,6%). Cùng gpt-oss-20b nhưng chạy Ollama đạt 23/37 (62,2%), trên Groq đạt 33/37 (89,2%). Kết quả chịu ảnh hưởng của môi trường phục vụ, lượng tử hóa và ngữ cảnh; chưa tách được các yếu tố này để quy chênh lệch cho kích thước model. Lỗi của Qwen tập trung ở tuân thủ quy trình gọi tool đa bước.
 
 ### 7.2. Hướng Phát triển Tiếp theo
 * Tích hợp mô-đun Document Vision (OCR) để tự động bóc tách thông tin từ file ảnh scan CCCD và sao kê tài khoản ngân hàng.
@@ -283,6 +294,6 @@ Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất b
 ---
 
 ## MỤC 9: PHỤ LỤC (Không tính vào giới hạn 8–9 trang)
-* **Phụ lục A**: Toàn văn Prompt hệ thống Agent thẩm định ([`prompts/agent_system.txt`](file:///c:/RAG_VDP/prompts/agent_system.txt)).
-* **Phụ lục B**: Toàn văn Prompt hệ thống Chốt chặn Phản biện Critic ([`prompts/critic_system.txt`](file:///c:/RAG_VDP/prompts/critic_system.txt)).
+* **Phụ lục A**: Toàn văn Prompt hệ thống Agent thẩm định (`prompts/agent_system.txt`, `prompts/agent_underwrite.txt`, `prompts/agent_qa.txt`).
+* **Phụ lục B**: Toàn văn Prompt hệ thống Chốt chặn Phản biện Critic (`prompts/critic.txt`, `prompts/critic_agent.txt`).
 * **Phụ lục C**: Báo cáo Liêm chính Học thuật và Khai báo Sử dụng AI ([`ai-usage.md`](file:///c:/RAG_VDP/ai-usage.md)).
