@@ -173,6 +173,19 @@ Trung bình 12 câu có đáp án (một lần chạy, kết quả ở `eval/out
 
 **Kết luận:** cả hai hồ sơ bị ảnh hưởng đổi từ duyệt sang từ chối đúng như đáp án mới, câu hỏi về trần DTI đổi từ 50% sang 40%, còn các hồ sơ đối chứng giữ nguyên. Như vậy quyết định của agent theo nội dung chính sách tra được, không theo trí nhớ của model. Giới hạn: chỉ 7 ca, một lần chạy, một model; APP-012 trượt do hạ tầng chứ không do thay đổi chính sách.
 
+
+### 2.6. Đối chứng không dùng RAG
+
+Công tắc `FINCO_NO_RAG=1` (trong `src/finco/tools.py`, mặc định tắt) làm `search_policy` luôn trả "Không tìm thấy đoạn chính sách nào phù hợp". Cùng model và prompt với cấu hình A, không critic, 9 câu hỏi đáp (`eval/no_rag_experiment.py`, kết quả ở `eval/out/no_rag/`, commit b2f9c62).
+
+| | Có RAG (A) | Không RAG |
+|---|---|---|
+| Đạt toàn diện | 8/9 | 3/9 |
+| 6 câu có đáp án (tra cứu, tổng hợp, phiên bản, tính toán) | 6/6 | 0/6 (đều từ chối) |
+| 3 câu no_answer (N01-N03) | 2/3 | 3/3 |
+
+Không có RAG, agent từ chối chứ không bịa. Thí nghiệm chỉ gồm 9 ca, một lần chạy.
+
 ## 3. Phân tích lỗi
 
 ### 3.1. Model nhỏ: lỗi tuân thủ quy trình
@@ -217,7 +230,7 @@ Quan sát có kiểm chứng: critic-agent thật sự độc lập (tự đọc
 - **Các model chạy trên các nền tảng khác nhau** (Groq, Colab T4), nên so sánh theo kích thước chỉ mang tính định hướng; chưa có "thang kích thước" cùng họ trên cùng nền tảng.
 - **Critic và Actor dùng model khác họ ở cấu hình B** nên chỉ giảm được một phần lỗi tương quan; ở cấu hình D thì dùng chung model nên lỗi có thể tương quan.
 - Bộ chấm yêu cầu trích dẫn xuất hiện trong văn bản trả lời của câu hỏi đáp; một câu trả lời đúng nhưng không nêu mã tài liệu bị tính là trượt (ví dụ C02).
-- Đã làm thí nghiệm đổi một con số (mục 2.5) nhưng chỉ trên 7 ca và một model. **Chưa có** đối chứng không dùng RAG.
+- Đã làm thí nghiệm đổi một con số (mục 2.5) nhưng chỉ trên 7 ca và một model. Đối chứng không dùng RAG (mục 2.6) chỉ chạy trên 9 câu hỏi đáp, không có hồ sơ vay.
 
 ## 5. Kết luận và hướng tiếp theo
 

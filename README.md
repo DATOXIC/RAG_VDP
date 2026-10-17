@@ -6,7 +6,7 @@
 
 ---
 
-## ⚡ 1. Khởi động nhanh (Quickstart)
+## 1. Khởi động nhanh (Quickstart)
 
 Hệ thống hỗ trợ chạy bằng `make` (Linux/macOS) hoặc trực tiếp bằng `python run.py` (Windows đa nền tảng).
 
@@ -37,7 +37,7 @@ Tự động tạo môi trường ảo `.venv`, cài đặt thư viện, khởi 
 
 ---
 
-## 🧭 2. Lộ trình kiểm thử cho Người chấm (Tester / Grader Roadmap)
+## 2. Lộ trình kiểm thử cho Người chấm (Tester / Grader Roadmap)
 
 Để thuận tiện cho Giảng viên và người chấm kiểm chứng từ mức độ nhẹ đến toàn diện, nhóm khuyến nghị quy trình 4 cấp độ:
 
@@ -68,7 +68,7 @@ Tự động tạo môi trường ảo `.venv`, cài đặt thư viện, khởi 
 
 ---
 
-## 🏛️ 3. Kiến trúc Hệ thống (System Architecture)
+## 3. Kiến trúc Hệ thống (System Architecture)
 
 ```
 run.py / Makefile ──► src/finco/agent.py (Vòng lặp Agent tự viết, MAX_STEPS=15)
@@ -97,7 +97,7 @@ run.py / Makefile ──► src/finco/agent.py (Vòng lặp Agent tự viết, M
 
 ---
 
-## 📋 4. Bảng Quy Chuẩn Mã Lý Do (Reason Codes)
+## 4. Bảng Quy Chuẩn Mã Lý Do (Reason Codes)
 
 Khi gọi `submit_decision`, Agent bắt buộc phải truyền mã lý do chuẩn thuộc tập đóng khớp với quyết định:
 
@@ -110,7 +110,7 @@ Khi gọi `submit_decision`, Agent bắt buộc phải truyền mã lý do chu�
 
 ---
 
-## 📊 5. Đánh giá Chất lượng chuyên sâu bằng RAGAS
+## 5. Đánh giá Chất lượng chuyên sâu bằng RAGAS
 
 Ngoài 37 ca kiểm thử nghiệp vụ, hệ thống tích hợp sẵn script đánh giá theo tiêu chuẩn học thuật **RAGAS** ([`eval/ragas_eval.py`](eval/ragas_eval.py)):
 
@@ -120,7 +120,7 @@ Ngoài 37 ca kiểm thử nghiệp vụ, hệ thống tích hợp sẵn script �
 
 ---
 
-## 📁 6. Cấu trúc Thư mục Dự án
+## 6. Cấu trúc Thư mục Dự án
 
 ```text
 ├── data/
@@ -148,7 +148,7 @@ Ngoài 37 ca kiểm thử nghiệp vụ, hệ thống tích hợp sẵn script �
 
 ---
 
-## ⚠️ 7. Các Giới hạn Kỹ thuật Đã biết (Known Limitations)
+## 7. Các Giới hạn Kỹ thuật Đã biết (Known Limitations)
 
 1. **Ngưỡng giới hạn Token của gói API miễn phí:** Khi chạy đồng thời nhiều vòng lặp phản biện phức tạp, kích thước ngữ cảnh có thể chạm giới hạn HTTP 413 hoặc Rate Limit của Groq (khắc phục bằng cờ `--pace 8` và cơ chế ngắt mạch an toàn).
 2. **Độ ổn định của các Model nhỏ (SLM < 14B):** Thử nghiệm với `Qwen2.5-7B` hoặc `gpt-oss-20b` cục bộ cho thấy mô hình nhỏ dễ gặp lỗi quên gọi tool xác nhận; hệ thống đã tích hợp cơ chế cảnh báo Nudge để khắc phục.

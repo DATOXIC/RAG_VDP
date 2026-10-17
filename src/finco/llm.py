@@ -48,7 +48,7 @@ class EmptyResponseError(RuntimeError):
     """LLM trả về phản hồi không dùng được (không có choices, hoặc nội dung rỗng)."""
 
 def _extra_content(raw_tool_call: Any) -> Optional[dict]:
-    """để code chạy tốt với cả Google (Gemini) lẫn OpenAI"""
+    """Lấy extra_content nếu sử dụng model khác (Gemini cần gửi lại để chạy tốt cùng OpenAI)"""
 
     extra = getattr(raw_tool_call, "model_extra", None)
     if isinstance(extra, dict) and extra.get("extra_content") is not None:
@@ -131,6 +131,7 @@ def critic_endpoint() -> Optional[tuple[str, str]]:
         return key, os.getenv("FINCO_CRITIC_BASE_URL") or GEMINI_BASE_URL
 
     base, key = os.getenv("FINCO_CRITIC_BASE_URL"), os.getenv("FINCO_CRITIC_API_KEY")
+
     if base and key:
         return key, base
     return None
@@ -141,8 +142,10 @@ def critic_default_model() -> Optional[str]:
     m = os.getenv("FINCO_CRITIC_MODEL")
     if m:
         return m
+
     if os.getenv("FINCO_CRITIC_PROVIDER", "").strip().lower() == "gemini":
         return GEMINI_DEFAULT_MODEL
+
     return None
 
 
@@ -172,6 +175,9 @@ def get_client(profile: Optional[str] = None) -> OpenAI:
     return _CLIENT
 
 def merge_usage(*usages: Usage) -> Usage:
+    """
+    Gộp usage lại. Có thể truyền nhiều phần tử
+    """
     return Usage(
         calls=sum(u.calls for u in usages),
         prompt_tokens=sum(u.prompt_tokens for u in usages),
@@ -182,6 +188,7 @@ def merge_usage(*usages: Usage) -> Usage:
 def load_prompt(filename: str) -> str:
     """Nội dung file prompt trong thư mục prompts/."""
     path = PROMPTS_DIR / filename
+
     if not path.exists():
         raise FileNotFoundError(f"Không tìm thấy file prompt: {path}")
     return path.read_text(encoding="utf-8").strip()
@@ -195,11 +202,19 @@ def _daily_quota_wait(e: Exception) -> Optional[float]:
     m = _TRY_AGAIN.search(msg)
     if not m or not m.group(1):
         return float("inf")  # hết hạn mức ngày nhưng không biết bao giờ hồi
+
     total = 0.0
     for num, unit in re.findall(r"([\d.]+)(ms|h|m|s)", m.group(1)):
         total += float(num) * {"h": 3600, "m": 60, "s": 1, "ms": 0.001}[unit]
+
     return total
 
+def _err_name(e: Exception) -> str:
+    """Trả về tên lỗi kèm mã HTTP (ví dụ: 'RateLimitError (HTTP 429)')."""
+
+    status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+    # type(e).__name__ : Tên loại lỗi
+    return f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
 
 def _create_with_retry(
     request: dict[str, Any],
@@ -208,42 +223,57 @@ def _create_with_retry(
     max_delay: float = 20.0,
     profile: Optional[str] = None,
 ):
+    # Khởi tạo Client LLM
     client = get_client(profile) if profile else get_client()
+    # Delay
     delay = initial_delay
 
     attempt = 0
     daily_waits = 0
+
     while attempt <= max_retries:
+
         try:
             return client.chat.completions.create(**request)
         
+        # Lỗi UnRetry
         except _NO_RETRY as e:
-            status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-            err_name = f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
+            
+            # Lấy loại lỗi
+            err_name = _err_name(e)
             print(f"[llm] Lỗi cố định {err_name}: {e}. Dừng ngay!", file=sys.stderr)
             raise
-
+        
+        # Có thể Retry
         except _RETRY as e:
-            status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-            err_name = f"{type(e).__name__} (HTTP {status})" if status else type(e).__name__
-
+            
+            # Lấy loại lỗi
+            err_name = _err_name(e)
+            # Lấy delay
             daily = _daily_quota_wait(e)
+
             if daily is not None:
+
+                # Chờ quá lâu HOẶC Chờ quá nhiều
                 if daily > MAX_DAILY_WAIT or daily_waits >= MAX_DAILY_WAITS:
                     shown = "không rõ" if daily == float("inf") else f"{daily / 60:.0f} phút"
                     print(f"[llm] Hết hạn mức token/ngày, cần chờ {shown} (> {MAX_DAILY_WAIT / 60:.0f} phút): dừng.", file=sys.stderr)
                     raise RuntimeError(f"Gọi LLM thất bại: hết hạn mức token/ngày ({err_name}), cần chờ {shown}: {e}") from e
+                
                 daily_waits += 1
                 wait = daily + random.uniform(1.0, 3.0)
                 print(f"[llm] Hết hạn mức token/ngày. Chờ đúng {wait:.0f}s rồi thử lại (không tính vào số lần retry)...", file=sys.stderr)
                 time.sleep(wait)
                 continue  # không tăng attempt: chờ đủ lâu thì lần này là lần thử "mới"
-
+            
+            # Đủ n lần thử
             if attempt == max_retries:
                 print(f"[llm] Đã thử lại {max_retries} lần nhưng vẫn thất bại: {e}", file=sys.stderr)
                 raise RuntimeError(f"Gọi LLM thất bại sau {max_retries} lần thử lại do lỗi {err_name}: {e}") from e
 
+            # Tìm thời gian chờ được Request
             headers = getattr(getattr(e, "response", None), "headers", None) or {}
+
             try:
                 retry_after = float(headers.get("retry-after", -1))
             except (ValueError, TypeError):
@@ -274,6 +304,7 @@ def call_llm(
     profile: Optional[str] = None,
 ) -> ChatTurn:
 
+    # Chế độ Critic
     if profile == "critic" and not model and critic_endpoint() is not None:
         model = critic_default_model()
 
@@ -284,6 +315,7 @@ def call_llm(
         "max_tokens": max_tokens,
         "timeout": timeout,
     }
+
     if stop:
         request["stop"] = stop
 
@@ -291,6 +323,7 @@ def call_llm(
         request["tools"] = tools
         request["tool_choice"] = "auto"
 
+    # Gọi LLM
     response = _create_with_retry(
         request, max_retries=max_retries, initial_delay=initial_delay, max_delay=max_delay, profile=profile
     )
@@ -307,10 +340,12 @@ def call_llm(
 
     raw_tool_calls = getattr(message, "tool_calls", None) or []
     
+    # Không có Content + Không có tool_class ==> Lỗi
     if not content and not raw_tool_calls:
         hint = " (bị cắt do max_tokens, hãy tăng max_tokens)" if choice.finish_reason == "length" else ""
         raise EmptyResponseError(f"LLM trả về nội dung rỗng, finish_reason={choice.finish_reason!r}{hint}.")
 
+    
     tool_calls: list[ToolCall] = [
         ToolCall(
             id=getattr(tc, "id", "") or f"call_{i}",

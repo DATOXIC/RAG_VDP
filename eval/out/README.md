@@ -18,6 +18,7 @@ Mỗi thư mục chứa `per_question.csv`/`agent_eval_results.csv`, `summary.js
 | `g20_comparison.csv` | bảng từng ca của G, H, I, J | |
 | `compare/` | đồ thị và bảng so sánh A, H, C do `make compare` sinh ra (`compare.png`, `compare.csv`) | |
 | `policy_change/` | thí nghiệm đổi trần DTI v1 50% → 40%: `before/`, `after/` (log và CSV), `summary.csv` | |
+| `no_rag/` | đối chứng không dùng RAG (`FINCO_NO_RAG=1`) trên 9 câu hỏi đáp: `per_question.csv`, `compare.csv` | |
 | `ragas/` | RAGAS bổ sung trên log của A (12 câu có đáp án): điểm từng câu và checkpoint |
 | `retrieval_per_question*.csv` | đo tầng truy xuất, có và không lọc ngày (bonus) | |
 
