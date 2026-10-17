@@ -9,7 +9,7 @@
 |---|---|---|
 | Claude Code (Anthropic), phiên làm việc trong repo | thiết kế và viết code `eval/`, bắt cầu trace → verifier, `reason_codes`, viết lại vòng lặp agent, `call_llm_tools`, `eval/run_eval.py`, testset, Makefile/run.py/README | thành viên chạy phiên này (**điền họ tên**; phần `eval/` thuộc TÔ PHƯƠNG ĐẠT, agent/MCP/chat thuộc NGUYỄN ĐĂNG VƯƠNG) |
 | *(CHƯA KHAI BÁO)* | phần `src/finco/rag/` (hybrid, filter, chunker), `llm.py` | TRƯƠNG KHẮC NHẬT PHI |
-| *(CHƯA KHAI BÁO)* | phần MCP server/client, `chat.py`, `audit.py` | NGUYỄN ĐĂNG VƯƠNG |
+| Claude Code (Anthropic), Codex (OpenAI) | hỗ trợ viết và sửa MCP server/client, giao diện REPL (`chat.py`), nhật ký kiểm toán (`audit.py`) | NGUYỄN ĐĂNG VƯƠNG |
 
 Mô hình LLM chạy trong sản phẩm (không phải công cụ viết code): Groq, `openai/gpt-oss-20b` (cấu hình bằng `LLM_MODEL`). Thư viện client: SDK `openai` (đề không liệt kê, cần xác nhận với giảng viên, xem PLAN.md mục 20).
 
@@ -25,6 +25,10 @@ Mô hình LLM chạy trong sản phẩm (không phải công cụ viết code): 
 | `prompts/agent_system.txt` | viết lại cho function calling, thứ tự CP-04, hỏi đáp/từ chối | `tests/test_prompt.py` |
 | `eval/run_eval.py`, `eval/scoring.py`, `tests/testset.jsonl` | viết mới | `tests/test_run_eval.py` |
 | `Makefile`, `run.py`, `README.md`, `.env.example`, cập nhật `PLAN.md` mục 4b/5/8/9 | viết | chạy `python run.py setup`, đọc lại |
+| `src/finco/mcp_server.py`: `@mcp.tool()`, stdio, logging | hỗ trợ viết | đối chiếu `tests/test_mcp_server.py`, kiểm tra log đi qua stderr |
+| `src/finco/mcp_client.py`: cấu hình server, `to_openai_tools` | hỗ trợ viết và sửa | đối chiếu schema tool, `tests/test_mcp_server.py`, `tests/test_agent.py` |
+| `src/finco/chat.py`: REPL, phân loại lệnh, xử lý đường dẫn import | hỗ trợ viết và sửa | kiểm tra các lệnh `list`, `ask`, `eval`, `history`, `audit` |
+| `src/finco/audit.py`: lưu trace, usage và đọc lịch sử phiên | hỗ trợ viết | đối chiếu dữ liệu lưu–đọc lại, trạng thái và chi tiết tool call |
 
 ## 3. Prompt chính (tóm tắt, không dán nguyên văn)
 
@@ -32,12 +36,18 @@ Mô hình LLM chạy trong sản phẩm (không phải công cụ viết code): 
 - "Bạn hãy đọc lại hai file yêu cầu và xác nhận thầy có yêu cầu ReAct hay không" → xác nhận đề chỉ yêu cầu parse action an toàn; nhóm giữ function calling.
 - "Giúp tôi đánh giá hệ thống từ commit bc3c727 đến hiện tại" → danh sách lỗi và rủi ro; sau đó "sửa hết các nhóm vấn đề, đừng gọi API LLM thật" → các thay đổi ở mục 2.
 
+- Tóm tắt đề xuất: “Tạo MCP server/client chạy qua stdio, khám phá tool động và chuyển schema sang function calling” → cấu hình kết nối và `to_openai_tools`.
+- Tóm tắt đề xuất: “Sửa lỗi import nhầm `types.py` khi chạy chat trực tiếp, phân biệt lệnh hồ sơ và câu hỏi” → xử lý `sys.path` và phân loại lệnh REPL.
+- Tóm tắt đề xuất: “Lưu kết quả Agent, trace và usage thành JSON, hỗ trợ tra cứu theo mã audit” → `save_audit_session`, `load_audit_session`, `list_recent_audits`.
+
 ## 4. Giới hạn và trung thực
 
 - Các test của agent dùng **LLM giả** (kịch bản định sẵn); chúng chứng minh vòng lặp, bọc lỗi và ép quy trình đúng, **không** chứng minh model thật quyết định đúng. Số liệu chất lượng trong báo cáo chỉ lấy từ `make eval` chạy thật (log trong `logs/`).
 - Code AI sinh được thành viên đọc, chạy test và chịu trách nhiệm giải thích khi vấn đáp.
 
-## 5. Đoạn code do AI sinh (khai báo của thành viên RAG)
+## 5. Đoạn code do AI sinh hoặc hỗ trợ viết
+
+### 5.1. Khai báo của thành viên RAG
 
 ```
 def corpus_hash(chunks: list[Chunk]) -> str:
@@ -67,3 +77,74 @@ def corpus_hash(chunks: list[Chunk]) -> str:
             dtype=bool,
         )
 ```
+
+### 5.2. MCP client và giao diện chat
+
+Trích đoạn `to_openai_tools` trong `src/finco/mcp_client.py` (nguồn gốc AI của từng đoạn cần đối chiếu lịch sử sử dụng):
+
+```python
+        schema = dict(getattr(tool, "input_schema", getattr(tool, "inputSchema", {})))
+        properties = dict(schema.get("properties", {}))
+        required = list(schema.get("required", []))
+
+        # 2. Tiêm trường 'thought' vào vị trí đầu tiên
+        if require_thought:
+            new_properties = {
+                "thought": {
+                    "type": "string",
+                    "description": (
+                        "Suy nghĩ ngắn gọn (1-2 câu): Tại sao gọi công cụ này? "
+                        "Cần dữ liệu gì và dự định làm gì tiếp theo với kết quả?"
+                    ),
+                }
+            }
+            # Ghép các tham số nghiệp vụ gốc vào sau thought
+            new_properties.update(properties)
+            properties = new_properties
+
+            # Đánh dấu thought là bắt buộc
+            if "thought" not in required:
+                required.insert(0, "thought")
+```
+
+Trích đoạn xử lý đường dẫn import trong `src/finco/chat.py`:
+
+```python
+CURRENT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = CURRENT_DIR.parents[1]
+SRC_DIR = REPO_ROOT / "src"
+
+# Nếu chạy trực tiếp 'python src/finco/chat.py', Python sẽ tự chèn CURRENT_DIR vào sys.path[0].
+# Loại bỏ nó để tránh rich/typing import nhầm file finco/types.py thay vì thư viện chuẩn.
+if str(CURRENT_DIR) in sys.path:
+    sys.path.remove(str(CURRENT_DIR))
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(1, str(REPO_ROOT))
+```
+Trích đoạn giao diện chat hiển thị chi tiết phiên kiểm toán bằng `Rich Tree` trong `show_audit_view`, file `src/finco/chat.py`:
+
+```python
+# Cây diễn giải từng lời gọi tool (Action -> Observation)
+steps = data.get("steps_detail", [])
+if steps:
+    tree = Tree(f"[bold magenta]Hành trình thẩm định ({len(steps)} bước)[/bold magenta]")
+    for s in steps:
+        step_no = s.get("step_number", 1)
+        tool = s.get("tool_name", "Không có tool")
+        step_node = tree.add(f"[bold yellow]Bước {step_no}: Gọi {tool}[/bold yellow]")
+
+        # Action args
+        args = s.get("tool_args", {})
+        step_node.add(f"[green]Tham số (Args):[/green] {json.dumps(args, ensure_ascii=False)}")
+
+        # Observation
+        obs = s.get("observation", "").strip()
+        obs_preview = obs if len(obs) <= 300 else obs[:300] + "..."
+        step_node.add(f"[dim]Kết quả tool (Observation):[/dim] {obs_preview}")
+
+    console.print(tree)
+```
+
+Đoạn này dựng cây các bước gọi tool, hiển thị tham số JSON có tiếng Việt và rút gọn kết quả dài để dễ theo dõi trên terminal.
