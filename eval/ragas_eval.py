@@ -1,22 +1,3 @@
-"""
-Đánh giá chất lượng RAG trên tập câu hỏi bằng thư viện RAGAS (Offline Benchmark):
-- Giám khảo LLM: Google Gemini (gemini-3.1-flash-lite qua OpenAI-compatible endpoint).
-- Mô hình Embedding: BGE-M3 cục bộ (SentenceTransformer có sẵn trong máy, 0 quota API).
-- Dữ liệu đầu vào: Đọc trực tiếp từ log chạy offline trong logs/ (0 token chạy Agent).
-- Bộ 5 chỉ số: Faithfulness, Answer Relevancy, Answer Correctness, Context Precision, Context Recall.
-- Cơ chế Checkpoint & Auto-Resume: Chấm câu nào lưu ngay câu đó, lỡ dừng giữa chừng chạy lại tiếp tục ngay.
-- Chống 429 RateLimit: Chấm tuần tự từng câu, tự động ngủ chờ hồi Quota khi gặp 429, kèm khoảng nghỉ --pace 8.0s.
-- Ngữ cảnh = kết quả của cả search_policy, get_application và calc_dti (số liệu tính toán đến từ hai tool sau,
-  nếu chỉ lấy search_policy thì câu trả lời đúng vẫn bị coi là "không có căn cứ").
-- Câu no_answer KHÔNG chấm bằng RAGAS (Answer Relevancy phạt câu từ chối đúng): chỉ báo từ chối đúng/sai bằng code.
-- Xuất kết quả: Bảng Rich trên Terminal + eval/out/ragas/ragas_scores.csv + ragas_summary.json.
-- Cài thư viện: pip install -r requirements-eval.txt (ngoài requirements.txt chính).
-
-Chạy:
-    python eval/ragas_eval.py
-    python eval/ragas_eval.py --pace 8.0 --log logs/eval_20261014_202454.jsonl
-"""
-
 from __future__ import annotations
 
 import argparse

@@ -130,7 +130,10 @@ class _NoDti(ValueError):
 
 @dataclass
 class RunRecord:
-    """Dấu vết một lượt thẩm tra của critic-agent (để đo token và đưa vào report)."""
+    """
+    Dấu vết một lượt thẩm tra của critic-agent
+    Là cả quá trình cho đến khi kết thúc
+    """
     app_id: str
     steps: list[dict[str, Any]] = field(default_factory=list) # Tools và step
     calls: int = 0 # Tổng lượt gọi trong lượt Critic
@@ -203,10 +206,14 @@ class CriticAgent:
 
     def _investigate(self, p: Proposal, rec: RunRecord) -> tuple[dict[str, Any], SessionEvidence]:
         """
-
+        Critic tự đi kiểm chứng riêng kết quả của Actor
+        Trả về: đoạn nào sai, trích dẫn, detail
         """
+        # Critic tạo phiên riêng
         own = SessionEvidence(app_id=p.app_id)
+        # Khởi tạo tools
         specs = [s.to_openai() for s in TOOL_SPECS]
+        # Cung cấp Context kết quả Actor cho Critic
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": self._system_prompt()},
             {"role": "user", "content": (
@@ -216,40 +223,55 @@ class CriticAgent:
                 f"cited_docs: {', '.join(p.cited_docs)}\nreason: {p.reason}"
             )},
         ]
+
         seen_calls: set[str] = set() # Lưu lại tools đã thực hiện
 
+        # Loop
         for step in range(self.max_steps):
+
             last = step == self.max_steps - 1
             if last:
                 messages.append({"role": "user", "content": "Hết lượt tra cứu. Trả ngay JSON kết quả cuối, không gọi công cụ."})
             
+            # gọi LLM
             turn = self._step(messages, None if last else specs)
             u = getattr(turn, "usage", None)
             rec.calls += 1
             rec.prompt_tokens += getattr(u, "prompt_tokens", 0) or 0
             rec.completion_tokens += getattr(u, "completion_tokens", 0) or 0
 
+            # Nếu CÓ gọi TOOL
             if getattr(turn, "tool_calls", None) and not last:
+                # Lưu lại context trước khi execute tool
                 messages.append(turn.to_assistant_message())
+
+                # Execute Tool
                 for tc in turn.tool_calls:
                     result = self._run_tool(tc, p, own, seen_calls)
                     rec.steps.append({"tool": tc.name, "args": tc.args, "result": result[:200]})
                     messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+                
                 continue
 
+            # Nếu KHÔNG gọi TOOL
             try:
+                # Tìm đoạn JSON từ LLM trả về
                 data = cm._parse_json(turn.content)
+
+                # Vi phạm (Cần tính DTI mà Critic chưa tính)
                 if self._needs_dti(p) and not any(s["tool"] == "calc_dti" for s in rec.steps):
-                    # Không cho "gật đầu" khi chưa tự tính DTI: ép bằng code, không chỉ nhắc trong prompt.
-                    if step > self.max_steps - 3:  # còn không đủ bước để gọi calc_dti rồi kết luận
+                    if step > self.max_steps - 3:  
                         raise _NoDti("critic-agent kết luận mà chưa tự tính DTI")
+
                     messages.append({"role": "assistant", "content": turn.content})
                     messages.append({"role": "user", "content": (
                         "Quyết định này phụ thuộc DTI nên bạn PHẢI tự gọi calc_dti (lãi suất theo CP-03 ứng với "
                         "kỳ hạn của hồ sơ) rồi mới kết luận. Gọi calc_dti ngay.")})
                     continue
+                
                 rec.steps.append({"tool": "__final__", "args": {}, "result": turn.content[:200]})
                 return data, own
+            
             except _NoDti:
                 raise
             except ValueError:
@@ -258,26 +280,35 @@ class CriticAgent:
                 # JSON hỏng: nhắc đúng một lần rồi để vòng lặp tiếp tục (vẫn bị chặn bởi max_steps)
                 messages.append({"role": "assistant", "content": turn.content or "(rỗng)"})
                 messages.append({"role": "user", "content": "Chỉ trả MỘT JSON object đúng định dạng đã nêu, không văn bản khác."})
+                
         raise ValueError(f"critic-agent hết {self.max_steps} bước mà chưa có kết luận")
 
     def _run_tool(self, tc: Any, p: Proposal, own: SessionEvidence, seen: set[str]) -> str:
-        
+        """
+        Thực thi tool
+        """
+
+        # Kiểm tra lỗi
         if tc.error:
             return tc.error
         
+        # Kiểm tra phạm vi Tool
         if tc.name not in READ_ONLY_TOOLS:
             return f"Error: Công cụ '{tc.name}' không tồn tại. Chỉ có: {', '.join(READ_ONLY_TOOLS)}."
         
+        # Tạo Key lưu vào seen --> Tránh thực hiện lặp
         key = tc.name + json.dumps(tc.args, sort_keys=True, ensure_ascii=False)
         if key in seen:
             return "Lời gọi này đã thực hiện, kết quả đã có ở trên. Hãy dùng kết quả đó hoặc trả kết luận."
         seen.add(key)
 
+        # Kiểm tra lệch hồ sơ
         args = tc.args
         app_arg = str(args.get("app_id", p.app_id)).strip().upper()
         if tc.name in ("get_application", "calc_dti") and app_arg != p.app_id:
             return f"Error: Bạn chỉ được thẩm tra hồ sơ {p.app_id}."
 
+        
         # Critic Agent tự thu thập dữ liệu riêng
         box = self._tools()
         try:

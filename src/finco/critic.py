@@ -9,7 +9,7 @@ _EXCLUSION_CODES = {"AGE", "AMOUNT_RANGE", "TERM_RANGE", "OVERDUE"}
 MIN_QUOTE_LEN = 8
 
 
-# --------------------------------------------------------------------------- 1. Bằng chứng phiên
+# 1. Bằng chứng phiên
 @dataclass
 class Retrieval:
     """Một đoạn chính sách Actor đã THỰC SỰ nhận được từ search_policy (hoặc từ calc_dti)."""
@@ -45,6 +45,8 @@ _UNATTACHED = ""  # search_policy gọi trước get_application: chưa biết h
 
 def get_evidence(app_id: Optional[str]) -> SessionEvidence:
     """
+    Nhận app_id
+    Tìm SessionEvidence
     """
     key = (app_id or _UNATTACHED).strip().upper()
 
@@ -56,6 +58,7 @@ def get_evidence(app_id: Optional[str]) -> SessionEvidence:
 
 def clear_evidence(app_id: Optional[str] = None) -> None:
     """
+    Xóa _EVIDENCE
     """
     if app_id is None:
         _EVIDENCE.clear()
@@ -64,6 +67,9 @@ def clear_evidence(app_id: Optional[str] = None) -> None:
 
 
 def record_application(app_id: str, raw: str, submitted_date: str) -> None:
+    """
+    Lưu lại bằng chứng thực tế 
+    """
     ev = get_evidence(app_id)
     ev.app_data_raw = raw 
     ev.submitted_date = submitted_date
@@ -84,6 +90,9 @@ def record_retrieval(app_id: Optional[str], hits: list[Any], as_of: Optional[str
 
 
 def record_dti(app_id: str, raw: str) -> None:
+    """
+    Lưu lại bằng chứng thực tế
+    """
     ev = get_evidence(app_id)
     ev.dti_result_raw = raw
     ev.retrievals.append(Retrieval(doc_id="CP-05", version="v1", as_of=None, text=raw, trusted=True))
@@ -117,6 +126,9 @@ class Verdict:
 _CITE = re.compile(r"([A-Za-z]+-\d+)(?:[\s@_\-(]*[vV](\d+))?")
 
 def parse_cite(text: str) -> Optional[tuple[str, Optional[str]]]:
+    """
+    Tìm trích dẫn.
+    """
     m = _CITE.search(text or "")
     if not m:
         return None
@@ -124,9 +136,8 @@ def parse_cite(text: str) -> Optional[tuple[str, Optional[str]]]:
 
 
 def required_docs(decision: str, codes: list[str], app: Any) -> set[str]:
-    """Tài liệu bắt buộc đã phải tra cứu, suy ra từ quy trình trong prompts/agent_underwrite.txt.
-
-    Quy trình dừng ở bước đầu tiên không đạt, nên quyết định cho biết hồ sơ đã đi tới bước nào.
+    """
+    Lý thuyết những văn bản phải cần
     """
     need = {"CP-01"}
 
@@ -151,7 +162,9 @@ def required_docs(decision: str, codes: list[str], app: Any) -> set[str]:
 # Tầng 1: xác định
 def check_evidence(p: Proposal, ev: SessionEvidence, app: Any) -> tuple[list[str], list[str]]:
     """
+    Đối chứng kết quả của Agent - Critic
     """
+
     issues: list[str] = [] #Danh sách Lỗi Cứng
     add: list[str] = [] #Danh sách Lỗi Mềm
 
@@ -175,6 +188,7 @@ def check_evidence(p: Proposal, ev: SessionEvidence, app: Any) -> tuple[list[str
         doc, ver = parsed
         cited_ids.add(doc)
 
+        # Bắt lỗi LLM trích dẫn bậy. 
         if doc not in seen:
             issues.append(
                 f"Trích dẫn '{raw}' nhưng chưa từng thấy {doc} trong kết quả tra cứu đúng ngày nộp hồ sơ."
@@ -184,22 +198,28 @@ def check_evidence(p: Proposal, ev: SessionEvidence, app: Any) -> tuple[list[str
                 f"Trích dẫn '{raw}' nhưng phiên bản đã thấy của {doc} là {', '.join(sorted(seen[doc]))}."
             )
 
+    
     # KIỂM TRA thực tế VS lý thuyết 
     need = required_docs(p.decision, p.reason_codes, app) # Lý thuyết
     when = ev.submitted_date or "ngày nộp hồ sơ"
     for doc in sorted(need):
+        # Bắt lỗi trích thiếu
         if doc not in seen:
             issues.append(
                 f"Chưa tra cứu {doc} (bắt buộc với quyết định '{p.decision}'); "
                 f"gọi search_policy với as_of_date = {when}."
             )
+        # Lỗi nhẹ -> Code tự vá
         elif doc not in cited_ids:
             ver = max(seen[doc])
             add.append(f"{doc} {ver}")
 
+    # KIỂM TRA đã tính DTI chưa
     if p.decision in ("approve", "escalate") or "DTI_EXCEEDED" in p.reason_codes:
         if not ev.dti_result_raw:
             issues.append("Chưa có kết quả calc_dti cho hồ sơ này.")
+
+
     return issues, add
 
 
@@ -276,9 +296,13 @@ class Critic:
         if self._prompt is None:
             from finco.llm import load_prompt
             self._prompt = load_prompt("critic.txt")
+
         return self._prompt
 
     def review(self, p: Proposal, ev: SessionEvidence, app: Any) -> Verdict:
+        """
+        
+        """
         issues, add = check_evidence(p, ev, app)
 
         if issues:  # thiếu bằng chứng thì khỏi tốn token hỏi LLM
@@ -286,7 +310,7 @@ class Critic:
 
         if add:  # LLM thấy đúng bộ trích dẫn sau khi bổ sung
             p = Proposal(p.app_id, p.decision, p.reason, [*p.cited_docs, *add], p.reason_codes)
-
+        
         messages = [
             {"role": "system", "content": self._system_prompt()},
             {"role": "user", "content": build_user_message(p, ev)},
@@ -299,6 +323,7 @@ class Critic:
             try:
                 data = _parse_json(self._llm(messages))
                 break
+
             except Exception as e:  # fail-closed: không xác minh được thì không cho ghi
                 last_err = f"{type(e).__name__}: {e}"
 
@@ -315,11 +340,12 @@ class Critic:
         1. Chấm điểm Actor
         2. Kiểm soát chính Critic
         """
+        #Trích xuất kết quả JSON từ Critic
         exp_decision = str(data.get("expected_decision", "")).strip().lower()
         raw_codes = data.get("expected_reason_codes") or []
         exp_codes = {str(c).strip().upper() for c in raw_codes} if isinstance(raw_codes, list) else set()
 
-        # Nếu Critic ngáo
+        # Nếu Critic ngáo không trả về đúng
         if exp_decision not in DECISIONS:
             return Verdict(False, [f"Critic trả về expected_decision không hợp lệ: {exp_decision!r}."], stage="error")
 
@@ -332,27 +358,31 @@ class Critic:
         if not mismatch:
             return Verdict(True)
 
-        # Kết quả sự thật mà Actor đã làm
+        # Kết quả sự thật mà Actor đã làm để dùng làm đối chiếu cho Critic
         corpus = _norm("\n".join(
             [ev.app_data_raw, ev.dti_result_raw] + [r.text for r in ev.valid_retrievals()]
         ))
 
-
+        # Đi đối chiếu những vấn đề mà Critic tìm được
         grounded: list[str] = []
         for item in data.get("issues") or []:
             if not isinstance(item, dict):
                 continue
-
+            
             quote = _norm(str(item.get("evidence_quote", ""))) # Trích dẫn nguyên văn đoạn nào sai
             detail = str(item.get("detail", "")).strip() # Diễn dải tại sao sai
+
+            # Nếu trích đúng đoạn 
             if detail and len(quote) >= MIN_QUOTE_LEN and quote in corpus:
                 grounded.append(f"{detail} (căn cứ: \"{item['evidence_quote'].strip()}\")")
 
         if grounded:
             return Verdict(False, grounded, stage="critic")
+        
         print(
             f"[critic] Phản đối không có trích dẫn kiểm chứng được cho {p.app_id}; bỏ qua. "
             f"expected={exp_decision}/{sorted(exp_codes)}",
             file=sys.stderr,
         )
+        
         return Verdict(True, warning="critic_disagreement_ungrounded")

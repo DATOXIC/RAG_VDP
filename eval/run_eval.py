@@ -1,25 +1,3 @@
-"""Chạy agent trên bộ câu hỏi và chấm điểm: `make eval`.
-
-    python eval/run_eval.py                         # 16 câu trong tests/testset.jsonl
-    python eval/run_eval.py --apps                  # thêm 21 hồ sơ trong expected_decisions.json
-    python eval/run_eval.py --ids T01 A01           # chỉ chạy vài câu
-    python eval/run_eval.py --pace 8                # nghỉ 8 giây giữa các câu (tránh rate limit)
-    python eval/run_eval.py --resume logs/eval_X.jsonl   # chạy tiếp, bỏ qua câu đã có trong log
-    python eval/run_eval.py --score-only logs/eval_X.jsonl   # chấm lại từ log, KHÔNG gọi LLM
-
-Nguyên tắc chấm (bằng code, không dùng LLM):
-- Câu hành động / hồ sơ: verifier so quyết định, mã lý do, trích dẫn, DTI, lãi suất, cặp ghi + đọc lại
-  với tests/expected_decisions.json (dựng từ trace của agent, không đọc văn bản tự do).
-- Câu no_answer: đạt khi agent từ chối đúng (câu chuẩn REFUSAL_MARKER) và KHÔNG ghi quyết định.
-- Câu còn lại: đạt khi câu trả lời chứa đủ các "ý chính" trong expected_answer (đánh dấu **như này**),
-  trích đúng tài liệu mong đợi (đúng phiên bản nếu có "@v"), không từ chối nhầm.
-- Faithfulness theo luật: mọi tài liệu mà câu trả lời trích phải xuất hiện trong kết quả công cụ.
-
-Chấm điểm là hàm thuần trên log: --score-only cho cùng kết quả mà không tốn một lượt gọi LLM nào.
-Mỗi câu chạy trên một DB sandbox sạch nên các câu không ảnh hưởng nhau và lần chạy sau không hưởng lợi
-từ lần trước. Không dùng cache.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -74,8 +52,6 @@ def record_from_result(question_id: str, result: Any) -> RunRecord:
         error=result.error_message,
         complete=True,
     )
-
-
 
 # --------------------------------------------------------------------------- nạp dữ liệu
 def load_cases(testset: Path) -> list[TestCase]:

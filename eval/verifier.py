@@ -23,24 +23,28 @@ EXPECTED_PATH = REPO_ROOT / "tests" / "expected_decisions.json"
 class VerifyResult:
     """Phiếu kết quả sát hạch chi tiết đáp ứng đủ 4 tiêu chí của PLAN.md."""
     app_id: str
+    
     # ----------------------------------------------------
     # TIÊU CHÍ 1: ĐỘ CHÍNH XÁC QUYẾT ĐỊNH (Decision Accuracy)
     # ----------------------------------------------------
     decision_correct: bool = False          # Đúng quyết định duyệt/từ chối không
     actual_decision: Optional[str] = None   # Quyết định AI đưa ra (approve/reject/...)
     expected_decision: str = "N/A"          # Quyết định chuẩn của đáp án
+    
     # ----------------------------------------------------
     # TIÊU CHÍ 1b: ĐÚNG ĐIỂM NGHẼN (Root Cause), so tập mã lý do, không dùng LLM
     # ----------------------------------------------------
     root_cause_correct: bool = False        # Mã lý do chuẩn có nằm trong reason_codes của agent không
     actual_reason_codes: list[str] = field(default_factory=list)    # Mã lý do agent ghi
     expected_reason_codes: list[str] = field(default_factory=list)  # Mã lý do chuẩn (expected.reasons)
+    
     # ----------------------------------------------------
     # TIÊU CHÍ 2: ĐỘ CHUẨN XÁC TRÍCH DẪN (Citation Accuracy)
     # ----------------------------------------------------
     citation_recall: float = 0.0            # Có trích dẫn đủ luật bắt buộc không (0.0 -> 1.0)
     citation_precision: float = 0.0         # Có bị trích dẫn thừa tài liệu rác không (0.0 -> 1.0)
     citation_valid: bool = False            # Đạt chuẩn trích dẫn hay không (Recall >= 0.8)
+    
     # ----------------------------------------------------
     # TIÊU CHÍ 3: KIỂM TRA CHUỖI GỌI TOOL (Tool Call Trace)
     # ----------------------------------------------------
@@ -48,6 +52,7 @@ class VerifyResult:
     has_calc_dti: bool = False              # Có gọi tool tính toán nợ không (không được tính mồm)
     read_after_write: bool = False          # Có gọi get_decision sau khi submit_decision không
     trace_valid: bool = False               # Quy trình gọi tool có tuân thủ 100% không
+    
     # ----------------------------------------------------
     # TIÊU CHÍ 4: KIỂM TRA TÍNH TOÁN CÁC CON SỐ (Numeric Math)
     # ----------------------------------------------------
@@ -55,6 +60,7 @@ class VerifyResult:
     dti_correct: bool = False               # Con số DTI tính ra có khớp đáp án chuẩn không (sai số <= 0.5%)
     actual_dti: Optional[float] = None     # Con số DTI mà AI tính được
     expected_dti: float = 0.0               # Con số DTI chuẩn trong đề thi
+    
     # ----------------------------------------------------
     # TỔNG KẾT
     # ----------------------------------------------------
@@ -161,7 +167,6 @@ def _clean_codes(value: Any) -> list[str]:
 
 def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmission:
     """Dựng bài nộp từ trace của MỘT hồ sơ.
-
     - Chỉ tính lời gọi tool THÀNH CÔNG (kết quả không bắt đầu bằng "Error:"): lời gọi lỗi không
       phải bằng chứng agent đã tra cứu / ghi / kiểm chứng.
     - submit_decision, get_decision, calc_dti phải đúng app_id đang chấm.

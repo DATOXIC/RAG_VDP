@@ -1,16 +1,3 @@
-"""Chấm điểm: hàm thuần trên log, không gọi agent, LLM hay mạng.
-
-Luồng: log .jsonl --records_from_log--> RunRecord --score_question--> QuestionScore --summarize--> số liệu.
-
-Nguyên tắc chấm (bằng code, không dùng LLM):
-- Câu hành động / hồ sơ: verifier so quyết định, mã lý do, trích dẫn, DTI, lãi suất, cặp ghi + đọc lại
-  với tests/expected_decisions.json (dựng từ trace của agent, không đọc văn bản tự do).
-- Câu no_answer: đạt khi agent từ chối đúng (câu chuẩn REFUSAL_MARKER) và KHÔNG ghi quyết định.
-- Câu còn lại: đạt khi câu trả lời chứa đủ các "ý chính" trong expected_answer (đánh dấu **như này**),
-  trích đúng tài liệu mong đợi (đúng phiên bản nếu có "@v"), không từ chối nhầm.
-- Faithfulness theo luật: mọi tài liệu mà câu trả lời trích phải xuất hiện trong kết quả công cụ.
-"""
-
 from __future__ import annotations
 
 import json

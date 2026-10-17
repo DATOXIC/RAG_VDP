@@ -1,13 +1,3 @@
-"""
-Module Giám khảo LLM (eval/judge.py) - Nhiệm vụ 3 của Luồng 3 (PLAN.md).
-Thẩm định định tính trường `reason` trong quyết định của Agent:
-1. is_factual: Số liệu và thông tin có trung thực, không bịa đặt không.
-2. is_logically_sound: Lập luận có dẫn dắt hợp lý tới quyết định không.
-
-Điểm nghẽn (root cause) KHÔNG do giám khảo LLM chấm: verifier so tập `reason_codes` của agent với
-`expect.reasons` bằng code (eval/verifier.py: verify_root_cause).
-"""
-
 from dataclasses import dataclass
 import json
 import os
@@ -15,46 +5,12 @@ import os
 from finco.types import Application
 from eval.verifier import ExpectedDecision, AgentSubmission
 import re
-from finco.llm import call_llm
+from finco.llm import call_llm, load_prompt
 
 # ---------------------------------------------------------------------------
-# 1. BẢN SYSTEM PROMPT HOÀN THIỆN CHO GIÁM KHẢO
+# 1. BẢN SYSTEM PROMPT HOÀN THIỆN CHO GIÁM KHẢO (Nạp từ prompts/judge.txt)
 # ---------------------------------------------------------------------------
-SYSTEM_PROMPT = """
-Bạn là Trưởng ban Kiểm soát Thẩm định Tín dụng của ngân hàng FinCo.
-Nhiệm vụ của bạn là thẩm định tính TRUNG THỰC, HỢP LÝ và ĐÚNG ĐẮN trong Lời giải thích (reason) của chuyên viên AI.
-
-[DỮ LIỆU THAM CHIẾU CHUẨN CỦA ĐỀ THI]:
-- Hồ sơ khách hàng: {applicant_info}
-- Quyết định chuẩn của Ban giám khảo: {expected_decision}
-- Các chỉ số tài chính chuẩn: {expected_metrics}
-- Trích đoạn chính sách áp dụng: {policy_context}
-
-[BÀI LÀM CỦA THÍ SINH]:
-- Quyết định thí sinh đưa ra: {actual_decision}
-- Lời giải thích của thí sinh: {agent_reason}
-
-[QUY TẮC PHÁN XÉT CHI TIẾT]:
-1. is_factual (Đúng sự thật):
-   - Mọi số liệu (DTI, lãi suất, thu nhập, tuổi...) và thông tin nếu có nêu trong reason PHẢI KHỚP với hồ sơ và số liệu chuẩn.
-   - Nếu thí sinh bịa ra thông tin không có thật (nợ xấu ngoài hệ thống, CIC, tài sản đảm bảo, hoặc nêu sai số) -> Đánh dấu FALSE.
-
-2. is_logically_sound (Nhất quán logic):
-   - Lời giải thích có thực sự hỗ trợ và dẫn dắt hợp lý tới quyết định {actual_decision} hay không?
-   - Không được có mâu thuẫn nội tại (ví dụ: khen khách hàng đủ mọi điều kiện nhưng lại ra quyết định từ chối).
-
-3. is_valid:
-   - TRUE khi và chỉ khi cả 2 tiêu chí trên (is_factual, is_logically_sound) ĐỀU LÀ TRUE.
-
-[ĐỊNH DẠNG ĐẦU RA]:
-Chỉ trả về một đối tượng JSON duy nhất (không bọc trong markdown hay viết thêm văn bản giải thích):
-{{
-  "is_factual": true,
-  "is_logically_sound": true,
-  "is_valid": true,
-  "critique": "Nhận xét ngắn gọn 1-2 câu giải thích vì sao đạt hoặc chỉ rõ điểm sai sót"
-}}
-"""
+SYSTEM_PROMPT = load_prompt("judge.txt")
 
 # ---------------------------------------------------------------------------
 # 2. KHUÔN MẪU DỮ LIỆU KẾT QUẢ ĐÁNH GIÁ (DATACLASS)
@@ -154,6 +110,7 @@ def _extract_json_block(text: str) -> dict:
 def _require_bool(data: dict, key: str) -> bool:
     """Lấy trường boolean. Chấp nhận true/false và chuỗi "true"/"false"; thiếu hoặc kiểu lạ thì lỗi.
     Không dùng bool(): bool("false") là True và sẽ chấm sai âm thầm."""
+    
     value = data.get(key)
     if isinstance(value, bool):
         return value

@@ -1,12 +1,9 @@
-"""Nhật ký kiểm toán cho REPL chat: mỗi lượt chạy một file logs/sessions/FINCO-XXXXXXXX.json.
-
-Nội dung lấy từ trace của lượt chạy; log máy (jsonl, có USAGE) nằm riêng ở logs/run_<run_id>.jsonl.
 """
-
+lưu lại những gì mà thao tác trên chat.py
+"""
 from __future__ import annotations
-
 import json
-import uuid
+import uuid # Tạo mã
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
