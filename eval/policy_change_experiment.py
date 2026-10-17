@@ -120,6 +120,8 @@ def per_question(root: Path) -> dict[str, dict]:
 
 
 def main(argv=None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--new", type=int, default=40, help="trần DTI mới của CP-01 v1, đơn vị % (mặc định 40)")
     ap.add_argument("--pace", type=float, default=5.0, help="giây nghỉ giữa hai câu (tránh giới hạn tốc độ)")

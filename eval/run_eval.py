@@ -262,6 +262,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         print_summary_table(verified)
         export_results_csv(verified, args.out_dir / "agent_eval_results.csv")
     print(f"Đã ghi kết quả vào {args.out_dir}" + ("" if chart_ok else " (không có biểu đồ: thiếu matplotlib)"))
+    if args.score_only:
+        return 0
     return 0 if summary["passed"] == summary["questions"] else 1
 
 

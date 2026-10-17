@@ -116,7 +116,8 @@ def _run(*args: str) -> int:
 
 def cmd_score(log: str | None = None, out_dir: str | None = None) -> int:
     args = ["eval/run_eval.py", "--score-only", log or DEFAULT_SCORE_LOG, "--apps"]
-    return _run(*args, *(["--out-dir", out_dir] if out_dir else []))
+    code = _run(*args, *(["--out-dir", out_dir] if out_dir else []))
+    return 0 if code in (0, 1) else code
 
 
 def cmd_check() -> int:

@@ -1,17 +1,38 @@
 ﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
-T01,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,2822,465,1657,,
-T02,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,2796,349,1629,,
-S01,tổng hợp,,False,True,,,,,False,False,False,False,True,False,1,0,2,2895,588,1711,,"thiếu ý: CCCD, DKKD, SK_TK_6T; trích dẫn chưa đủ: có ['CP-03@v1', 'CP-16@v1'], cần ['CP-03', 'CP-02']"
-S02,tổng hợp,,False,True,,,,,False,True,False,False,True,False,1,0,2,2916,509,1742,,"trích dẫn chưa đủ: có ['CP-15@v1', 'CP-16@v1'], cần ['CP-06', 'CP-04']"
-V01,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,2921,430,1752,,
-V02,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,2760,286,1584,,
-C01,tính toán,APP-001,False,True,,,,,False,True,False,False,True,False,3,0,4,6410,311,2071,,"trích dẫn chưa đủ: có ['CP-05@v1'], cần ['CP-03', 'CP-05']"
-C02,tính toán,APP-014,False,True,,,,,True,False,False,False,True,False,3,0,4,6446,1153,2086,,thiếu ý: 6417491
-M01,thiếu dữ liệu,APP-021,True,True,,,,,True,True,False,False,True,True,7,1,8,25081,1859,4051,,
-M02,thiếu dữ liệu,APP-004,True,True,,,,,True,True,False,False,True,True,4,0,5,13541,1613,3224,,
-N01,no_answer,,False,True,,,,,,,True,False,True,False,1,0,2,2983,765,1820,,không từ chối dù tài liệu không có thông tin
-N02,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2666,1253,1505,,
-N03,no_answer,,True,True,,,,,,,True,True,True,False,2,0,3,4969,699,2145,,
-N04,no_answer,,True,True,,,,,,,True,True,True,False,3,0,4,7594,463,2644,,
-A01,hành động,APP-015,True,True,True,True,True,True,True,,False,False,True,True,11,0,11,43565,1711,5963,,
-A02,hành động,APP-018,False,True,True,False,True,True,True,,False,False,True,True,11,0,11,44477,1950,6231,,Sai mã lý do (AI: ['ESCALATE_COUNCIL'] != Chuẩn: ['ESCALATE_EMPLOYEE'])
+T01,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,3297,429,2108,,
+T02,tra cứu,,True,True,,,,,True,True,False,False,True,False,1,0,2,3119,443,1928,,
+S01,tổng hợp,,True,True,,,,,True,True,False,False,True,False,2,0,3,5469,860,2526,,
+S02,tổng hợp,,True,True,,,,,True,True,False,False,True,False,1,0,2,3233,534,2035,,
+V01,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,3132,444,1939,,
+V02,phiên bản,,True,True,,,,,True,True,False,False,True,False,1,0,2,2983,352,1783,,
+C01,tính toán,APP-001,True,True,,,,,True,True,False,False,True,False,3,0,4,6915,484,2300,,
+C02,tính toán,APP-014,True,True,,,,,True,True,False,False,True,False,3,0,4,6975,633,2320,,
+M01,thiếu dữ liệu,APP-021,True,True,,,,,True,True,False,False,True,True,5,0,5,16087,1322,4348,,
+M02,thiếu dữ liệu,APP-004,True,True,,,,,True,True,False,False,True,True,5,0,6,19067,1599,4192,,
+N01,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,3108,526,1921,,
+N02,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,3073,646,1888,,
+N03,no_answer,,False,True,,,,,,,True,False,True,False,2,0,3,6142,470,2872,,không từ chối dù tài liệu không có thông tin
+N04,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,3085,341,1892,,
+A01,hành động,APP-015,True,True,True,True,True,True,True,,False,False,True,True,7,0,7,25937,2076,5213,,
+A02,hành động,APP-018,False,True,True,False,True,True,True,,False,False,True,True,8,0,8,32581,2542,6302,,Sai mã lý do (AI: ['ESCALATE_COUNCIL'] != Chuẩn: ['ESCALATE_EMPLOYEE'])
+APP-001,hồ sơ,APP-001,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,39340,2561,6966,,
+APP-002,hồ sơ,APP-002,True,True,True,True,True,True,True,,False,False,True,True,16,0,8,32912,2842,6488,,
+APP-003,hồ sơ,APP-003,True,True,True,True,True,True,True,,False,False,True,True,10,0,8,31813,2301,5755,,
+APP-004,hồ sơ,APP-004,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,15866,1300,4180,,
+APP-005,hồ sơ,APP-005,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,16077,1123,4293,,
+APP-006,hồ sơ,APP-006,True,True,True,True,True,True,True,,False,False,True,True,16,0,8,32922,2428,6442,,
+APP-007,hồ sơ,APP-007,True,True,True,True,True,True,True,,False,False,True,True,6,0,4,11434,700,3512,,
+APP-008,hồ sơ,APP-008,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,11422,864,3490,,
+APP-009,hồ sơ,APP-009,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,39443,2741,6999,,
+APP-010,hồ sơ,APP-010,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,15778,1138,4161,,
+APP-011,hồ sơ,APP-011,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,32350,2650,6276,,
+APP-012,hồ sơ,APP-012,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,32872,2699,6420,,
+APP-013,hồ sơ,APP-013,True,True,True,True,True,True,True,,False,False,True,True,4,0,4,11437,1028,3515,,
+APP-014,hồ sơ,APP-014,True,True,True,True,True,True,True,,False,False,True,True,9,0,9,40467,2698,7009,,
+APP-015,hồ sơ,APP-015,True,True,True,True,True,True,True,,False,False,True,True,7,0,7,26010,1871,5243,,
+APP-016,hồ sơ,APP-016,True,True,True,True,True,True,True,,False,False,True,True,21,0,8,32964,2468,6500,,
+APP-017,hồ sơ,APP-017,True,True,True,True,True,True,True,,False,False,True,True,9,0,7,25950,1844,5136,,
+APP-018,hồ sơ,APP-018,False,True,True,False,True,True,True,,False,False,True,True,8,0,8,32652,2515,6312,,Sai mã lý do (AI: ['ESCALATE_COUNCIL'] != Chuẩn: ['ESCALATE_EMPLOYEE'])
+APP-019,hồ sơ,APP-019,True,True,True,True,True,True,True,,False,False,True,True,8,0,8,32440,2750,6277,,
+APP-020,hồ sơ,APP-020,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,15155,812,3697,,
+APP-021,hồ sơ,APP-021,True,True,True,True,True,True,True,,False,False,True,True,5,0,5,15946,1162,4201,,

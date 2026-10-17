@@ -58,6 +58,8 @@ def summarize(rows: list[dict]) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--configs", nargs="+", default=["A", "H", "C"], choices=sorted(CONFIGS))
     ap.add_argument("--out-dir", type=Path, default=OUT / "compare")
