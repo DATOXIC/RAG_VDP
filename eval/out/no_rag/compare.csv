@@ -1,0 +1,10 @@
+﻿id,type,co_rag_dat,khong_rag_dat,khong_rag_tu_choi,co_rag_prompt_token,khong_rag_prompt_token
+T01,tra cứu,True,False,True,3297,6788
+T02,tra cứu,True,False,True,3119,11772
+S01,tổng hợp,True,False,True,5469,15720
+V01,phiên bản,True,False,True,3132,2491
+V02,phiên bản,True,False,True,2983,2500
+C01,tính toán,True,False,True,6915,17439
+N01,no_answer,True,True,True,3108,2463
+N02,no_answer,True,True,True,3073,2463
+N03,no_answer,False,True,True,6142,2449

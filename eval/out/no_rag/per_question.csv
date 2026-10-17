@@ -1,0 +1,10 @@
+﻿id,type,target_app_id,passed,success,decision_ok,root_cause_ok,verify_ok,numbers_ok,citation_ok,facts_ok,refusal_expected,refused,grounded,wrote_decision,tool_calls,tool_errors,llm_calls,prompt_tokens,completion_tokens,max_prompt,error,notes
+T01,tra cứu,,False,True,,,,,False,False,False,True,True,False,4,0,5,6788,628,1514,,"thiếu ý: CCCD, HDLD, SK_LUONG_3T; trích dẫn chưa đủ: có không có, cần ['CP-02']; từ chối nhầm câu có đáp án"
+T02,tra cứu,,False,True,,,,,False,False,False,True,True,False,7,0,8,11772,1576,1725,,"thiếu ý: 2%; trích dẫn chưa đủ: có không có, cần ['CP-03']; từ chối nhầm câu có đáp án"
+S01,tổng hợp,,False,True,,,,,False,False,False,True,False,False,9,0,10,15720,1370,1898,,"trích tài liệu chưa từng thấy: CP-03; thiếu ý: 15,5%, CCCD, DKKD, SK_TK_6T; trích dẫn chưa đủ: có ['CP-03'], cần ['CP-03', 'CP-02']; từ chối nhầm câu có đáp án"
+V01,phiên bản,,False,True,,,,,False,False,False,True,True,False,1,0,2,2491,274,1298,,"thiếu ý: 60 tuổi; trích dẫn chưa đủ: có không có, cần ['CP-01@v1']; từ chối nhầm câu có đáp án"
+V02,phiên bản,,False,True,,,,,False,False,False,True,True,False,1,0,2,2500,315,1300,,"thiếu ý: 45%; trích dẫn chưa đủ: có không có, cần ['CP-01@v2']; từ chối nhầm câu có đáp án"
+C01,tính toán,APP-001,False,True,,,,,False,False,False,True,False,False,9,0,10,17439,1281,2117,,"trích tài liệu chưa từng thấy: CP-03; thiếu ý: 24,6; trích dẫn chưa đủ: có ['CP-03'], cần ['CP-03', 'CP-05']; từ chối nhầm câu có đáp án"
+N01,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2463,362,1276,,
+N02,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2463,302,1278,,
+N03,no_answer,,True,True,,,,,,,True,True,True,False,1,0,2,2449,242,1265,,

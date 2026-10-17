@@ -33,11 +33,15 @@ Trong hoạt động tín dụng tiêu dùng, thẩm định hồ sơ vay (Credi
 * **Tầng (b) Biến đổi ("Có việc để đo")**: Không nhại lại nguyên văn một chunk; đòi hỏi tính DTI, chọn v1/v2 theo ngày nộp (`as_of_date`), ghép $\ge 2$ tài liệu, và nhận diện thiếu dữ liệu (`need_info`).
 * **Tầng (c) Hành động ("Chứng minh là Agent")**: Sở hữu tool ghi trạng thái thật vào SQLite (`submit_decision`) và bắt buộc kích hoạt tool đọc lại (`get_decision`) để chứng minh trạng thái đã đổi.
 
+**Ví dụ tầng (b):** APP-014 và APP-015 có cùng DTI 47,09%. APP-014 nộp ngày 20/03/2025, áp CP-01 v1 với trần 50% nên được duyệt; APP-015 nộp ngày 10/05/2025, áp CP-01 v2 với trần 45% nên bị từ chối. Quyết định đòi hỏi kết hợp kết quả tính toán với đúng phiên bản chính sách, thay vì chỉ chép lại tài liệu.
+
 ---
 
 ## MỤC 2: KIẾN TRÚC TỔNG THỂ (Dung lượng: ~1.0 trang)
 
 ### 2.1. Sơ đồ phân tầng và Ranh giới giao tiếp (Boundary Architecture)
+
+![Hình 1. Kiến trúc tổng thể FinCo Agentic RAG](../docs/figures/architecture.png)
 
 ```
 [ User / Test Suite / Evaluator ]
@@ -245,6 +249,25 @@ Kết quả cấu hình A: gpt-oss-120b, không critic (`FINCO_CRITIC=0`), từ 
 
 N03 là ca từ chối thất bại trong kết quả 3/4, phân tích ở mục 6.5. Tổng chi phí của A: 198 lượt gọi LLM, 689.453 prompt token và 54.196 completion token.
 
+**Chi phí token từng ca (cấu hình A).** Trích từ `eval/out/ab_nocritic/per_question.csv`; prompt/completion là tổng qua các lượt gọi, còn `max_prompt` là số prompt token lớn nhất trong một lượt.
+
+| Ca | Lượt gọi LLM | Lượt gọi tool | Prompt token | Completion token | max_prompt |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| T01 | 2 | 1 | 3297 | 429 | 2108 |
+| S01 | 3 | 2 | 5469 | 860 | 2526 |
+| V01 | 2 | 1 | 3132 | 444 | 1939 |
+| C01 | 4 | 3 | 6915 | 484 | 2300 |
+| M01 | 5 | 5 | 16087 | 1322 | 4348 |
+| N01 | 2 | 1 | 3108 | 526 | 1921 |
+| A01 | 7 | 7 | 25937 | 2076 | 5213 |
+| APP-001 | 9 | 9 | 39340 | 2561 | 6966 |
+| APP-014 | 9 | 9 | 40467 | 2698 | 7009 |
+| APP-018 | 8 | 8 | 32652 | 2515 | 6312 |
+
+![Hình 2. So sánh kết quả và chi phí cấu hình A, H, C](../eval/out/compare/compare.png)
+
+Nguồn hình: `eval/out/compare/compare.csv`; tái tạo bằng `make compare`.
+
 ### 6.4. Kết quả Đánh giá Chất lượng Sinh bằng RAGAS Framework
 Đánh giá bổ sung trên 12 câu có đáp án của cấu hình A; không chấm các câu `no_answer` bằng RAGAS:
 * **Faithfulness (Độ trung thực)**: **0,94**.
@@ -255,15 +278,71 @@ N03 là ca từ chối thất bại trong kết quả 3/4, phân tích ở mục
 Kết quả tại `eval/out/ragas/`, giám khảo `gemini-3.5-flash-lite`, một lần chạy. Đây là số liệu bổ sung, không chứng minh hệ thống hoàn toàn không bịa đặt.
 
 ### 6.5. Phân tích Các Ca Thất Bại Thực Tế (Failure Case Analysis)
-Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất bại tiêu biểu trong quá trình thực nghiệm:
+Tuân thủ nguyên tắc liêm chính khoa học, nhóm phân tích các ca thất bại tiêu biểu trong quá trình thực nghiệm:
 
 1. **Ca 1: Lỗi suy luận quá mức ở câu N03 (Bảo lãnh khoản vay)**:
    * *Hiện tượng*: Câu hỏi: *"Khoản vay FinCo Easy có yêu cầu người bảo lãnh không?"*. Văn bản chính sách hoàn toàn không đề cập đến người bảo lãnh (đáp án chuẩn là phải từ chối).
    * *Hành vi của Agent*: Agent tra cứu CP-01, CP-02 và thấy danh mục chứng từ không có giấy bảo lãnh, từ đó tự suy luận: *"FinCo Easy không yêu cầu người bảo lãnh"*.
    * *Phân tích gốc rễ*: Agent mắc lỗi Over-inference (suy luận logic đời thường thay vì tuân thủ nguyên tắc kiểm soát rủi ro ngân hàng: điều khoản chưa ban hành thì không được tự ý khẳng định).
-2. **Ca 2: Lỗi mã lý do ở câu A02 (Nhân viên FinCo vay 300 triệu)**:
+2. **Ca 2: Lỗi mã lý do ở APP-018 và câu hành động A02 (nhân viên FinCo)**:
    * *Hiện tượng*: Khi thẩm định hồ sơ nhân viên vay vốn, Agent chọn đúng quyết định `escalate` lên Hội đồng tín dụng, nhưng mã lý do lại ghi là `ESCALATE_COUNCIL` thay vì mã chuẩn nghiệp vụ là `ESCALATE_EMPLOYEE`.
    * *Kết quả Multi-Agent Critic*: A02 đạt ở cấu hình B nhưng chưa tách được tác động của critic khỏi nhiễu giữa hai lần chạy. Ở APP-018 (cùng nhánh nhân viên), cả 3 lần critic chặn đều đề xuất `approve`/`APPROVED`, không đúng đáp án `escalate`/`ESCALATE_EMPLOYEE`. B đạt 32/37 so với A đạt 34/37; chưa có bằng chứng critic sửa thành công lỗi này.
+
+3. **Ca 3: Lỗi tuân thủ quy trình của Qwen2.5-7B (cấu hình C)**:
+   * *Hiện tượng*: Có câu trả lời không gọi tool tra cứu (T02, N02, N04); có hồ sơ chọn sai lãi suất theo kỳ hạn, hoặc hết bước/ngữ cảnh khi xử lý APP-018 và APP-011.
+   * *Phân tích*: Lỗi tập trung ở tuân thủ chuỗi thao tác và lựa chọn tham số, không thể quy toàn bộ cho truy xuất. C đạt 10/37 ca toàn diện, chỉ đúng quyết định 6/21 hồ sơ. Cần đo lại sau khi cải thiện prompt và kiểm soát quy trình.
+
+### 6.6. So sánh Cấu hình A–J và Ảnh hưởng của Critic
+
+| Cấu hình | Actor | Critic | Nền tảng | Đạt toàn diện |
+| :--- | :--- | :--- | :--- | ---: |
+| A | gpt-oss-120b | Không | Groq | 34/37 |
+| B | gpt-oss-120b | Gemini 3.1 Flash Lite, critic-agent | Groq + Google AI Studio | 32/37 |
+| C | Qwen2.5-7B-Instruct-AWQ | Không | vLLM trên Colab T4 | 10/37 |
+| D | Qwen2.5-7B-Instruct-AWQ | Chính nó, single (bản sửa) | vLLM trên Colab T4 | 9/37 |
+| E | Qwen2.5-14B-Instruct-AWQ | Không | vLLM trên Colab T4 | 8/37 |
+| G | gpt-oss:20b | Không | Ollama | 23/37 |
+| H | gpt-oss-20b | Không | Groq | 33/37 |
+| I | gpt-oss-20b | Gemini 3.1 Flash Lite, single | Groq + Google AI Studio | 32/37 |
+| J | gpt-oss-20b | Gemini 3.1 Flash Lite, critic-agent | Groq + Google AI Studio | 32/37 |
+
+Giữ nguyên nhãn cấu hình của bộ thí nghiệm (nguồn không có nhãn F). Đường dẫn kết quả tương ứng nằm trong `eval/out/README.md`.
+
+Trên Actor 120b, tổng prompt token của A là 689.453; B gồm 732.316 của Actor và 375.548 của critic, tổng 1.107.864 (**tăng khoảng 61%**) nhưng đạt 32/37 so với 34/37. Trên cùng nền tảng Groq, H/I/J lần lượt đạt 33/32/32 ca. Chưa thấy critic cải thiện trong các lần chạy này; không kết luận critic luôn gây hại vì mỗi cấu hình chỉ chạy một lần và một số ca lỗi do hạ tầng. Không dùng G làm mốc để đo hiệu quả critic của I/J vì khác môi trường phục vụ.
+
+### 6.7. Thí nghiệm Đổi một Con số trong Chính sách
+
+**Thiết lập:** `make policy-change` (`eval/policy_change_experiment.py`) tạo bản sao tạm, đổi trần DTI của CP-01 v1 từ 50% xuống 40%, cập nhật các chỗ tham chiếu trong CP-01 v2 và CP-15, dựng lại chỉ mục và đáp án chuẩn. Chạy gpt-oss-120b không critic trên 7 ca; dữ liệu chính trong repo không bị sửa.
+
+| Ca | Vai trò | Đáp án gốc | Đáp án mới | Agent sau thay đổi |
+| :--- | :--- | :--- | :--- | :--- |
+| APP-014, DTI 47,09% | Bị ảnh hưởng | approve | reject | reject |
+| APP-016, DTI 48,48% | Bị ảnh hưởng | approve | reject | reject |
+| APP-001, DTI 24,62% | Đối chứng v1, DTI thấp | approve | approve | approve |
+| APP-012 | Đối chứng chuyển cấp | escalate | escalate | escalate; trượt toàn diện do HTTP 413 ở trả lời cuối |
+| APP-019, DTI 51,53% | Đối chứng đã vượt trần cũ | reject | reject | reject |
+| APP-015, DTI 47,09% | Đối chứng áp v2 | reject | reject | reject |
+| X01, hỏi trần DTI ngày 15/03/2025 | Hỏi đáp | 50% | 40% | Trước 50%, sau 40% |
+
+Nguồn: `eval/out/policy_change/summary.csv` và log trong `before/`, `after/`. Hai hồ sơ bị ảnh hưởng và câu hỏi X01 đổi theo chính sách, các quyết định đối chứng giữ nguyên. Đây là bằng chứng hỗ trợ agent sử dụng nội dung truy xuất; giới hạn là 7 ca, một model và một lần chạy, không loại trừ mọi ảnh hưởng từ kiến thức sẵn có của model.
+
+### 6.8. Đối chứng Không dùng RAG
+
+**Thiết lập:** `FINCO_NO_RAG=1` khiến `search_policy` không trả đoạn chính sách nào; giữ Actor gpt-oss-120b, prompt và bộ công cụ, không critic. Chấm lại `logs/eval_20261016_211113.jsonl` bằng `--score-only`, không gọi LLM mới. Log chỉ có 9 ca: T01, T02, S01, V01, V02, C01, N01, N02, N03; chỉ so với A trên đúng các ca này.
+
+| Nhóm ca có trong log | Có RAG (A) | Không RAG |
+| :--- | ---: | ---: |
+| 6 câu có đáp án | 6/6 | 0/6 |
+| 3 câu ngoài tài liệu | 2/3 | 3/3 |
+| Tổng cùng 9 ca | 8/9 | 3/9 |
+
+Không-RAG từ chối cả 6 câu có đáp án. Kết quả hỗ trợ vai trò của RAG trong hỏi đáp chính sách, chưa có đối chứng trên hồ sơ vay. Bảng ghép từng ca tại `eval/out/no_rag/compare.csv`. Lệnh tái lập đúng tập đã chạy:
+
+```bash
+python eval/run_eval.py --score-only logs/eval_20261016_211113.jsonl --ids T01 T02 S01 V01 V02 C01 N01 N02 N03 --out-dir eval/out/no_rag
+```
+
+Lệnh `python eval/no_rag_experiment.py --score-only logs/eval_20261016_211113.jsonl` cũng chấm được log nhưng mặc định tính thêm các ca chưa chạy thành trượt, nên không dùng mẫu số 16 đó để kết luận đối chứng. Bộ chấm trả mã thoát 1 khi có ca trượt; CSV/JSON vẫn được xuất.
 
 ---
 
@@ -274,6 +353,13 @@ Tuân thủ nguyên tắc liêm chính khoa học, nhóm mổ xẻ 2 ca thất b
    Gói API miễn phí của Groq giới hạn trần ngữ cảnh 8.000 tokens/request. Khi chạy các hồ sơ thẩm định phức tạp trải qua nhiều vòng đối thoại với Critic, kích thước prompt bị phình to dẫn tới lỗi HTTP 413 (Payload Too Large), làm ca chạy thất bại. Circuit Breaker trong `critic.py` giới hạn 2 lần chặn, sau đó chỉ cho ghi `escalate`; cơ chế này không khắc phục lỗi HTTP 413.
 2. **Độ ổn định suy luận của các Mô hình Ngôn ngữ Nhỏ (SLM)**:
    Qwen2.5-7B và Qwen2.5-14B đạt toàn diện lần lượt 10/37 (27,0%) và 8/37 (21,6%). Cùng gpt-oss-20b nhưng chạy Ollama đạt 23/37 (62,2%), trên Groq đạt 33/37 (89,2%). Kết quả chịu ảnh hưởng của môi trường phục vụ, lượng tử hóa và ngữ cảnh; chưa tách được các yếu tố này để quy chênh lệch cho kích thước model. Lỗi của Qwen tập trung ở tuân thủ quy trình gọi tool đa bước.
+
+3. **Mẫu nhỏ và chưa đo độ biến thiên**:
+   Mỗi cấu hình chỉ chạy một lần trên 37 ca; chênh lệch 1–3 ca chưa đủ để kết luận hiệu quả ổn định của critic. Tập kiểm thử được thiết kế có chủ đích, nên không gán một biên sai số thống kê cố định như ±13 điểm phần trăm cho khả năng tổng quát hóa. Cần chạy lặp và phân tích các ca ghép cặp. Thí nghiệm đổi số chỉ phủ 7 ca; đối chứng không-RAG mới có 9 câu hỏi đáp, chưa có hồ sơ vay.
+4. **Critic và lỗi suy luận chưa được khắc phục gốc**:
+   Critic Gemini mới được thử trên Actor có ít lỗi quyết định; chưa thử trên Actor sai nhiều như gpt-oss:20b qua Ollama (đúng 17/21 hồ sơ). Lỗi mã lý do nhân viên ở APP-018/A02 và suy diễn N03 vẫn cần sửa quy tắc trong prompt, bổ sung kiểm thử hồi quy rồi đo lại.
+5. **Truy xuất còn nhiễu và chưa có re-ranking**:
+   Hybrid tìm được tài liệu vàng trong top-3 ở 18/20 truy vấn; RAGAS cho Context Precision của S01 là 0,00, C01 là 0,33. Cần tinh chỉnh truy vấn, đánh giá lại các đoạn nhiễu và thử bước xếp hạng lại trước khi đưa ngữ cảnh cho Agent.
 
 ### 7.2. Hướng Phát triển Tiếp theo
 * Tích hợp mô-đun Document Vision (OCR) để tự động bóc tách thông tin từ file ảnh scan CCCD và sao kê tài khoản ngân hàng.
