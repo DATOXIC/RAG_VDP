@@ -290,6 +290,25 @@ def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmi
     )
 ```
 
+## judge.py
+
+```python
+def _extract_json_block(text: str) -> dict:
+    """Bóc tách đối tượng JSON từ phản hồi của LLM: chịu được code fence và văn bản thừa quanh JSON."""
+    cleaned = (text or "").strip()
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
+    if fenced:
+        cleaned = fenced.group(1)
+    else:
+        start, end = cleaned.find("{"), cleaned.rfind("}")
+        if start != -1 and end > start:
+            cleaned = cleaned[start:end + 1]
+    data = json.loads(cleaned)
+    if not isinstance(data, dict):
+        raise ValueError("Giám khảo không trả về một đối tượng JSON")
+    return data
+```
+
 ## retrieval_eval.py
 
 ```python
