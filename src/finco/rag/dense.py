@@ -23,16 +23,18 @@ def _log(msg: str) -> None:
 
 
 def corpus_hash(chunks: list[Chunk]) -> str:
-    """Hash làm khóa để phát hiện thay đổi"""
+    """Băm nội dung và toàn bộ metadata của chunk theo thứ tự vector.
 
-    h = hashlib.sha256() # khởi tạo Hash
-
-    for c in chunks:
-        h.update(c.chunk_id.encode("utf-8")) # Băm ID
-        h.update(b"\x00")
-        h.update(c.text.encode("utf-8")) # Băm body
-        h.update(b"\x00")
-    return h.hexdigest()
+    Ngày hết hạn không nằm trong text nhưng ảnh hưởng trực tiếp đến lọc phiên
+    bản. JSON có thứ tự khóa cố định giúp hash ổn định khi lưu và nạp lại.
+    """
+    payload = json.dumps(
+        [asdict(c) for c in chunks],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def get_model():
@@ -201,6 +203,10 @@ class VectorStore:
         
         if meta.get("vector_dim") != vectors.shape[1] or meta.get("num_chunks") != len(chunks):
             raise ValueError("Index hỏng: meta.json không khớp dữ liệu. Hãy build lại index.")
+
+        # Kiểm tra cả metadata/nội dung đã lưu trước khi đối chiếu nguồn hiện tại.
+        if meta.get("corpus_hash") != corpus_hash(chunks):
+            raise ValueError("Index hỏng: corpus_hash không khớp chunks.json. Hãy build lại index.")
 
         # 3. Phát hiện index cũ so với dữ liệu hiện tại
         if expected_chunks is not None and meta.get("corpus_hash") != corpus_hash(expected_chunks):
