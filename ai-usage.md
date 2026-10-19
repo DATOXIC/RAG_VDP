@@ -604,6 +604,8 @@ def summarize(scores: list[QuestionScore]) -> dict[str, Any]:
 - **`eval/policy_change_experiment.py`:**
 - **`eval/scoring.py`**
 - **`eval/run_eval.py`**
+- **`chat.py`**
+
 
 ## Thư mục tests
 - Các file python trong thư mục này có sử dụng AI để viết các Unit Test để dễ dàng kiểm tra file có bị lỗi hay bug gì hay không trong quá trình sửa đổi.
