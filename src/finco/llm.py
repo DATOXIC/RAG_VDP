@@ -88,6 +88,7 @@ class ToolCall:
 @dataclass
 class ChatTurn:
     """Một lượt trả lời của model: văn bản và/hoặc các lời gọi tool, kèm Usage của lần gọi."""
+    
     content: str
     tool_calls: list[ToolCall] = field(default_factory=list)
     usage: Usage = field(default_factory=lambda: Usage(0, 0, 0, 0))
@@ -369,3 +370,11 @@ def call_llm(
     )
 
 call_llm_tools = call_llm
+
+if __name__ == "__main__":
+
+    query = "Xin chào"
+
+    messages = [{"role": "user", "content": query}]
+    response = call_llm(messages)
+    print(response.content)

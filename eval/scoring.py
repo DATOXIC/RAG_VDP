@@ -23,6 +23,7 @@ _REFUSAL_PHRASES = (
     "không có thông tin", "không tìm thấy", "không có quy định", "không đề cập",
     "không có trong tài liệu", "không được nêu", "không có dữ liệu",
 )
+
 ANSWER_TOOL = "__answer__"  # dòng log cuối mỗi câu (khớp finco.agent.ANSWER_TOOL)
 
 # --------------------------------------------------------------------------- chuẩn hóa văn bản
@@ -57,16 +58,18 @@ def is_refusal(answer: str, lenient: bool = False) -> bool:
 def cited_in_text(answer: str) -> list[str]:
     """Các trích dẫn kiểu 'CP-01 v2' / '[CP-05]' trong câu trả lời, chuẩn hóa 'CP-01@v2' / 'CP-05'."""
     out = []
+
     for m in re.finditer(r"CP-\d{2}(?:\s*[@_]?\s*v\d+)?", (answer or "").translate(_DASHES), flags=re.IGNORECASE):
         parsed = parse_citation(m.group(0))
         if parsed:
             doc, ver = parsed
             out.append(f"{doc}@{ver}" if ver else doc)
+
     return list(dict.fromkeys(out))
 
 
 
-# --------------------------------------------------------------------------- dữ liệu một lượt
+#  dữ liệu một lượt
 @dataclass
 class RunRecord:
     """Những gì còn lại của một câu sau khi chạy: đủ để chấm lại mà không cần agent."""
@@ -87,26 +90,34 @@ def records_from_log(path: Path) -> dict[str, RunRecord]:
             raw = raw.strip()
             if not raw:
                 continue
+
             try:
                 row = json.loads(raw)
             except json.JSONDecodeError:
                 continue
+
             if not isinstance(row, dict) or "question_id" not in row:
                 continue
+
             rec = records.setdefault(str(row["question_id"]), RunRecord(question_id=str(row["question_id"]), trace=[]))
             if row.get("tool") == ANSWER_TOOL:
                 u = row.get("usage") or {}
                 rec.final_answer = row.get("result", "") or ""
+
                 rec.usage = Usage(
-                    calls=int(u.get("calls", 0)), prompt_tokens=int(u.get("prompt_tokens", 0)),
-                    completion_tokens=int(u.get("completion_tokens", 0)), max_prompt=int(u.get("max_prompt", 0)),
+                    calls=int(u.get("calls", 0)), 
+                    prompt_tokens=int(u.get("prompt_tokens", 0)),
+                    completion_tokens=int(u.get("completion_tokens", 0)), 
+                    max_prompt=int(u.get("max_prompt", 0)),
                 )
+
                 args = row.get("args") or {}
                 rec.success = bool(args.get("success"))
                 rec.error = args.get("error")
                 rec.complete = True
             else:
                 rec.trace.append(row)
+
     return records
 
 
@@ -145,14 +156,22 @@ def _is_error(text: str) -> bool:
 
 def score_question(case: TestCase, rec: RunRecord, expected: Optional[ExpectedDecision] = None) -> QuestionScore:
     """Chấm một câu. Hàm thuần: cùng đầu vào, cùng kết quả; không gọi mạng."""
+    
     s = QuestionScore(
-        id=case.id, type=case.type, target_app_id=case.target_app_id or "",
-        success=rec.success and rec.complete, refusal_expected=case.is_no_answer,
-        tool_calls=len(rec.trace), tool_errors=sum(1 for r in rec.trace if _is_error(r.get("result", ""))),
-        llm_calls=rec.usage.calls, prompt_tokens=rec.usage.prompt_tokens,
-        completion_tokens=rec.usage.completion_tokens, max_prompt=rec.usage.max_prompt,
+        id=case.id, 
+        type=case.type, 
+        target_app_id=case.target_app_id or "",
+        success=rec.success and rec.complete, 
+        refusal_expected=case.is_no_answer,
+        tool_calls=len(rec.trace), 
+        tool_errors=sum(1 for r in rec.trace if _is_error(r.get("result", ""))),
+        llm_calls=rec.usage.calls, 
+        prompt_tokens=rec.usage.prompt_tokens,
+        completion_tokens=rec.usage.completion_tokens, 
+        max_prompt=rec.usage.max_prompt,
         error=rec.error or ("" if rec.complete else "log thiếu dòng __answer__ (câu chạy dở)"),
     )
+
     answer = rec.final_answer or ""
     s.wrote_decision = any(
         r.get("tool") == "submit_decision" and not _is_error(r.get("result", "")) for r in rec.trace
@@ -161,10 +180,12 @@ def score_question(case: TestCase, rec: RunRecord, expected: Optional[ExpectedDe
     notes: list[str] = []
 
     # Faithfulness theo luật: tài liệu trích trong câu trả lời phải có trong những gì công cụ trả về.
+    
     seen_docs = set(re.findall(r"CP-\d+", results_text))
     cited = cited_in_text(answer)
     ungrounded = sorted({c.split("@")[0] for c in cited} - seen_docs)
     s.grounded = not ungrounded
+    
     if ungrounded:
         notes.append(f"trích tài liệu chưa từng thấy: {', '.join(ungrounded)}")
 
@@ -172,14 +193,17 @@ def score_question(case: TestCase, rec: RunRecord, expected: Optional[ExpectedDe
         if expected is None:
             s.notes = f"không có đáp án chuẩn cho {case.target_app_id}"
             return s
+            
         sub = submission_from_trace(case.target_app_id or "", rec.trace)
         v = verify_decision_record(sub, expected)
         s.decision_ok, s.root_cause_ok = v.decision_correct, v.root_cause_correct
         s.citation_ok, s.verify_ok = v.citation_valid, v.trace_valid
         s.numbers_ok = v.dti_correct and v.rate_correct
         s.passed = v.is_overall_pass and s.success
+        
         if v.error_message:
             notes.append(v.error_message)
+    
     elif case.is_no_answer:  # ---- câu không có đáp án: phải từ chối, không ghi gì
         s.refused = is_refusal(answer, lenient=True)
         s.passed = s.success and s.refused and not s.wrote_decision
@@ -187,12 +211,14 @@ def score_question(case: TestCase, rec: RunRecord, expected: Optional[ExpectedDe
             notes.append("không từ chối dù tài liệu không có thông tin")
         if s.wrote_decision:
             notes.append("ghi quyết định cho câu hỏi đáp")
+    
     else:  # ---- hỏi đáp có đáp án
         s.refused = is_refusal(answer, lenient=False)
         facts = key_facts(case.expected_answer)
         norm_answer = normalize(answer)
         missing = [f for f in facts if normalize(f) not in norm_answer]
         s.facts_ok = bool(facts) and not missing and bool(answer.strip())
+        
         if case.expected_docs:
             s.citation_ok = verify_citations(cited, case.expected_docs)["citation_valid"]
         s.passed = s.success and bool(s.facts_ok) and s.citation_ok is not False and not s.refused

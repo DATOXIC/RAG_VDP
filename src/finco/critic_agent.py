@@ -370,3 +370,5 @@ def from_env() -> CriticAgent:
         max_tokens=int(os.getenv("FINCO_CRITIC_MAX_TOKENS", "2000")),
         log_path=os.getenv("FINCO_CRITIC_LOG") or None,
     )
+ # gọi LLM
+ def print()    

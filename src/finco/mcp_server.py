@@ -8,6 +8,8 @@ Dùng MCPServer bọc đúng 5 công cụ nghiệp vụ trong finco.tools:
 5. get_decision: Đọc lại quyết định (bước kiểm chứng Read-Your-Writes).
 """
 
+import difflib
+from pathlib import Path
 from typing import Optional
 from mcp.server.mcpserver import MCPServer
 import logging
@@ -102,6 +104,27 @@ def get_decision(app_id: str) -> str:
     logger.info(f"Kiểm tra lại quyết định (Read-Your-Writes) cho hồ sơ: {app_id}")
     return tools.get_decision(app_id=app_id)
 
+@mcp.tool()
+def get_diff(file1: str, file2: str) -> str:
+
+    with open(file1, "r", encoding="utf-8") as f1:
+        lines1 = [line.strip() for line in f1 if line.strip()]
+    with open(file2, "r", encoding="utf-8") as f2:
+        lines2 = [line.strip() for line in f2 if line.strip()]
+    
+    diff = []
+
+    for line in lines1:
+        if line not in lines2:
+            diff.append(f"- {line}")
+
+    for line in lines2:
+        if line not in lines1:
+            diff.append(f"+ {line}")
+
+    return "\n".join(diff)
+    
+
 
 if __name__ == "__main__":
     from finco.store import db
@@ -122,3 +145,5 @@ if __name__ == "__main__":
     
     logger.info("MCP Server FinCo đang khởi động qua stdio transport...")
     mcp.run(transport="stdio")
+
+

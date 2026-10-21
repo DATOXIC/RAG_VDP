@@ -20,7 +20,7 @@ class JudgeResult:
     """Phiếu kết quả thẩm định định tính từ Giám khảo LLM."""
     app_id: str
     is_valid: bool = False                # Đạt toàn diện (True khi cả 2 đều True)
-    is_factual: bool = False              # Các số liệu/dữ kiện trong reason có đúng thật không
+    is_factual: bool = False              # Các số liệu/ dữ kiện trong reason có đúng thật không
     is_logically_sound: bool = False      # Logic lý do -> quyết định có hợp lý không
     critique: str = ""                    # Nhận xét ngắn gọn của Giám khảo
     judge_error: bool = False             # True = giám khảo lỗi (mạng, JSON hỏng...), KHÔNG phải agent sai
@@ -42,6 +42,7 @@ def format_judge_inputs(
     # 1. Định dạng thông tin khách hàng
     debt_str = f"{app.existing_debt_monthly:,} VNĐ" if app.existing_debt_monthly is not None else "Chưa khai báo (None)"
     docs_str = ", ".join(app.docs_submitted) if app.docs_submitted else "Không có"
+    
     applicant_info = (
         f"Mã HS: {app.app_id}, Tên: {app.applicant_name}, Tuổi: {app.age}, "
         f"Khoản vay đề nghị: {app.amount:,} VNĐ kỳ hạn {app.term_months} tháng. "
@@ -56,10 +57,13 @@ def format_judge_inputs(
     metrics = []
     if expect.dti > 0:
         metrics.append(f"DTI chuẩn: {expect.dti * 100:.2f}% (Trần DTI: {expect.max_dti * 100:.1f}%)")
+    
     if expect.annual_rate > 0:
         metrics.append(f"Lãi suất chuẩn: {expect.annual_rate * 100:.1f}%/năm")
+    
     if expect.qualified_income > 0:
         metrics.append(f"Thu nhập hợp lệ: {expect.qualified_income:,} VNĐ")
+    
     if expect.monthly_payment > 0:
         metrics.append(f"Trả góp hàng tháng (PMT): {expect.monthly_payment:,} VNĐ")
 
@@ -149,6 +153,7 @@ def judge_single_decision(
             is_valid=is_valid,
             critique=data.get("critique", ""),
         )
+    
     except Exception as e:
         return JudgeResult(
             app_id=actual.app_id,
@@ -158,3 +163,47 @@ def judge_single_decision(
             critique=f"Lỗi Giám khảo LLM: {e}",
             judge_error=True,
         )
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+    from pathlib import Path
+    from eval.run_eval import load_expected
+    from eval.verifier import load_trace, submission_from_trace
+    from finco.store import db
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
+    parser = argparse.ArgumentParser(description="Chấm định tính lời giải thích của Agent cho một hồ sơ.")
+    parser.add_argument("app_id", nargs="?", default="APP-015", help="Mã hồ sơ cần chấm (mặc định: APP-015)")
+    parser.add_argument("--log", type=Path, default=Path("logs/eval_20261014_202454.jsonl"), help="File log chứa trace bài làm")
+    args = parser.parse_args()
+
+    app_id = args.app_id.strip().upper()
+    try:
+        app = db.get_application(app_id)
+        expected = load_expected()[app_id]
+    except Exception as e:
+        print(f"Lỗi dữ liệu: {e}")
+        sys.exit(1)
+
+    trace = load_trace(args.log, question_id=app_id)
+    if not trace:
+        print(f"Không tìm thấy trace của hồ sơ {app_id} trong {args.log}")
+        sys.exit(1)
+
+    actual = submission_from_trace(app_id, trace)
+    print(f"Đang gọi LLM Giám khảo để chấm lời giải thích hồ sơ {app_id}...")
+    res = judge_single_decision(app, expected, actual)
+
+    print(f"\n{'='*55}")
+    print(f"   KẾT QUẢ GIÁM KHẢO LLM (FINCO JUDGE) CHO {app_id}")
+    print(f"{'='*55}")
+    print(f"• Trung thực (is_factual)       : {'ĐẠT [V]' if res.is_factual else 'KHÔNG ĐẠT [X]'}")
+    print(f"• Logic chặt chẽ (is_logical)   : {'ĐẠT [V]' if res.is_logically_sound else 'KHÔNG ĐẠT [X]'}")
+    print(f"• Kết luận chung (is_valid)     : {'ĐỖ TOÀN DIỆN' if res.is_valid else 'TRƯỢT'}")
+    print(f"• Lời phê của Giám khảo         : {res.critique}")
+    print(f"{'='*55}\n")
+

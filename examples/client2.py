@@ -25,6 +25,7 @@ def main() -> int:
     shutil.copy(ROOT / "data" / "finco.db", db)
     env = dict(os.environ, FINCO_DB=str(db), FINCO_CRITIC="0", FINCO_LOG_LEVEL="WARNING",
                PYTHONPATH=f"{ROOT / 'src'}{os.pathsep}{ROOT}", PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+    
     proc = subprocess.Popen(
         [sys.executable, "-m", "finco.mcp_server"], cwd=ROOT, env=env, text=True, encoding="utf-8",
         bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -56,6 +57,7 @@ def main() -> int:
     try:
         info = rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
                                   "clientInfo": {"name": "client2-raw-jsonrpc", "version": "0"}})
+        
         print("server:", info["serverInfo"])
         send({"jsonrpc": "2.0", "method": "notifications/initialized"})
 

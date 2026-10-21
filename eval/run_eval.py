@@ -105,7 +105,9 @@ def run_case(agent: Any, case: TestCase) -> tuple[RunRecord, Any]:
 
 # --------------------------------------------------------------------------- xuất kết quả
 def write_per_question_csv(scores: list[QuestionScore], path: Path) -> None:
+    # Tránh gây lỗi
     path.parent.mkdir(parents=True, exist_ok=True)
+    
     fields = list(QuestionScore.__dataclass_fields__)
     with open(path, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -123,20 +125,25 @@ def write_chart(scores: list[QuestionScore], path: Path) -> bool:
         import matplotlib.pyplot as plt
     except ImportError:
         return False
+
     types = sorted({s.type for s in scores})
     rates = [100.0 * sum(s.passed for s in scores if s.type == t) / sum(1 for s in scores if s.type == t) for t in types]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4.5))
+    
     ax1.bar(types, rates, color="#3b7dd8")
     ax1.set_ylim(0, 105)
     ax1.set_ylabel("Tỷ lệ đạt (%)")
     ax1.set_title("Tỷ lệ đạt theo loại câu")
     ax1.tick_params(axis="x", rotation=30)
+    
     ids = [s.id for s in scores]
     tokens = [s.prompt_tokens + s.completion_tokens for s in scores]
+    
     ax2.bar(ids, tokens, color=["#2e9e5b" if s.passed else "#d8453b" for s in scores])
     ax2.set_ylabel("Token (prompt + completion)")
     ax2.set_title("Token từng câu (xanh = đạt, đỏ = trượt)")
     ax2.tick_params(axis="x", rotation=60)
+    
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=130)
@@ -199,6 +206,7 @@ def collect_records(args: argparse.Namespace, cases: list[TestCase]) -> tuple[di
         rec, result = run_case(agent, case)
         result.save_log(log_path)  # ghi ngay: lỡ dừng giữa chừng vẫn --resume được
         records[case.id] = rec
+        
         print(f"[{i}/{len(todo)}] {case.id:<8} {'ok ' if rec.success else 'LỖI'} "
               f"{len(rec.trace)} tool, {rec.usage.calls} lần gọi LLM, {time.time() - started:.1f}s"
               f"{'' if rec.success else '  -> ' + str(rec.error)}")
@@ -215,6 +223,7 @@ def collect_records(args: argparse.Namespace, cases: list[TestCase]) -> tuple[di
 def main(argv: Optional[list[str]] = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+        
     ap = argparse.ArgumentParser(description="Chạy và chấm điểm agent FinCo.")
     ap.add_argument("--testset", type=Path, default=TESTSET_PATH)
     ap.add_argument("--apps", action="store_true", help="thêm toàn bộ hồ sơ trong expected_decisions.json")

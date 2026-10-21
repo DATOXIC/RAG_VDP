@@ -59,8 +59,10 @@ def build_searchers(modes) -> dict:
     out = {}
     if "dense" in modes:
         out["dense"] = lambda q, k, d: store.search(q, top_k=k, as_of_date=d)
+
     if "bm25" in modes:
         out["bm25"] = lambda q, k, d: bm25.search(q, top_k=k, as_of_date=d)
+
     if "hybrid" in modes:
         hybrid = HybridSearcher(store, bm25)
         out["hybrid"] = lambda q, k, d: hybrid.search(q, top_k=k, as_of_date=d)
@@ -68,12 +70,14 @@ def build_searchers(modes) -> dict:
 
 
 def evaluate(questions, searchers, k_max, use_date_filter):
+    
     rows = []
     for q in questions:
         gold = to_keys(q["gold"])
         relevant = gold | to_keys(q.get("alt", []))
         as_of = q.get("as_of_date")
         filter_date = as_of if use_date_filter else None
+
         for mode, search in searchers.items():
             hits = search(q["query"], k_max, filter_date)
             wrong = (
@@ -99,6 +103,7 @@ def evaluate(questions, searchers, k_max, use_date_filter):
 
 def summarize(rows, ks):
     """Gom theo (mode, nhóm). Trả list dict để in và ghi."""
+
     groups = defaultdict(list)
     for r in rows:
         if not r["has_gold"]:
@@ -120,6 +125,7 @@ def summarize(rows, ks):
             ) / n
         entry["wrong_version_chunks"] = sum(r["wrong_version"] for r in rs)
         out.append(entry)
+
     return out
 
 

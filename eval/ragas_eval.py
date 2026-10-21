@@ -91,33 +91,46 @@ def find_latest_log() -> Path:
     default_main = REPO_ROOT / "logs" / "eval_20261014_202454.jsonl"
     if default_main.exists():
         return default_main
+
     log_dir = REPO_ROOT / "logs"
     logs = sorted(log_dir.glob("eval_*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)
+    
     if not logs:
         console.print("[bold red]Lỗi:[/bold red] Không tìm thấy file log nào trong logs/.")
         sys.exit(1)
+
     return logs[0]
 
 
 def extract_evaluation_dataset(testset_path: Path, log_path: Path) -> list[dict[str, Any]]:
-    """Gom 4 trường bắt buộc: user_input, retrieved_contexts, response, reference."""
+    """Gom 4 trường bắt buộc: user_input, retrieved_contexts, response, reference.
+    [File tests/testset.jsonl] ──► user_input (case["question"])
+                               ──► reference  (case["expected_answer"])
+                                       │
+                                       ▼  (Ghép nối qua mã câu hỏi: qid)
+                                       ▲
+    [File logs/eval_xxx.jsonl] ──► retrieved_contexts (kết quả các tool tra cứu)
+                               ──► response           (rec.final_answer)
+    """
     from eval.scoring import is_refusal, records_from_log
 
     # Đọc testset gốc
     testset_cases = {}
+
     with open(testset_path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 c = json.loads(line)
                 testset_cases[c["id"]] = c
 
-    # Đọc log thực thi của Agent qua records_from_log chuẩn (gom trace và final_answer từ event stream)
+    # Đọc log thực thi của Agent qua records_from_log chuẩn 
     agent_results = records_from_log(log_path)
 
     dataset = []
     for qid, case in testset_cases.items():
         if qid not in agent_results:
             continue
+
         rec = agent_results[qid]
 
         # Ngữ cảnh: kết quả của các tool tra cứu/tính toán (không tính tool ghi quyết định)
@@ -175,6 +188,7 @@ def evaluate_sequentially_with_checkpoint(
 
     # Tải checkpoint cũ nếu có
     checkpoint: dict[str, dict[str, Any]] = {}
+
     if checkpoint_file.exists():
         try:
             with open(checkpoint_file, "r", encoding="utf-8") as f:
@@ -197,6 +211,7 @@ def evaluate_sequentially_with_checkpoint(
     exhausted_models: set[str] = set()
     used_models: set[str] = {model_name}  # model thực sự đã chấm (có thể đổi giữa chừng khi hết hạn mức)
     total = len(items)
+    
     for idx, item in enumerate(items, start=1):
         qid = item["id"]
 
@@ -259,7 +274,7 @@ def evaluate_sequentially_with_checkpoint(
                     if wait_s > 60.0:
                         exhausted_models.add(model_name)
                         console.print(
-                            f"      [bold red]⚠ Model {model_name} đã hết hạn mức ngày (Google yêu cầu chờ {wait_s:.0f}s ~ {wait_s/3600:.1f}h)![/bold red]"
+                            f"      [bold red] Model {model_name} đã hết hạn mức ngày (Google yêu cầu chờ {wait_s:.0f}s ~ {wait_s/3600:.1f}h)![/bold red]"
                         )
                         backup_models = [DEFAULT_MODEL, "gemini-flash-lite-latest", "gemini-3.7-flash"]
                         backup = next((bm for bm in backup_models if bm not in exhausted_models), None)

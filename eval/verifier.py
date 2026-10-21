@@ -138,6 +138,7 @@ def load_trace(path: Path, question_id: Optional[str] = None) -> list[dict]:
 
 def _step_fields(step: TraceStep) -> tuple[str, dict, str]:
     """Lấy (tool, args, result) từ LogLine hoặc dict, chịu được dữ liệu thiếu/sai kiểu."""
+    
     if isinstance(step, LogLine):
         tool, args, result = step.tool, step.args, step.result
     else:
@@ -158,6 +159,7 @@ def _as_fraction(value: Optional[float]) -> Optional[float]:
 
 def _clean_codes(value: Any) -> list[str]:
     """Chuẩn hóa danh sách mã lý do: chuỗi đơn -> list, strip, viết hoa, bỏ trùng, giữ thứ tự."""
+    
     if isinstance(value, str):
         value = [value]
     if not isinstance(value, list):
@@ -174,7 +176,8 @@ def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmi
     - DTI lấy từ kết quả calc_dti cuối (chuỗi do code sinh, không phải văn bản LLM); lãi suất
       lấy từ args agent truyền vào calc_dti.
     """
-    target = app_id.strip().upper()
+    
+    target = app_id.strip().upper() # App_id muốn tìm
     tool_calls: list[str] = []
     submit_args: Optional[dict] = None
     dti: Optional[float] = None
@@ -182,16 +185,20 @@ def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmi
 
     for step in steps:
         tool, args, result = _step_fields(step)
+        
         # "__answer__" là dòng ghi câu trả lời + usage cuối mỗi câu (không phải lời gọi tool).
         if not tool or tool.startswith("__") or result.lstrip().startswith("Error:"):
             continue
+
         if tool in ("submit_decision", "get_decision", "calc_dti"):
             if str(args.get("app_id", "")).strip().upper() != target:
                 continue
+
         tool_calls.append(tool)
 
         if tool == "submit_decision":
             submit_args = args
+
         elif tool == "calc_dti":
             m = _DTI_LINE.search(result)
             if m:
@@ -201,15 +208,21 @@ def submission_from_trace(app_id: str, steps: Iterable[TraceStep]) -> AgentSubmi
                 except (TypeError, ValueError):
                     rate = None
 
+    # Nếu Actor không submit
     if submit_args is None:
         return AgentSubmission(
-            app_id=target, decision="NONE", reason="", tool_calls=tool_calls,
-            calculated_dti=dti, used_rate=rate,
+            app_id=target, 
+            decision="NONE", 
+            reason="", 
+            tool_calls=tool_calls,
+            calculated_dti=dti, 
+            used_rate=rate,
         )
 
     cited = submit_args.get("cited_docs")
     if isinstance(cited, str):
         cited = [cited]
+
     return AgentSubmission(
         app_id=target,
         decision=str(submit_args.get("decision", "")).strip().lower(),
@@ -280,6 +293,7 @@ def verify_root_cause(actual_codes: list[str], expected_codes: list[str]) -> dic
 
 def verify_citations(actual_cited: list[str], expected_cited: list[str], min_recall: float = 0.8) -> dict:
     """TIÊU CHÍ 2: Chấm điểm trích dẫn luật (Recall & Precision)."""
+
     actual_list = list(dict.fromkeys(normalize_doc_id(d) for d in actual_cited if d and d.strip()))
     expect_list = list(dict.fromkeys(normalize_doc_id(d) for d in expected_cited if d and d.strip()))
 
@@ -331,6 +345,7 @@ def verify_numeric_math(
     rate_tolerance: float = 0.001
 ) -> dict:
     """TIÊU CHÍ 4: Kiểm tra độ chính xác của các phép tính toán tài chính (DTI & Lãi suất)."""
+    
     # Nếu hồ sơ không yêu cầu tính DTI (vd: loại do tuổi hoặc thiếu giấy tờ)
     if expected_dti <= 0:
         return {
@@ -389,6 +404,7 @@ def verify_decision_record(actual: AgentSubmission, expect: ExpectedDecision) ->
 
     # 3. Thu thập thông điệp lỗi chi tiết (phục vụ debug)
     errors: list[str] = []
+
     if not c1["decision_correct"]:
         errors.append(f"Sai quyết định (AI: '{c1['actual_decision']}' != Chuẩn: '{c1['expected_decision']}')")
 
@@ -488,6 +504,7 @@ def export_results_csv(results: list[VerifyResult], output_path: Path = REPO_ROO
         "has_search_policy", "has_calc_dti", "read_after_write", "trace_valid",
         "dti_correct", "actual_dti", "expected_dti", "rate_correct", "error_message"
     ]
+    
     with open(output_path, mode="w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()

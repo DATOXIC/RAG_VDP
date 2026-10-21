@@ -398,3 +398,27 @@ def get_decision(app_id: str) -> str:
         return f"Error: Hồ sơ '{app_id}' chưa có quyết định nào trong hệ thống."
     except Exception as e:
         return f"Error: Đã xảy ra lỗi khi đọc quyết định: {e}"
+
+def get_diff(file1: str, file2: str) -> str:
+
+    with open(file1, "r", encoding="utf-8") as f1:
+        lines1 = [line.strip() for line in f1 if line.strip()]
+    with open(file2, "r", encoding="utf-8") as f2:
+        lines2 = [line.strip() for line in f2 if line.strip()]
+    
+    diff = []
+
+    for line in lines1:
+        if line not in lines2:
+            diff.append(f"- {line}")
+
+    for line in lines2:
+        if line not in lines1:
+            diff.append(f"+ {line}")
+
+    return "\n".join(diff)
+
+if __name__ == "__main__":
+    f1 = "data/policies/CP-01_v1_chinh-sach-cho-vay.md"
+    f2 = "data/policies/CP-01_v2_chinh-sach-cho-vay.md"
+    print(get_diff(f1, f2))

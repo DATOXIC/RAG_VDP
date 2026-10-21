@@ -131,6 +131,7 @@ class Agent:
         verbose: bool = True, 
         llm: Optional[LlmFn] = None
     ):
+
         """Khởi tạo: nạp sẵn cấu hình và prompt vào bộ nhớ một lần duy nhất."""
         self.model = model or DEFAULT_MODEL
         self.max_steps = max_steps
@@ -306,7 +307,14 @@ class Agent:
                                 })
                                 continue
 
+                        
                         result.final_answer = turn.content
+                        
+                        # if is is_underwrite and result.final_answer and not bool(re.search(r"CP-\d+",result.final_answer)):
+                        #     sub = result.to_submission()
+                        #     if sub.cited_docs:
+                        #         docs_str = ", ".join("[{d}]" for d in sub.cited_docs)
+                        #         result.final_answer += f"\n\n**Căn cứ pháp lý áp dụng:**{docs_str}"  
 
                         if not turn.content:
                             result.success = False
@@ -344,3 +352,5 @@ class Agent:
             usage=result.usage,
         )
         return result
+ 
+        

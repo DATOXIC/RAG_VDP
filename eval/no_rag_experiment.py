@@ -52,6 +52,7 @@ def main(argv=None) -> int:
         rows.append({"id": i, "type": n["type"], "co_rag_dat": b["passed"], "khong_rag_dat": n["passed"],
                      "khong_rag_tu_choi": n["refused"], "co_rag_prompt_token": b["prompt_tokens"],
                      "khong_rag_prompt_token": n["prompt_tokens"], "ghi_chu_khong_rag": n["notes"] or n["error"]})
+    
     with open(OUT / "compare.csv", "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
